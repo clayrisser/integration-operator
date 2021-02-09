@@ -37,12 +37,12 @@ export interface IntegrationPlugResource extends KubernetesObject {
 }
 
 export interface IntegrationSocketSpec {
+  cleanupJob?: V1JobSpec; // batchv1.JobSpec `json:"cleanupJob,omitempty"`
   configmaps?: string[]; // []string `json:"configmaps,omitempty"`
+  hooks?: IntegrationSocketSpecHook[]; // []*IntegrationSocketSpecHook `json:"hooks,omitempty"`
   replications?: IntegrationSocketSpecReplication[]; // []*IntegrationSocketSpecReplication `json:"replications,omitempty"`
   secrets?: string[]; // []string `json:"secrets,omitempty"`
   wait?: IntegrationPlugSpecWait; // IntegrationPlugSpecWait `json:"wait,omitempty"`
-  job?: V1JobSpec; // batchv1.JobSpec `json:"cleanupJob,omitempty"`
-  cleanupJob?: V1JobSpec; // batchv1.JobSpec `json:"cleanupJob,omitempty"`
 }
 
 export interface IntegrationSocketStatus {}
@@ -88,4 +88,9 @@ export interface IntegrationPlugSpecMergeSecrets {
 export interface IntegrationPlugSpecSocket {
   name?: string; // string `json:"name,omitempty"`
   namespace?: string; // string `json:"namespace,omitempty"`
+}
+
+export interface IntegrationSocketSpecHook {
+  name?: string; // string `json:"name,omitempty"`
+  job?: V1JobSpec; // []*batchv1.JobSpec `json:"job,omitempty"`
 }

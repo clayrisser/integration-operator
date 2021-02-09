@@ -39,12 +39,11 @@ type IntegrationSocketSpec struct {
         // resources to replicate to other namespaces
         Replications []*IntegrationSocketSpecReplication `json:"replications,omitempty"`
 
-        // job to run after integration
-        Job batchv1.JobSpec `json:"job,omitempty"`
-
-        // job to run during integration cleanup
-        CleanupJob batchv1.JobSpec `json:"cleanupJob,omitempty"`
+        // hooks that trigger during the lifecycle of an integration
+        Hooks []*IntegrationSocketSpecHook `json:"hooks,omitempty"`
 }
+
+
 
 // IntegrationPlugSpecWait defines what to wait on before integrating
 type IntegrationPlugSpecWait struct {
@@ -56,6 +55,14 @@ type IntegrationPlugSpecWait struct {
 
         // resources to wait on
         Resources []*IntegrationPlugSpecWaitResource `json:"resources,omitempty"`
+}
+
+type IntegrationSocketSpecHook struct {
+        // hook name
+        Name string `json:"name,omitempty"`
+
+        // job to run when hook is triggered
+        Job []*batchv1.JobSpec `json:"job,omitempty"`
 }
 
 type IntegrationSocketSpecReplication struct {
