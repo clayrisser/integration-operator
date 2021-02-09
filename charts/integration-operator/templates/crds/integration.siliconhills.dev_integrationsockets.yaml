@@ -1,0 +1,142 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: integrationsockets.integration.siliconhills.dev
+spec:
+  group: integration.siliconhills.dev
+  names:
+    kind: IntegrationSocket
+    listKind: IntegrationSocketList
+    plural: integrationsockets
+    singular: integrationsocket
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: IntegrationSocket is the Schema for the integrationsockets API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: IntegrationSocketSpec defines the desired state of IntegrationSocket
+            properties:
+              configmaps:
+                description: configmaps to copy to plug namespace when integrating
+                items:
+                  type: string
+                type: array
+              replications:
+                description: resources to replicate to other namespaces
+                items:
+                  properties:
+                    from:
+                      description: resource to replicate from
+                      properties:
+                        annotationSelector:
+                          description: AnnotationSelector is a string that follows
+                            the label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                            It matches with the resource annotations.
+                          type: string
+                        group:
+                          type: string
+                        kind:
+                          type: string
+                        labelSelector:
+                          description: LabelSelector is a string that follows the
+                            label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                            It matches with the resource labels.
+                          type: string
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        version:
+                          type: string
+                      type: object
+                    to:
+                      description: namespace to replicate the resource to
+                      type: string
+                  type: object
+                type: array
+              secrets:
+                description: secrets to copy to plug namespace when integrating
+                items:
+                  type: string
+                type: array
+              wait:
+                description: configuration for wait
+                properties:
+                  interval:
+                    description: interval in milliseconds to query for resources while
+                      waiting
+                    type: integer
+                  resources:
+                    description: resources to wait on
+                    items:
+                      properties:
+                        selector:
+                          description: resource selector
+                          properties:
+                            annotationSelector:
+                              description: AnnotationSelector is a string that follows
+                                the label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                                It matches with the resource annotations.
+                              type: string
+                            group:
+                              type: string
+                            kind:
+                              type: string
+                            labelSelector:
+                              description: LabelSelector is a string that follows
+                                the label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                                It matches with the resource labels.
+                              type: string
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                            version:
+                              type: string
+                          type: object
+                        statusPhases:
+                          description: resource status phases
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    type: array
+                  timeout:
+                    description: wait timeout in milliseconds
+                    type: integer
+                type: object
+            type: object
+          status:
+            description: IntegrationSocketStatus defines the observed state of IntegrationSocket
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
