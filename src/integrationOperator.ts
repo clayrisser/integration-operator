@@ -114,3 +114,15 @@ export enum ResourceKind {
 export enum ResourceVersion {
   V1alpha1 = 'v1alpha1'
 }
+
+export enum KustomizeResourceGroup {
+  Kustomize = 'kustomize'
+}
+
+export enum KustomizeResourceKind {
+  Kustomization = 'Kustomization'
+}
+
+export enum KustomizeResourceVersion {
+  V1alpha1 = 'v1alpha1'
+}

@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
         kustomizeTypes "sigs.k8s.io/kustomize/api/types"
+	batchv1 "k8s.io/api/batch/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -37,6 +38,12 @@ type IntegrationSocketSpec struct {
 
         // resources to replicate to other namespaces
         Replications []*IntegrationSocketSpecReplication `json:"replications,omitempty"`
+
+        // job to run after integration
+        Job batchv1.JobSpec `json:"job,omitempty"`
+
+        // job to run during integration cleanup
+        CleanupJob batchv1.JobSpec `json:"cleanupJob,omitempty"`
 }
 
 // IntegrationPlugSpecWait defines what to wait on before integrating

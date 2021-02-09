@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { KubernetesObject } from '@kubernetes/client-node';
+import { KubernetesObject, V1JobSpec } from '@kubernetes/client-node';
 import { KustomizationSpec, Selector } from 'kustomize-operator';
 
 export interface IntegrationPlugSpec {
@@ -41,6 +41,8 @@ export interface IntegrationSocketSpec {
   replications?: IntegrationSocketSpecReplication[]; // []*IntegrationSocketSpecReplication `json:"replications,omitempty"`
   secrets?: string[]; // []string `json:"secrets,omitempty"`
   wait?: IntegrationPlugSpecWait; // IntegrationPlugSpecWait `json:"wait,omitempty"`
+  job?: V1JobSpec; // batchv1.JobSpec `json:"cleanupJob,omitempty"`
+  cleanupJob?: V1JobSpec; // batchv1.JobSpec `json:"cleanupJob,omitempty"`
 }
 
 export interface IntegrationSocketStatus {}
