@@ -4,12 +4,14 @@
   "words": [
     "babelrc",
     "bool",
+    "configmaps",
     "cspell",
     "cspellrc",
     "ecma",
     "jsx",
     "kubernetes",
     "kustomization",
+    "kustomize",
     "lang",
     "lowercased",
     "mjs",
@@ -18,12 +20,14 @@
     "omitempty",
     "ora",
     "plusplus",
+    "postfix",
     "rebased",
     "repo",
     "tsconfig",
     "tsx",
     "umd",
     "usr",
+    "yaml",
     "yoda"
   ]
 }

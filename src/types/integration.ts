@@ -15,10 +15,14 @@
  */
 
 import { KubernetesObject } from '@kubernetes/client-node';
-import { KustomizationSpec } from 'kustomize-operator';
+import { KustomizationSpec, Selector } from 'kustomize-operator';
 
 export interface IntegrationPlugSpec {
-  kustomization?: KustomizationSpec;
+  kustomization?: KustomizationSpec; // KustomizationSpec `json:"kustomization,omitempty" yaml:"kustomization,omitempty"`
+  mergeConfigmaps?: IntegrationPlugSpecMergeConfigmaps[]; // []*IntegrationPlugSpecMergeConfigmaps `json:"mergeConfigmaps,omitempty"`
+  mergeSecrets?: IntegrationPlugSpecMergeSecrets[]; // []*IntegrationPlugSpecMergeSecrets `json:"mergeSecrets,omitempty"`
+  resourcePostfix?: string; // string `json:"resourcePostfix,omitempty"`
+  socket?: IntegrationPlugSpecSocket; // IntegrationPlugSpecSocket `json:"socket,omitempty"`
 }
 
 export interface IntegrationPlugStatus {
@@ -32,7 +36,12 @@ export interface IntegrationPlugResource extends KubernetesObject {
   status?: IntegrationPlugStatus;
 }
 
-export interface IntegrationSocketSpec {}
+export interface IntegrationSocketSpec {
+  configmaps?: string[]; // []string `json:"configmaps,omitempty"`
+  replications?: IntegrationSocketSpecReplication[]; // []*IntegrationSocketSpecReplication `json:"replications,omitempty"`
+  secrets?: string[]; // []string `json:"secrets,omitempty"`
+  wait?: IntegrationPlugSpecWait; // IntegrationPlugSpecWait `json:"wait,omitempty"`
+}
 
 export interface IntegrationSocketStatus {}
 
@@ -46,4 +55,35 @@ export enum IntegrationPlugStatusPhase {
   Pending = 'Pending',
   Succeeded = 'Succeeded',
   Unknown = 'Unknown'
+}
+
+export interface IntegrationPlugSpecWait {
+  interval?: number; // int `json:"interval,omitempty"`
+  resources?: IntegrationPlugSpecWaitResource[]; // []*IntegrationPlugSpecWaitResource `json:"resources,omitempty"`
+  timeout?: number; // int `json:"timeout,omitempty"`
+}
+
+export interface IntegrationSocketSpecReplication {
+  from?: Selector; // kustomizeTypes.Selector `json:"from,omitempty"`
+  to?: string; // string `json:"to,omitempty"`
+}
+
+export interface IntegrationPlugSpecWaitResource {
+  selector?: Selector; // kustomizeTypes.Selector `json:"selector,omitempty"`
+  statusPhases?: string[]; // []string `json:"statusPhases,omitempty"`
+}
+
+export interface IntegrationPlugSpecMergeConfigmaps {
+  from?: string; // string `json:"from,omitempty"`
+  to?: string; // string `json:"to,omitempty"`
+}
+
+export interface IntegrationPlugSpecMergeSecrets {
+  from?: string; // string `json:"from,omitempty"`
+  to?: string; // string `json:"to,omitempty"`
+}
+
+export interface IntegrationPlugSpecSocket {
+  name?: string; // string `json:"name,omitempty"`
+  namespace?: string; // string `json:"namespace,omitempty"`
 }

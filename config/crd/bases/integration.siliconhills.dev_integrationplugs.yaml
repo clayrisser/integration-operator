@@ -751,6 +751,43 @@ spec:
                         type: object
                       type: array
                   type: object
+                mergeConfigmaps:
+                  description: configmaps to merge with copied configmaps
+                  items:
+                    properties:
+                      from:
+                        description: name of the configmap to merge from
+                        type: string
+                      to:
+                        description: name of the copied configmap to merge to
+                        type: string
+                    type: object
+                  type: array
+                mergeSecrets:
+                  description: secrets to merge with copied secrets
+                  items:
+                    properties:
+                      from:
+                        description: name of the secret to merge from
+                        type: string
+                      to:
+                        description: name of the copied secret to merge to
+                        type: string
+                    type: object
+                  type: array
+                resourcePostfix:
+                  description: postfix to apply to copied resource names
+                  type: string
+                socket:
+                  description: socket to integrate with
+                  properties:
+                    name:
+                      description: name of the socket
+                      type: string
+                    namespace:
+                      description: namespace of the socket
+                      type: string
+                  type: object
               type: object
             status:
               description: IntegrationPlugStatus defines the observed state of IntegrationPlug

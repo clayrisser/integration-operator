@@ -25,8 +25,20 @@ import (
 
 // IntegrationPlugSpec defines the desired state of IntegrationPlug
 type IntegrationPlugSpec struct {
+        // socket to integrate with
+        Socket IntegrationPlugSpecSocket `json:"socket,omitempty"`
+
 	// kustomization to apply after success
 	Kustomization KustomizationSpec `json:"kustomization,omitempty" yaml:"kustomization,omitempty"`
+
+        // postfix to apply to copied resource names
+        ResourcePostfix string `json:"resourcePostfix,omitempty"`
+
+        // configmaps to merge with copied configmaps
+        MergeConfigmaps []*IntegrationPlugSpecMergeConfigmaps `json:"mergeConfigmaps,omitempty"`
+
+        // secrets to merge with copied secrets
+        MergeSecrets []*IntegrationPlugSpecMergeSecrets `json:"mergeSecrets,omitempty"`
 }
 
 // IntegrationPlugStatus defines the observed state of IntegrationPlug
@@ -39,6 +51,30 @@ type IntegrationPlugStatus struct {
 
         // integration connection ready
         Ready bool `json:"ready,omitempty"`
+}
+
+type IntegrationPlugSpecMergeConfigmaps struct {
+        // name of the configmap to merge from
+        from string `json:"from,omitempty"`
+
+        // name of the copied configmap to merge to
+        to string `json:"to,omitempty"`
+}
+
+type IntegrationPlugSpecMergeSecrets struct {
+        // name of the secret to merge from
+        from string `json:"from,omitempty"`
+
+        // name of the copied secret to merge to
+        to string `json:"to,omitempty"`
+}
+
+type IntegrationPlugSpecSocket struct {
+	// name of the socket
+	Name string `json:"name,omitempty"`
+
+	// namespace of the socket
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // +kubebuilder:object:root=true
