@@ -484,7 +484,47 @@ spec:
                         JSONPatches is a list of JSONPatch for applying JSON
                         patch. Format documented at https://tools.ietf.org/html/rfc6902
                         and http://jsonpatch.com
-                      items: {}
+                      items:
+                        description:
+                          Patch represent either a Strategic Merge Patch
+                          or a JSON patch and its targets. The content of the patch
+                          can either be from a file or from an inline string.
+                        properties:
+                          patch:
+                            description: Patch is the content of a patch.
+                            type: string
+                          path:
+                            description: Path is a relative file path to the patch file.
+                            type: string
+                          target:
+                            description:
+                              Target points to the resources that the patch
+                              is applied to
+                            properties:
+                              annotationSelector:
+                                description:
+                                  AnnotationSelector is a string that follows
+                                  the label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                                  It matches with the resource annotations.
+                                type: string
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              labelSelector:
+                                description:
+                                  LabelSelector is a string that follows
+                                  the label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                                  It matches with the resource labels.
+                                type: string
+                              name:
+                                type: string
+                              namespace:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                        type: object
                       type: array
                     patchesStrategicMerge:
                       description:

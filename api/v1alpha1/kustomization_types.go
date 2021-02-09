@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Silicon Hills LLC
+ * Copyright 2021 Silicon Hills LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ type KustomizationSpec struct {
 	// JSONPatches is a list of JSONPatch for applying JSON patch.
 	// Format documented at https://tools.ietf.org/html/rfc6902
 	// and http://jsonpatch.com
-	PatchesJson6902 []kustomizeTypes.PatchJson6902 `json:"patchesJson6902,omitempty" yaml:"patchesJson6902,omitempty"`
+	PatchesJson6902 []kustomizeTypes.Patch `json:"patchesJson6902,omitempty" yaml:"patchesJson6902,omitempty"`
 
 	// PatchesStrategicMerge specifies the relative path to a file
 	// containing a strategic merge patch.  Format documented at

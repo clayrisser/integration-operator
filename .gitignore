@@ -32,8 +32,8 @@
 /dist
 /es
 /lib
-bin/manager
-bin/controller-gen
+/bin/**/*
+!/bin/*.js
 bower_components
 build/Release
 coverage

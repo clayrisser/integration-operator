@@ -37,11 +37,100 @@ spec:
             spec:
               description: IntegrationSocketSpec defines the desired state of IntegrationSocket
               properties:
-                foo:
-                  description:
-                    Foo is an example field of IntegrationSocket. Edit IntegrationSocket_types.go
-                    to remove/update
-                  type: string
+                configmaps:
+                  description: configmaps to copy to plug namespace when integrating
+                  items:
+                    type: string
+                  type: array
+                replications:
+                  description: resources to replicate to other namespaces
+                  items:
+                    properties:
+                      from:
+                        description: resource to replicate from
+                        properties:
+                          annotationSelector:
+                            description:
+                              AnnotationSelector is a string that follows
+                              the label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                              It matches with the resource annotations.
+                            type: string
+                          group:
+                            type: string
+                          kind:
+                            type: string
+                          labelSelector:
+                            description:
+                              LabelSelector is a string that follows the
+                              label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                              It matches with the resource labels.
+                            type: string
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                          version:
+                            type: string
+                        type: object
+                      to:
+                        description: namespace to replicate the resource to
+                        type: string
+                    type: object
+                  type: array
+                secrets:
+                  description: secrets to copy to plug namespace when integrating
+                  items:
+                    type: string
+                  type: array
+                wait:
+                  description: configuration for wait
+                  properties:
+                    interval:
+                      description:
+                        interval in milliseconds to query for resources while
+                        waiting
+                      type: integer
+                    resources:
+                      description: resources to wait on
+                      items:
+                        properties:
+                          selector:
+                            description: resource selector
+                            properties:
+                              annotationSelector:
+                                description:
+                                  AnnotationSelector is a string that follows
+                                  the label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                                  It matches with the resource annotations.
+                                type: string
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              labelSelector:
+                                description:
+                                  LabelSelector is a string that follows
+                                  the label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                                  It matches with the resource labels.
+                                type: string
+                              name:
+                                type: string
+                              namespace:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                          statusPhases:
+                            description: resource status phases
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      type: array
+                    timeout:
+                      description: wait timeout in milliseconds
+                      type: integer
+                  type: object
               type: object
             status:
               description: IntegrationSocketStatus defines the observed state of IntegrationSocket
