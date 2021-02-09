@@ -17,6 +17,7 @@
 package v1alpha1
 
 import (
+        kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -33,6 +34,9 @@ type IntegrationPlugSpec struct {
 
         // postfix to apply to copied resource names
         ResourcePostfix string `json:"resourcePostfix,omitempty"`
+
+        // resources to replicate
+        Replications []*Replication `json:"replications,omitempty"`
 
         // configmaps to merge with copied configmaps
         MergeConfigmaps []*IntegrationPlugSpecMergeConfigmaps `json:"mergeConfigmaps,omitempty"`
@@ -54,19 +58,19 @@ type IntegrationPlugStatus struct {
 }
 
 type IntegrationPlugSpecMergeConfigmaps struct {
-        // name of the configmap to merge from
-        from string `json:"from,omitempty"`
+        // name of the plug configmap to merge from
+        From string `json:"from,omitempty"`
 
-        // name of the copied configmap to merge to
-        to string `json:"to,omitempty"`
+        // name of the copied socket configmap to merge to
+        To string `json:"to,omitempty"`
 }
 
 type IntegrationPlugSpecMergeSecrets struct {
-        // name of the secret to merge from
-        from string `json:"from,omitempty"`
+        // name of the plug secret to merge from
+        From string `json:"from,omitempty"`
 
-        // name of the copied secret to merge to
-        to string `json:"to,omitempty"`
+        // name of the copied socket secret to merge to
+        To string `json:"to,omitempty"`
 }
 
 type IntegrationPlugSpecSocket struct {

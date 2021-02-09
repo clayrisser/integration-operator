@@ -15,12 +15,13 @@
  */
 
 import { KubernetesObject, V1JobSpec } from '@kubernetes/client-node';
-import { KustomizationSpec, Selector } from 'kustomize-operator';
+import { KustomizationSpec } from 'kustomize-operator';
 
 export interface IntegrationPlugSpec {
   kustomization?: KustomizationSpec; // KustomizationSpec `json:"kustomization,omitempty" yaml:"kustomization,omitempty"`
   mergeConfigmaps?: IntegrationPlugSpecMergeConfigmaps[]; // []*IntegrationPlugSpecMergeConfigmaps `json:"mergeConfigmaps,omitempty"`
   mergeSecrets?: IntegrationPlugSpecMergeSecrets[]; // []*IntegrationPlugSpecMergeSecrets `json:"mergeSecrets,omitempty"`
+  replications?: Replication[]; // []*Replication `json:"replications,omitempty"`
   resourcePostfix?: string; // string `json:"resourcePostfix,omitempty"`
   socket?: IntegrationPlugSpecSocket; // IntegrationPlugSpecSocket `json:"socket,omitempty"`
 }
@@ -37,10 +38,9 @@ export interface IntegrationPlugResource extends KubernetesObject {
 }
 
 export interface IntegrationSocketSpec {
-  cleanupJob?: V1JobSpec; // batchv1.JobSpec `json:"cleanupJob,omitempty"`
   configmaps?: string[]; // []string `json:"configmaps,omitempty"`
   hooks?: IntegrationSocketSpecHook[]; // []*IntegrationSocketSpecHook `json:"hooks,omitempty"`
-  replications?: IntegrationSocketSpecReplication[]; // []*IntegrationSocketSpecReplication `json:"replications,omitempty"`
+  replications?: Replication[]; // []*Replication `json:"replications,omitempty"`
   secrets?: string[]; // []string `json:"secrets,omitempty"`
   wait?: IntegrationPlugSpecWait; // IntegrationPlugSpecWait `json:"wait,omitempty"`
 }
@@ -65,14 +65,12 @@ export interface IntegrationPlugSpecWait {
   timeout?: number; // int `json:"timeout,omitempty"`
 }
 
-export interface IntegrationSocketSpecReplication {
-  from?: Selector; // kustomizeTypes.Selector `json:"from,omitempty"`
-  to?: string; // string `json:"to,omitempty"`
-}
-
 export interface IntegrationPlugSpecWaitResource {
-  selector?: Selector; // kustomizeTypes.Selector `json:"selector,omitempty"`
+  group?: string; // string `json:"group,omitempty"`
+  kind?: string; // string `json:"kind,omitempty"`
+  name?: string; // string `json:"name,omitempty"`
   statusPhases?: string[]; // []string `json:"statusPhases,omitempty"`
+  version?: string; // string `json:"version,omitempty"`
 }
 
 export interface IntegrationPlugSpecMergeConfigmaps {
@@ -92,5 +90,22 @@ export interface IntegrationPlugSpecSocket {
 
 export interface IntegrationSocketSpecHook {
   name?: string; // string `json:"name,omitempty"`
-  job?: V1JobSpec; // []*batchv1.JobSpec `json:"job,omitempty"`
+  job?: V1JobSpec; // batchv1.JobSpec `json:"job,omitempty"`
+}
+
+export interface Replication {
+  from?: ReplicationFrom; // ReplicationFrom `json:"from,omitempty"`
+  to?: ReplicationTo; // ReplicationTo `json:"to,omitempty"`
+}
+
+export interface ReplicationTo {
+  name?: string; // string `json:"name,omitempty"`
+  namespace?: string; // string `json:"namespace,omitempty"`
+}
+
+export interface ReplicationFrom {
+  group?: string; // string `json:"group,omitempty"`
+  kind?: string; // string `json:"kind,omitempty"`
+  name?: string; // string `json:"name,omitempty"`
+  version?: string; // string `json:"version,omitempty"`
 }

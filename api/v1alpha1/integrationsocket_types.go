@@ -36,14 +36,12 @@ type IntegrationSocketSpec struct {
         // secrets to copy to plug namespace when integrating
 	Secrets []string `json:"secrets,omitempty"`
 
-        // resources to replicate to other namespaces
-        Replications []*IntegrationSocketSpecReplication `json:"replications,omitempty"`
+        // resources to replicate
+        Replications []*Replication `json:"replications,omitempty"`
 
         // hooks that trigger during the lifecycle of an integration
         Hooks []*IntegrationSocketSpecHook `json:"hooks,omitempty"`
 }
-
-
 
 // IntegrationPlugSpecWait defines what to wait on before integrating
 type IntegrationPlugSpecWait struct {
@@ -62,20 +60,21 @@ type IntegrationSocketSpecHook struct {
         Name string `json:"name,omitempty"`
 
         // job to run when hook is triggered
-        Job []*batchv1.JobSpec `json:"job,omitempty"`
-}
-
-type IntegrationSocketSpecReplication struct {
-        // resource to replicate from
-        from kustomizeTypes.Selector `json:"from,omitempty"`
-
-        // namespace to replicate the resource to
-        to string `json:"to,omitempty"`
+        Job batchv1.JobSpec `json:"job,omitempty"`
 }
 
 type IntegrationPlugSpecWaitResource struct {
-        // resource selector
-        Selector kustomizeTypes.Selector `json:"selector,omitempty"`
+        // resource group to select
+        Group string `json:"group,omitempty"`
+
+        // resource version to select
+        Version string `json:"version,omitempty"`
+
+        // resource kind to select
+        Kind string `json:"kind,omitempty"`
+
+        // resource name to select
+        Name string `json:"name,omitempty"`
 
         // resource status phases
         StatusPhases []string `json:"statusPhases,omitempty"`
