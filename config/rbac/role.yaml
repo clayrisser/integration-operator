@@ -1,0 +1,59 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+  - apiGroups:
+      - integration.siliconhills.dev
+    resources:
+      - integrationplugs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - integration.siliconhills.dev
+    resources:
+      - integrationplugs/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - integration.siliconhills.dev
+    resources:
+      - integrationplugs/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - integration.siliconhills.dev
+    resources:
+      - integrationsockets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - integration.siliconhills.dev
+    resources:
+      - integrationsockets/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - integration.siliconhills.dev
+    resources:
+      - integrationsockets/status
+    verbs:
+      - get
+      - patch
+      - update

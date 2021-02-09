@@ -1,0 +1,740 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: integrationplugs.integration.siliconhills.dev
+spec:
+  group: integration.siliconhills.dev
+  names:
+    kind: IntegrationPlug
+    listKind: IntegrationPlugList
+    plural: integrationplugs
+    singular: integrationplug
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: IntegrationPlug is the Schema for the integrationplugs API
+          properties:
+            apiVersion:
+              description:
+                'APIVersion defines the versioned schema of this representation
+                of an object. Servers should convert recognized schemas to the latest
+                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description:
+                'Kind is a string value representing the REST resource this
+                object represents. Servers may infer this from the endpoint the client
+                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: IntegrationPlugSpec defines the desired state of IntegrationPlug
+              properties:
+                kustomization:
+                  description: kustomization to apply after success
+                  properties:
+                    commonAnnotations:
+                      additionalProperties:
+                        type: string
+                      description: CommonAnnotations to add to all objects.
+                      type: object
+                    commonLabels:
+                      additionalProperties:
+                        type: string
+                      description: CommonLabels to add to all objects and selectors.
+                      type: object
+                    configMapGenerator:
+                      description:
+                        ConfigMapGenerator is a list of configmaps to generate
+                        from local data (one configMap per list item). The resulting
+                        resource is a normal operand, subject to name prefixing, patching,
+                        etc.  By default, the name of the map will have a suffix hash
+                        generated from its contents.
+                      items:
+                        description:
+                          ConfigMapArgs contains the metadata of how to generate
+                          a configmap.
+                        properties:
+                          behavior:
+                            description:
+                              "Behavior of generated resource, must be one
+                              of:   'create': create a new one   'replace': replace
+                              the existing one   'merge': merge with the existing
+                              one"
+                            type: string
+                          envs:
+                            description:
+                              EnvSources is a list of file paths. The contents
+                              of each file should be one key=value pair per line, e.g.
+                              a Docker or npm ".env" file or a ".ini" file (wikipedia.org/wiki/INI_file)
+                            items:
+                              type: string
+                            type: array
+                          files:
+                            description:
+                              'FileSources is a list of file "sources" to
+                              use in creating a list of key, value pairs. A source takes
+                              the form:  [{key}=]{path} If the "key=" part is missing,
+                              the key is the path''s basename. If they "key=" part is
+                              present, it becomes the key (replacing the basename).
+                              In either case, the value is the file contents. Specifying
+                              a directory will iterate each named file in the directory
+                              whose basename is a valid configmap key.'
+                            items:
+                              type: string
+                            type: array
+                          literals:
+                            description:
+                              LiteralSources is a list of literal pair sources.
+                              Each literal source should be a key and literal value,
+                              e.g. `key=value`
+                            items:
+                              type: string
+                            type: array
+                          name:
+                            description:
+                              Name - actually the partial name - of the generated
+                              resource. The full name ends up being something like NamePrefix
+                              + this.Name + hash(content of generated resource).
+                            type: string
+                          namespace:
+                            description: Namespace for the configmap, optional
+                            type: string
+                          options:
+                            description:
+                              Local overrides to global generatorOptions
+                              field.
+                            properties:
+                              annotations:
+                                additionalProperties:
+                                  type: string
+                                description: Annotations to add to all generated resources.
+                                type: object
+                              disableNameSuffixHash:
+                                description:
+                                  DisableNameSuffixHash if true disables
+                                  the default behavior of adding a suffix to the names
+                                  of generated resources that is a hash of the resource
+                                  contents.
+                                type: boolean
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                description: Labels to add to all generated resources.
+                                type: object
+                            type: object
+                        type: object
+                      type: array
+                    configuration:
+                      description: kustomization config
+                      properties:
+                        commonAnnotations:
+                          description:
+                            NameReference     nbrSlice      `json:"nameReference,omitempty"
+                            yaml:"nameReference,omitempty"`
+                          items:
+                            description:
+                              "FieldSpec completely specifies a kustomizable
+                              field in an unstructured representation of a k8s API object.
+                              It helps define the operands of transformations. \n For
+                              example, a directive to add a common label to objects
+                              will need to know that a 'Deployment' object (in API group
+                              'apps', any version) can have labels at field path 'spec/template/metadata/labels',
+                              and further that it is OK (or not OK) to add that field
+                              path to the object if the field path doesn't exist already.
+                              \n This would look like {   group: apps   kind: Deployment
+                              \  path: spec/template/metadata/labels   create: true
+                              }"
+                            properties:
+                              create:
+                                type: boolean
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              path:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                          type: array
+                        commonLabels:
+                          items:
+                            description:
+                              "FieldSpec completely specifies a kustomizable
+                              field in an unstructured representation of a k8s API object.
+                              It helps define the operands of transformations. \n For
+                              example, a directive to add a common label to objects
+                              will need to know that a 'Deployment' object (in API group
+                              'apps', any version) can have labels at field path 'spec/template/metadata/labels',
+                              and further that it is OK (or not OK) to add that field
+                              path to the object if the field path doesn't exist already.
+                              \n This would look like {   group: apps   kind: Deployment
+                              \  path: spec/template/metadata/labels   create: true
+                              }"
+                            properties:
+                              create:
+                                type: boolean
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              path:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                          type: array
+                        images:
+                          items:
+                            description:
+                              "FieldSpec completely specifies a kustomizable
+                              field in an unstructured representation of a k8s API object.
+                              It helps define the operands of transformations. \n For
+                              example, a directive to add a common label to objects
+                              will need to know that a 'Deployment' object (in API group
+                              'apps', any version) can have labels at field path 'spec/template/metadata/labels',
+                              and further that it is OK (or not OK) to add that field
+                              path to the object if the field path doesn't exist already.
+                              \n This would look like {   group: apps   kind: Deployment
+                              \  path: spec/template/metadata/labels   create: true
+                              }"
+                            properties:
+                              create:
+                                type: boolean
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              path:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                          type: array
+                        namePrefix:
+                          items:
+                            description:
+                              "FieldSpec completely specifies a kustomizable
+                              field in an unstructured representation of a k8s API object.
+                              It helps define the operands of transformations. \n For
+                              example, a directive to add a common label to objects
+                              will need to know that a 'Deployment' object (in API group
+                              'apps', any version) can have labels at field path 'spec/template/metadata/labels',
+                              and further that it is OK (or not OK) to add that field
+                              path to the object if the field path doesn't exist already.
+                              \n This would look like {   group: apps   kind: Deployment
+                              \  path: spec/template/metadata/labels   create: true
+                              }"
+                            properties:
+                              create:
+                                type: boolean
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              path:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                          type: array
+                        nameSuffix:
+                          items:
+                            description:
+                              "FieldSpec completely specifies a kustomizable
+                              field in an unstructured representation of a k8s API object.
+                              It helps define the operands of transformations. \n For
+                              example, a directive to add a common label to objects
+                              will need to know that a 'Deployment' object (in API group
+                              'apps', any version) can have labels at field path 'spec/template/metadata/labels',
+                              and further that it is OK (or not OK) to add that field
+                              path to the object if the field path doesn't exist already.
+                              \n This would look like {   group: apps   kind: Deployment
+                              \  path: spec/template/metadata/labels   create: true
+                              }"
+                            properties:
+                              create:
+                                type: boolean
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              path:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                          type: array
+                        namespace:
+                          items:
+                            description:
+                              "FieldSpec completely specifies a kustomizable
+                              field in an unstructured representation of a k8s API object.
+                              It helps define the operands of transformations. \n For
+                              example, a directive to add a common label to objects
+                              will need to know that a 'Deployment' object (in API group
+                              'apps', any version) can have labels at field path 'spec/template/metadata/labels',
+                              and further that it is OK (or not OK) to add that field
+                              path to the object if the field path doesn't exist already.
+                              \n This would look like {   group: apps   kind: Deployment
+                              \  path: spec/template/metadata/labels   create: true
+                              }"
+                            properties:
+                              create:
+                                type: boolean
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              path:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                          type: array
+                        replicas:
+                          items:
+                            description:
+                              "FieldSpec completely specifies a kustomizable
+                              field in an unstructured representation of a k8s API object.
+                              It helps define the operands of transformations. \n For
+                              example, a directive to add a common label to objects
+                              will need to know that a 'Deployment' object (in API group
+                              'apps', any version) can have labels at field path 'spec/template/metadata/labels',
+                              and further that it is OK (or not OK) to add that field
+                              path to the object if the field path doesn't exist already.
+                              \n This would look like {   group: apps   kind: Deployment
+                              \  path: spec/template/metadata/labels   create: true
+                              }"
+                            properties:
+                              create:
+                                type: boolean
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              path:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                          type: array
+                        varReference:
+                          items:
+                            description:
+                              "FieldSpec completely specifies a kustomizable
+                              field in an unstructured representation of a k8s API object.
+                              It helps define the operands of transformations. \n For
+                              example, a directive to add a common label to objects
+                              will need to know that a 'Deployment' object (in API group
+                              'apps', any version) can have labels at field path 'spec/template/metadata/labels',
+                              and further that it is OK (or not OK) to add that field
+                              path to the object if the field path doesn't exist already.
+                              \n This would look like {   group: apps   kind: Deployment
+                              \  path: spec/template/metadata/labels   create: true
+                              }"
+                            properties:
+                              create:
+                                type: boolean
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              path:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    crds:
+                      description:
+                        Crds specifies relative paths to Custom Resource
+                        Definition files. This allows custom resources to be recognized
+                        as operands, making it possible to add them to the Resources
+                        list. CRDs themselves are not modified.
+                      items:
+                        type: string
+                      type: array
+                    generatorOptions:
+                      description:
+                        GeneratorOptions modify behavior of all ConfigMap
+                        and Secret generators.
+                      properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: Annotations to add to all generated resources.
+                          type: object
+                        disableNameSuffixHash:
+                          description:
+                            DisableNameSuffixHash if true disables the default
+                            behavior of adding a suffix to the names of generated resources
+                            that is a hash of the resource contents.
+                          type: boolean
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: Labels to add to all generated resources.
+                          type: object
+                      type: object
+                    images:
+                      description:
+                        Images is a list of (image name, new name, new tag
+                        or digest) for changing image names, tags or digests. This can
+                        also be achieved with a patch, but this operator is simpler
+                        to specify.
+                      items:
+                        description:
+                          Image contains an image name, a new name, a new
+                          tag or digest, which will replace the original name and tag.
+                        properties:
+                          digest:
+                            description:
+                              Digest is the value used to replace the original
+                              image tag. If digest is present NewTag value is ignored.
+                            type: string
+                          name:
+                            description: Name is a tag-less image name.
+                            type: string
+                          newName:
+                            description:
+                              NewName is the value used to replace the original
+                              name.
+                            type: string
+                          newTag:
+                            description:
+                              NewTag is the value used to replace the original
+                              tag.
+                            type: string
+                        type: object
+                      type: array
+                    namePrefix:
+                      description:
+                        NamePrefix will prefix the names of all resources
+                        mentioned in the kustomization file including generated configmaps
+                        and secrets.
+                      type: string
+                    nameSuffix:
+                      description:
+                        NameSuffix will suffix the names of all resources
+                        mentioned in the kustomization file including generated configmaps
+                        and secrets.
+                      type: string
+                    namespace:
+                      description: Namespace to add to all objects.
+                      type: string
+                    patches:
+                      description:
+                        Patches is a list of patches, where each one can
+                        be either a Strategic Merge Patch or a JSON patch. Each patch
+                        can be applied to multiple target objects.
+                      items:
+                        description:
+                          Patch represent either a Strategic Merge Patch
+                          or a JSON patch and its targets. The content of the patch
+                          can either be from a file or from an inline string.
+                        properties:
+                          patch:
+                            description: Patch is the content of a patch.
+                            type: string
+                          path:
+                            description: Path is a relative file path to the patch file.
+                            type: string
+                          target:
+                            description:
+                              Target points to the resources that the patch
+                              is applied to
+                            properties:
+                              annotationSelector:
+                                description:
+                                  AnnotationSelector is a string that follows
+                                  the label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                                  It matches with the resource annotations.
+                                type: string
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              labelSelector:
+                                description:
+                                  LabelSelector is a string that follows
+                                  the label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                                  It matches with the resource labels.
+                                type: string
+                              name:
+                                type: string
+                              namespace:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                        type: object
+                      type: array
+                    patchesJson6902:
+                      description:
+                        JSONPatches is a list of JSONPatch for applying JSON
+                        patch. Format documented at https://tools.ietf.org/html/rfc6902
+                        and http://jsonpatch.com
+                      items: {}
+                      type: array
+                    patchesStrategicMerge:
+                      description:
+                        PatchesStrategicMerge specifies the relative path
+                        to a file containing a strategic merge patch.  Format documented
+                        at https://github.com/kubernetes/community/blob/master/contributors/devel/strategic-merge-patch.md
+                        URLs and globs are not supported.
+                      items:
+                        description:
+                          PatchStrategicMerge represents a relative path
+                          to a stategic merge patch with the format https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/strategic-merge-patch.md
+                        type: string
+                      type: array
+                    replicas:
+                      description:
+                        Replicas is a list of {resourcename, count} that
+                        allows for simpler replica specification. This can also be done
+                        with a patch.
+                      items:
+                        description:
+                          Replica specifies a modification to a replica config.
+                          The number of replicas of a resource whose name matches will
+                          be set to count. This struct is used by the ReplicaCountTransform,
+                          and is meant to supplement the existing patch functionality
+                          with a simpler syntax for replica configuration.
+                        properties:
+                          count:
+                            description: The number of replicas required.
+                            format: int64
+                            type: integer
+                          name:
+                            description:
+                              The name of the resource to change the replica
+                              count
+                            type: string
+                        required:
+                          - count
+                        type: object
+                      type: array
+                    resources:
+                      description:
+                        Resources refers to kubernetes resources subject
+                        to kustomization.
+                      items:
+                        description:
+                          Selector specifies a set of resources. Any resource
+                          that matches intersection of all conditions is included in
+                          this set.
+                        properties:
+                          annotationSelector:
+                            description:
+                              AnnotationSelector is a string that follows
+                              the label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                              It matches with the resource annotations.
+                            type: string
+                          group:
+                            type: string
+                          kind:
+                            type: string
+                          labelSelector:
+                            description:
+                              LabelSelector is a string that follows the
+                              label selection expression https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#api
+                              It matches with the resource labels.
+                            type: string
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                          version:
+                            type: string
+                        type: object
+                      type: array
+                    retryTimeout:
+                      description:
+                        keep retrying when fails until timeout in milliseconds
+                        expires
+                      type: integer
+                    secretGenerator:
+                      description:
+                        SecretGenerator is a list of secrets to generate
+                        from local data (one secret per list item). The resulting resource
+                        is a normal operand, subject to name prefixing, patching, etc.  By
+                        default, the name of the map will have a suffix hash generated
+                        from its contents.
+                      items:
+                        description:
+                          SecretArgs contains the metadata of how to generate
+                          a secret.
+                        properties:
+                          behavior:
+                            description:
+                              "Behavior of generated resource, must be one
+                              of:   'create': create a new one   'replace': replace
+                              the existing one   'merge': merge with the existing
+                              one"
+                            type: string
+                          envs:
+                            description:
+                              EnvSources is a list of file paths. The contents
+                              of each file should be one key=value pair per line, e.g.
+                              a Docker or npm ".env" file or a ".ini" file (wikipedia.org/wiki/INI_file)
+                            items:
+                              type: string
+                            type: array
+                          files:
+                            description:
+                              'FileSources is a list of file "sources" to
+                              use in creating a list of key, value pairs. A source takes
+                              the form:  [{key}=]{path} If the "key=" part is missing,
+                              the key is the path''s basename. If they "key=" part is
+                              present, it becomes the key (replacing the basename).
+                              In either case, the value is the file contents. Specifying
+                              a directory will iterate each named file in the directory
+                              whose basename is a valid configmap key.'
+                            items:
+                              type: string
+                            type: array
+                          literals:
+                            description:
+                              LiteralSources is a list of literal pair sources.
+                              Each literal source should be a key and literal value,
+                              e.g. `key=value`
+                            items:
+                              type: string
+                            type: array
+                          name:
+                            description:
+                              Name - actually the partial name - of the generated
+                              resource. The full name ends up being something like NamePrefix
+                              + this.Name + hash(content of generated resource).
+                            type: string
+                          namespace:
+                            description: Namespace for the configmap, optional
+                            type: string
+                          options:
+                            description:
+                              Local overrides to global generatorOptions
+                              field.
+                            properties:
+                              annotations:
+                                additionalProperties:
+                                  type: string
+                                description: Annotations to add to all generated resources.
+                                type: object
+                              disableNameSuffixHash:
+                                description:
+                                  DisableNameSuffixHash if true disables
+                                  the default behavior of adding a suffix to the names
+                                  of generated resources that is a hash of the resource
+                                  contents.
+                                type: boolean
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                description: Labels to add to all generated resources.
+                                type: object
+                            type: object
+                          type:
+                            description:
+                              "Type of the secret. \n This is the same field
+                              as the secret type field in v1/Secret: It can be \"Opaque\"
+                              (default), or \"kubernetes.io/tls\". \n If type is \"kubernetes.io/tls\",
+                              then \"literals\" or \"files\" must have exactly two keys:
+                              \"tls.key\" and \"tls.crt\""
+                            type: string
+                        type: object
+                      type: array
+                    vars:
+                      description:
+                        Vars allow things modified by kustomize to be injected
+                        into a kubernetes object specification. A var is a name (e.g.
+                        FOO) associated with a field in a specific resource instance.  The
+                        field must contain a value of type string/bool/int/float, and
+                        defaults to the name field of the instance.  Any appearance
+                        of "$(FOO)" in the object spec will be replaced at kustomize
+                        build time, after the final value of the specified field has
+                        been determined.
+                      items:
+                        description:
+                          Var represents a variable whose value will be sourced
+                          from a field in a Kubernetes object.
+                        properties:
+                          fieldref:
+                            description:
+                              'FieldRef refers to the field of the object
+                              referred to by ObjRef whose value will be extracted for
+                              use in replacing $(FOO). If unspecified, this defaults
+                              to fieldPath: $defaultFieldPath'
+                            properties:
+                              fieldPath:
+                                type: string
+                            type: object
+                          name:
+                            description:
+                              Value of identifier name e.g. FOO used in container
+                              args, annotations Appears in pod template as $(FOO)
+                            type: string
+                          objref:
+                            description:
+                              ObjRef must refer to a Kubernetes resource
+                              under the purview of this kustomization. ObjRef should
+                              use the raw name of the object (the name specified in
+                              its YAML, before addition of a namePrefix and a nameSuffix).
+                            properties:
+                              apiVersion:
+                                type: string
+                              group:
+                                type: string
+                              kind:
+                                type: string
+                              name:
+                                type: string
+                              namespace:
+                                type: string
+                              version:
+                                type: string
+                            required:
+                              - name
+                            type: object
+                        required:
+                          - name
+                          - objref
+                        type: object
+                      type: array
+                  type: object
+              type: object
+            status:
+              description: IntegrationPlugStatus defines the observed state of IntegrationPlug
+              properties:
+                message:
+                  description: integration connection message
+                  type: string
+                phase:
+                  description:
+                    integration connection phase (Pending, Succeeded, Failed,
+                    Unknown)
+                  type: string
+                ready:
+                  description: integration connection ready
+                  type: boolean
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+status:
+  acceptedNames:
+    kind: ''
+    plural: ''
+  conditions: []
+  storedVersions: []

@@ -1,0 +1,7 @@
+apiVersion: integration.siliconhills.dev/v1alpha1
+kind: IntegrationSocket
+metadata:
+  name: integrationsocket-sample
+spec:
+  # Add fields here
+  foo: bar

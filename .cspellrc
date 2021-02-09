@@ -1,0 +1,29 @@
+{
+  "language": "en",
+  "version": "0.1",
+  "words": [
+    "babelrc",
+    "bool",
+    "cspell",
+    "cspellrc",
+    "ecma",
+    "jsx",
+    "kubernetes",
+    "kustomization",
+    "lang",
+    "lowercased",
+    "mjs",
+    "mjx",
+    "namespace",
+    "omitempty",
+    "ora",
+    "plusplus",
+    "rebased",
+    "repo",
+    "tsconfig",
+    "tsx",
+    "umd",
+    "usr",
+    "yoda"
+  ]
+}

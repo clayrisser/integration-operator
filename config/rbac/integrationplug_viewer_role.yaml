@@ -1,0 +1,20 @@
+# permissions for end users to view integrationplugs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: integrationplug-viewer-role
+rules:
+  - apiGroups:
+      - integration.siliconhills.dev
+    resources:
+      - integrationplugs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - integration.siliconhills.dev
+    resources:
+      - integrationplugs/status
+    verbs:
+      - get
