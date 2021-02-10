@@ -267,7 +267,7 @@ export default class IntegrationPlug extends Controller {
             spec: hook.job
           })
         ).body;
-        await this.waitForJobToFinish(job);
+        await this.waitForJobToFinish(job, hook.timeout);
         const logs = await this.getJobLogs(job);
         let message = '';
         if (hook.messageRegex) {
@@ -394,7 +394,8 @@ export default class IntegrationPlug extends Controller {
           await this.createOrUpdateConfigMap(
             configmapName + postfix,
             plugResource.metadata?.namespace!,
-            mergedData
+            mergedData,
+            plugResource
           );
         }
       )
@@ -460,7 +461,8 @@ export default class IntegrationPlug extends Controller {
         await this.createOrUpdateSecret(
           secretName + postfix,
           plugResource.metadata?.namespace!,
-          mergedStringData
+          mergedStringData,
+          plugResource
         );
       })
     );
@@ -469,7 +471,8 @@ export default class IntegrationPlug extends Controller {
   private async createOrUpdateSecret(
     name: string,
     namespace: string,
-    data: HashMap<string>
+    data: HashMap<string>,
+    owner?: k8s.KubernetesObject
   ) {
     try {
       await this.coreV1Api.readNamespacedSecret(name, namespace);
@@ -496,7 +499,12 @@ export default class IntegrationPlug extends Controller {
       await this.coreV1Api.createNamespacedSecret(namespace, {
         metadata: {
           name,
-          namespace
+          namespace,
+          ...(typeof owner !== 'undefined'
+            ? {
+                ownerReferences: [this.getOwnerReference(owner, namespace)]
+              }
+            : {})
         },
         stringData: data
       });
@@ -506,7 +514,8 @@ export default class IntegrationPlug extends Controller {
   private async createOrUpdateConfigMap(
     name: string,
     namespace: string,
-    data: HashMap<string>
+    data: HashMap<string>,
+    owner?: k8s.KubernetesObject
   ) {
     try {
       await this.coreV1Api.readNamespacedConfigMap(name, namespace);
@@ -533,7 +542,12 @@ export default class IntegrationPlug extends Controller {
       await this.coreV1Api.createNamespacedConfigMap(namespace, {
         metadata: {
           name,
-          namespace
+          namespace,
+          ...(typeof owner !== 'undefined'
+            ? {
+                ownerReferences: [this.getOwnerReference(owner, namespace)]
+              }
+            : {})
         },
         data
       });
@@ -632,6 +646,7 @@ export default class IntegrationPlug extends Controller {
       );
     } catch (err) {
       if (err.statusCode !== 404) throw err;
+      const ns = plugResource.metadata.namespace;
       const kustomizationResource: KustomizationResource = {
         apiVersion: `${getGroupName(
           KustomizeResourceGroup.Kustomize,
@@ -640,7 +655,8 @@ export default class IntegrationPlug extends Controller {
         kind: KustomizeResourceKind.Kustomization,
         metadata: {
           name: plugResource.metadata.name,
-          namespace: plugResource.metadata.namespace
+          namespace: ns,
+          ownerReferences: [this.getOwnerReference(plugResource, ns)]
         },
         spec: plugResource.spec?.kustomization
       };
@@ -652,6 +668,31 @@ export default class IntegrationPlug extends Controller {
         kustomizationResource
       );
     }
+  }
+
+  private getOwnerReference(
+    owner: k8s.KubernetesObject,
+    childNamespace: string
+  ) {
+    const ownerNamespace = owner.metadata?.namespace;
+    if (!childNamespace) {
+      throw new Error(
+        `cluster-scoped resource must not have a namespace-scoped owner, owner's namespace ${ownerNamespace}`
+      );
+    }
+    if (ownerNamespace !== childNamespace) {
+      throw new Error(
+        `cross-namespace owner references are disallowed, owner's namespace ${ownerNamespace}, obj's namespace ${childNamespace}`
+      );
+    }
+    return {
+      apiVersion: owner?.apiVersion!,
+      blockOwnerDeletion: true,
+      controller: true,
+      kind: owner?.kind!,
+      name: owner?.metadata?.name!,
+      uid: owner?.metadata?.uid!
+    };
   }
 }
 

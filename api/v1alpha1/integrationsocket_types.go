@@ -64,6 +64,9 @@ type IntegrationSocketSpecHook struct {
 
         // regex to find status message
         MessageRegex string `json:"messageRegex,omitempty"`
+
+	// wait timeout in milliseconds
+        Timeout int `json:"timeout,omitempty"`
 }
 
 type IntegrationPlugSpecWaitResource struct {

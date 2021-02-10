@@ -93,6 +93,7 @@ export interface IntegrationSocketSpecHook {
   job?: V1JobSpec; // batchv1.JobSpec `json:"job,omitempty"`
   messageRegex?: string; // string `json:"messageRegex,omitempty"`
   name?: string; // string `json:"name,omitempty"`
+  timeout?: number; // int `json:"timeout,omitempty"`
 }
 
 export interface Replication {
