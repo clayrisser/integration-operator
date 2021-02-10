@@ -20,6 +20,5 @@ import Replicate from './replicate';
 
 export * from './command';
 export * from './kubectl';
-export * from './replicate';
 
 export { Command, Kubectl, Replicate };

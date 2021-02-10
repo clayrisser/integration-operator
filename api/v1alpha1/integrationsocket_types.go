@@ -61,6 +61,9 @@ type IntegrationSocketSpecHook struct {
 
         // job to run when hook is triggered
         Job batchv1.JobSpec `json:"job,omitempty"`
+
+        // regex to find status message
+        MessageRegex string `json:"messageRegex,omitempty"`
 }
 
 type IntegrationPlugSpecWaitResource struct {

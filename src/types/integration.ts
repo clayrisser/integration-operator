@@ -90,8 +90,9 @@ export interface IntegrationPlugSpecSocket {
 }
 
 export interface IntegrationSocketSpecHook {
-  name?: string; // string `json:"name,omitempty"`
   job?: V1JobSpec; // batchv1.JobSpec `json:"job,omitempty"`
+  messageRegex?: string; // string `json:"messageRegex,omitempty"`
+  name?: string; // string `json:"name,omitempty"`
 }
 
 export interface Replication {

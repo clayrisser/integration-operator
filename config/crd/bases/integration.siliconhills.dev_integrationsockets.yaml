@@ -8199,6 +8199,9 @@ spec:
                         required:
                           - template
                         type: object
+                      messageRegex:
+                        description: regex to find status message
+                        type: string
                       name:
                         description: hook name
                         type: string

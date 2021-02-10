@@ -15,6 +15,7 @@
  */
 
 import * as k8s from '@kubernetes/client-node';
+import newRegExp from 'newregexp';
 import ora from 'ora';
 import { KustomizationResource } from 'kustomize-operator';
 import { ResourceMeta } from '@dot-i/k8s-operator';
@@ -25,6 +26,8 @@ import {
   IntegrationPlugResource,
   IntegrationPlugSpecMergeConfigmaps,
   IntegrationPlugSpecMergeSecrets,
+  IntegrationPlugStatus,
+  IntegrationPlugStatusPhase,
   IntegrationSocketResource,
   IntegrationSocketSpecHook,
   Replication
@@ -75,6 +78,22 @@ export default class IntegrationPlug extends Controller {
     );
   }
 
+  async deleted(
+    plugResource: IntegrationPlugResource,
+    _meta: ResourceMeta,
+    _oldPlugResource?: IntegrationPlugResource
+  ) {
+    const socketResource = await this.getSocketResource(plugResource);
+    if (!socketResource) {
+      this.spinner.warn(
+        `integrationsocket/${plugResource.spec?.socket?.name} does not exist in namespace ${plugResource.spec?.socket?.namespace}`
+      );
+      return null;
+    }
+    await this.callHook(Hook.Cleanup, plugResource, socketResource);
+    return null;
+  }
+
   async addedOrModified(
     plugResource: IntegrationPlugResource,
     _meta: ResourceMeta,
@@ -93,13 +112,53 @@ export default class IntegrationPlug extends Controller {
       );
       return null;
     }
-    await this.copyAndMergeConfigmaps(plugResource, socketResource);
-    await this.copyAndMergeSecrets(plugResource, socketResource);
-    await this.replicateSocketResources(socketResource);
-    await this.replicatePlugResources(plugResource);
-    await this.callHook(Hook.Ready, plugResource, socketResource);
-    if (plugResource?.spec?.kustomization) {
-      await this.applyKustomization(plugResource);
+    try {
+      await this.updateStatus(
+        {
+          message: 'pending',
+          phase: IntegrationPlugStatusPhase.Pending,
+          ready: false
+        },
+        plugResource
+      );
+      await this.callHook(Hook.Before, plugResource, socketResource);
+      await this.copyAndMergeConfigmaps(plugResource, socketResource);
+      await this.copyAndMergeSecrets(plugResource, socketResource);
+      await this.replicateSocketResources(socketResource);
+      await this.replicatePlugResources(plugResource);
+      const integrateHookResults = await this.callHook(
+        Hook.Integrate,
+        plugResource,
+        socketResource
+      );
+      const statusMessage = integrateHookResults
+        .map(
+          ({ name, namespace, message }: HookResult) =>
+            `${name} ${namespace} ${message}`
+        )
+        .join('\n');
+      if (plugResource?.spec?.kustomization) {
+        await this.applyKustomization(plugResource);
+      }
+      await this.callHook(Hook.After, plugResource, socketResource);
+      await this.updateStatus(
+        {
+          message: statusMessage,
+          phase: IntegrationPlugStatusPhase.Succeeded,
+          ready: true
+        },
+        plugResource
+      );
+    } catch (err) {
+      await this.updateStatus(
+        {
+          message: err.message?.toString() || '',
+          phase: IntegrationPlugStatusPhase.Failed,
+          ready: false
+        },
+        plugResource
+      );
+      throw err;
     }
     return null;
   }
@@ -115,17 +174,50 @@ export default class IntegrationPlug extends Controller {
         return hook.name === hookName;
       }
     );
-    await Promise.all(
+    return Promise.all(
       filteredHooks.map(async (hook: IntegrationSocketSpecHook, i: number) => {
-        await this.batchV1Api.createNamespacedJob(ns, {
-          metadata: {
-            name: `${plugResource.metadata?.name!}-${hookName}-${i.toString()}`,
-            namespace: ns
-          },
-          spec: hook.job
-        });
+        const job = (
+          await this.batchV1Api.createNamespacedJob(ns, {
+            metadata: {
+              name: `${plugResource.metadata
+                ?.name!}-${hookName}-${i.toString()}`,
+              namespace: ns
+            },
+            spec: hook.job
+          })
+        ).body;
+        const logs = await this.getJobLogs(job);
+        let message = '';
+        if (hook.messageRegex) {
+          const messageMatches = logs.match(newRegExp(hook.messageRegex));
+          message = [...(messageMatches || [])].join('\n');
+        }
+        return {
+          name: job.metadata?.name!,
+          namespace: job.metadata?.namespace!,
+          message
+        };
       })
     );
+  }
+
+  private async getJobLogs(job: k8s.V1Job): Promise<string> {
+    const pods = (
+      await this.coreV1Api.listNamespacedPod(job.metadata?.namespace || '')
+    ).body;
+    const podName =
+      pods.items.find(
+        (pod: k8s.V1Pod) =>
+          pod.metadata?.labels?.['job-name'] === job.metadata?.name
+      )?.metadata?.name || '';
+    return (
+      await this.coreV1Api.readNamespacedPodLog(
+        podName,
+        job.metadata?.namespace || '',
+        undefined,
+        false
+      )
+    ).body;
   }
 
   private async replicatePlugResources(plugResource: IntegrationPlugResource) {
@@ -378,6 +470,34 @@ export default class IntegrationPlug extends Controller {
     }
   }
 
+  private async updateStatus(
+    plugStatus: IntegrationPlugStatus,
+    plugResource: IntegrationPlugResource
+  ): Promise<void> {
+    if (!plugResource.metadata?.name || !plugResource.metadata.namespace)
+      return;
+    await this.customObjectsApi.patchNamespacedCustomObjectStatus(
+      this.group,
+      ResourceVersion.V1alpha1,
+      plugResource.metadata.namespace,
+      this.plural,
+      plugResource.metadata.name,
+      [
+        {
+          op: 'replace',
+          path: '/status',
+          value: plugStatus
+        }
+      ],
+      undefined,
+      undefined,
+      undefined,
+      {
+        headers: { 'Content-Type': 'application/json-patch+json' }
+      }
+    );
+  }
+
   private async applyKustomization(
     plugResource: IntegrationPlugResource
   ): Promise<void> {
@@ -437,6 +557,14 @@ export default class IntegrationPlug extends Controller {
 }
 
 export enum Hook {
-  Cleanup = 'CLEANUP',
-  Ready = 'READY'
+  After = 'after',
+  Before = 'before',
+  Cleanup = 'cleanup',
+  Integrate = 'integrate'
+}
+
+export interface HookResult {
+  message: string;
+  name: string;
+  namespace: string;
 }
