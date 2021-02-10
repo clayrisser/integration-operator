@@ -90,6 +90,7 @@ export interface IntegrationPlugSpecSocket {
 }
 
 export interface IntegrationSocketSpecHook {
+  interval?: number; // int `json:"interval,omitempty"`
   job?: V1JobSpec; // batchv1.JobSpec `json:"job,omitempty"`
   messageRegex?: string; // string `json:"messageRegex,omitempty"`
   name?: string; // string `json:"name,omitempty"`

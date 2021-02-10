@@ -19,13 +19,19 @@ import newRegExp from 'newregexp';
 import ora from 'ora';
 import { KustomizationResource } from 'kustomize-operator';
 import { ResourceMeta } from '@dot-i/k8s-operator';
-import { Replicate } from '~/services';
-import { kind2plural, getGroupName } from '~/util';
+import { Replicate, Kubectl } from '~/services';
+import {
+  kind2plural,
+  getGroupName,
+  resources2String,
+  getApiVersion
+} from '~/util';
 import {
   HashMap,
   IntegrationPlugResource,
   IntegrationPlugSpecMergeConfigmaps,
   IntegrationPlugSpecMergeSecrets,
+  IntegrationPlugSpecWaitResource,
   IntegrationPlugStatus,
   IntegrationPlugStatusPhase,
   IntegrationSocketResource,
@@ -42,15 +48,17 @@ import {
 import Controller from './controller';
 
 export default class IntegrationPlug extends Controller {
-  coreV1Api: k8s.CoreV1Api;
+  private coreV1Api: k8s.CoreV1Api;
 
-  customObjectsApi: k8s.CustomObjectsApi;
+  private customObjectsApi: k8s.CustomObjectsApi;
 
-  kubeConfig: k8s.KubeConfig;
+  private kubeConfig: k8s.KubeConfig;
 
-  batchV1Api: k8s.BatchV1Api;
+  private batchV1Api: k8s.BatchV1Api;
 
-  spinner = ora();
+  private spinner = ora();
+
+  private kubectl = new Kubectl();
 
   constructor(groupnameprefix: string, kind: string) {
     super(groupnameprefix, kind);
@@ -127,6 +135,7 @@ export default class IntegrationPlug extends Controller {
         this.callHook(Hook.BeforeCreate, plugResource, socketResource),
         this.callHook(Hook.BeforeCreateOrUpdate, plugResource, socketResource)
       ]);
+      await this.waitForResources(plugResource, socketResource);
       await this.copyAndMergeConfigmaps(plugResource, socketResource);
       await this.copyAndMergeSecrets(plugResource, socketResource);
       await this.replicateSocketResources(socketResource);
@@ -201,6 +210,7 @@ export default class IntegrationPlug extends Controller {
         this.callHook(Hook.BeforeUpdate, plugResource, socketResource),
         this.callHook(Hook.BeforeCreateOrUpdate, plugResource, socketResource)
       ]);
+      await this.waitForResources(plugResource, socketResource);
       await this.copyAndMergeConfigmaps(plugResource, socketResource);
       await this.copyAndMergeSecrets(plugResource, socketResource);
       await this.replicateSocketResources(socketResource);
@@ -244,6 +254,53 @@ export default class IntegrationPlug extends Controller {
     return null;
   }
 
+  private async getResources(
+    resources: k8s.KubernetesObject[]
+  ): k8s.KubernetesObject[] {
+    const resourcesStr = resources2String(resources);
+    const resources =
+      (
+        await this.kubectl.get<KubernetesListObject<KubernetesObject>>({
+          stdin: resourcesStr,
+          output: Output.Json
+        })
+      )?.items || [];
+    return resources;
+  }
+
+  private async waitForResources(
+    plugResource: IntegrationPlugResource,
+    socketResource: IntegrationSocketResource
+  ) {
+    const timeout = socketResource?.spec?.wait?.timeout || 60000;
+    const interval = Math.max(
+      socketResource?.spec?.wait?.interval || 5000,
+      timeout / 10
+    );
+    try {
+      await this.getResources(
+        (socketResource.spec?.wait?.resources || []).map<k8s.KubernetesObject>(
+          (resource: IntegrationPlugSpecWaitResource) => ({
+            apiVersion: getApiVersion(resource.version, resource.group),
+            kind: resource.kind,
+            metadata: {
+              name: resource.name,
+              namespace: plugResource.metadata?.namespace
+            }
+          })
+        )
+      );
+    } catch (err) {
+      await new Promise((r) => setTimeout(r, interval));
+      await this.waitForResources(
+        plugResource,
+        socketResource,
+        timeout - interval,
+        interval
+      );
+    }
+  }
+
   private async callHook(
     hookName: Hook,
     plugResource: IntegrationPlugResource,
@@ -262,12 +319,13 @@ export default class IntegrationPlug extends Controller {
             metadata: {
               name: `${plugResource.metadata
                 ?.name!}-${hookName}-${i.toString()}`,
-              namespace: ns
+              namespace: ns,
+              ownerReferences: [this.getOwnerReference(plugResource, ns)]
             },
             spec: hook.job
           })
         ).body;
-        await this.waitForJobToFinish(job, hook.timeout);
+        await this.waitForJobToFinish(job, hook.timeout, hook.interval);
         const logs = await this.getJobLogs(job);
         let message = '';
         if (hook.messageRegex) {
@@ -286,7 +344,7 @@ export default class IntegrationPlug extends Controller {
   private async waitForJobToFinish(
     job: k8s.V1Job,
     timeout = 60000,
-    interval = 1000
+    interval = 5000
   ) {
     interval = Math.max(timeout / 10, interval);
     const jobStatus = (

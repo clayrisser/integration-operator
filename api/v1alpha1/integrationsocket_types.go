@@ -67,6 +67,9 @@ type IntegrationSocketSpecHook struct {
 
 	// wait timeout in milliseconds
         Timeout int `json:"timeout,omitempty"`
+
+	// interval in milliseconds to query for jobs while waiting
+        Interval int `json:"interval,omitempty"`
 }
 
 type IntegrationPlugSpecWaitResource struct {
