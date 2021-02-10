@@ -15,23 +15,34 @@
  */
 
 import * as k8s from '@kubernetes/client-node';
+import ora from 'ora';
 import { KustomizationResource } from 'kustomize-operator';
 import { ResourceMeta } from '@dot-i/k8s-operator';
-import { IntegrationPlugResource, IntegrationSocketResource } from '~/types';
+import {
+  HashMap,
+  IntegrationPlugResource,
+  IntegrationPlugSpecMergeConfigmaps,
+  IntegrationPlugSpecMergeSecrets,
+  IntegrationSocketResource
+} from '~/types';
 import { kind2plural, getGroupName } from '~/util';
 import {
   KustomizeResourceGroup,
   KustomizeResourceKind,
-  KustomizeResourceVersion
+  KustomizeResourceVersion,
+  ResourceKind,
+  ResourceVersion
 } from '~/integrationOperator';
 import Controller from './controller';
 
-export default class ExternalMongo extends Controller {
+export default class IntegrationPlug extends Controller {
   coreV1Api: k8s.CoreV1Api;
 
   customObjectsApi: k8s.CustomObjectsApi;
 
   kubeConfig: k8s.KubeConfig;
+
+  spinner = ora();
 
   constructor(groupnameprefix: string, kind: string) {
     super(groupnameprefix, kind);
@@ -41,29 +52,275 @@ export default class ExternalMongo extends Controller {
     this.customObjectsApi = this.kubeConfig.makeApiClient(k8s.CustomObjectsApi);
   }
 
+  static base64DecodeSecretData(data: HashMap<string> = {}): HashMap<string> {
+    return Object.entries(data).reduce(
+      (
+        stringData: HashMap<string>,
+        [key, base64EncodedValue]: [string, string]
+      ) => {
+        stringData[key] = Buffer.from(base64EncodedValue, 'base64').toString(
+          'utf8'
+        );
+        return stringData;
+      },
+      {}
+    );
+  }
+
   async addedOrModified(
-    resource: IntegrationPlugResource,
+    plugResource: IntegrationPlugResource,
     _meta: ResourceMeta,
-    oldResource?: IntegrationPlugResource
+    oldPlugResource?: IntegrationPlugResource
   ): Promise<any> {
-    if (resource.metadata?.generation === oldResource?.metadata?.generation) {
+    if (
+      plugResource.metadata?.generation ===
+      oldPlugResource?.metadata?.generation
+    ) {
       return null;
     }
-    const socketResource = await this.getSocket();
-    await this.replicateConfigmaps();
-    await this.replicateSecrets();
+    const socketResource = await this.getSocketResource(plugResource);
+    if (!socketResource) {
+      this.spinner.warn(
+        `integrationsocket/${plugResource.spec?.socket?.name} does not exist in namespace ${plugResource.spec?.socket?.namespace}`
+      );
+      return null;
+    }
+    await this.copyAndMergeConfigmaps(plugResource, socketResource);
+    await this.copyAndMergeSecrets(plugResource, socketResource);
     await this.replicateResources();
     return null;
   }
 
-  async replicateConfigmaps() {}
+  async copyAndMergeConfigmaps(
+    plugResource: IntegrationPlugResource,
+    socketResource: IntegrationSocketResource
+  ) {
+    const configmapPostfix = plugResource?.spec?.configmapPostfix;
+    const postfix = configmapPostfix ? `-${configmapPostfix}` : '';
+    const mergeConfigmapsData = await Promise.all(
+      (plugResource.spec?.mergeConfigmaps || []).map<
+        Promise<[string | null, HashMap<string>]>
+      >(
+        async ({
+          to,
+          from
+        }: IntegrationPlugSpecMergeConfigmaps): Promise<
+          [string | null, HashMap<string>]
+        > => {
+          let plugConfigmap: k8s.V1ConfigMap | null = null;
+          if (from) {
+            plugConfigmap = (
+              await this.coreV1Api.readNamespacedConfigMap(
+                from,
+                plugResource.metadata?.namespace!
+              )
+            ).body;
+          }
+          return [to || null, plugConfigmap?.data || {}];
+        }
+      )
+    );
+    await Promise.all(
+      (socketResource.spec?.configmaps || []).map(
+        async (configmapName: string) => {
+          const socketConfigmap = (
+            await this.coreV1Api.readNamespacedConfigMap(
+              configmapName,
+              socketResource.metadata?.namespace!
+            )
+          ).body;
+          let mergedData = socketConfigmap?.data || {};
+          mergeConfigmapsData.forEach(
+            ([mergeConfigmapToName, mergeConfigmapFromData]: [
+              string | null,
+              HashMap<string>
+            ]) => {
+              if (mergeConfigmapToName === socketConfigmap?.metadata?.name) {
+                mergedData = {
+                  ...mergedData,
+                  ...mergeConfigmapFromData
+                };
+              }
+            }
+          );
+          await this.createOrUpdateConfigMap(
+            configmapName + postfix,
+            plugResource.metadata?.namespace!,
+            mergedData
+          );
+        }
+      )
+    );
+  }
 
-  async replicateSecrets() {}
+  async copyAndMergeSecrets(
+    plugResource: IntegrationPlugResource,
+    socketResource: IntegrationSocketResource
+  ) {
+    const secretPostfix = plugResource?.spec?.secretPostfix;
+    const postfix = secretPostfix ? `-${secretPostfix}` : '';
+    const mergeSecretsStringData = await Promise.all(
+      (plugResource.spec?.mergeSecrets || []).map<
+        Promise<[string | null, HashMap<string>]>
+      >(
+        async ({
+          to,
+          from
+        }: IntegrationPlugSpecMergeSecrets): Promise<
+          [string | null, HashMap<string>]
+        > => {
+          let plugSecret: k8s.V1Secret | null = null;
+          if (from) {
+            plugSecret = (
+              await this.coreV1Api.readNamespacedSecret(
+                from,
+                plugResource.metadata?.namespace!
+              )
+            ).body;
+          }
+          return [
+            to || null,
+            IntegrationPlug.base64DecodeSecretData(plugSecret?.data)
+          ];
+        }
+      )
+    );
+    await Promise.all(
+      (socketResource.spec?.secrets || []).map(async (secretName: string) => {
+        const socketSecret = (
+          await this.coreV1Api.readNamespacedSecret(
+            secretName,
+            socketResource.metadata?.namespace!
+          )
+        ).body;
+        let mergedStringData = IntegrationPlug.base64DecodeSecretData(
+          socketSecret?.data
+        );
+        mergeSecretsStringData.forEach(
+          ([mergeSecretToName, mergeSecretFromStringData]: [
+            string | null,
+            HashMap<string>
+          ]) => {
+            if (mergeSecretToName === socketSecret?.metadata?.name) {
+              mergedStringData = {
+                ...mergedStringData,
+                ...mergeSecretFromStringData
+              };
+            }
+          }
+        );
+        await this.createOrUpdateSecret(
+          secretName + postfix,
+          plugResource.metadata?.namespace!,
+          mergedStringData
+        );
+      })
+    );
+  }
 
   async replicateResources() {}
 
-  async getSocket(): Promise<IntegrationSocketResource> {
-    return {} as IntegrationSocketResource;
+  async createOrUpdateSecret(
+    name: string,
+    namespace: string,
+    data: HashMap<string>
+  ) {
+    try {
+      await this.coreV1Api.readNamespacedSecret(name, namespace);
+      await this.coreV1Api.patchNamespacedSecret(
+        name,
+        namespace,
+        [
+          {
+            op: 'replace',
+            path: '/stringData',
+            value: data
+          }
+        ],
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        {
+          headers: { 'Content-Type': 'application/json-patch+json' }
+        }
+      );
+    } catch (err) {
+      if (err.statusCode !== 404) throw err;
+      await this.coreV1Api.createNamespacedSecret(namespace, {
+        metadata: {
+          name,
+          namespace
+        },
+        stringData: data
+      });
+    }
+  }
+
+  async createOrUpdateConfigMap(
+    name: string,
+    namespace: string,
+    data: HashMap<string>
+  ) {
+    try {
+      await this.coreV1Api.readNamespacedConfigMap(name, namespace);
+      await this.coreV1Api.patchNamespacedConfigMap(
+        name,
+        namespace,
+        [
+          {
+            op: 'replace',
+            path: '/data',
+            value: data
+          }
+        ],
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        {
+          headers: { 'Content-Type': 'application/json-patch+json' }
+        }
+      );
+    } catch (err) {
+      if (err.statusCode !== 404) throw err;
+      await this.coreV1Api.createNamespacedConfigMap(namespace, {
+        metadata: {
+          name,
+          namespace
+        },
+        data
+      });
+    }
+  }
+
+  async getSocketResource(
+    plugResource: IntegrationPlugResource
+  ): Promise<IntegrationSocketResource | null> {
+    if (
+      !plugResource.metadata?.name ||
+      !plugResource.metadata?.namespace ||
+      !plugResource.spec?.socket?.name
+    ) {
+      return null;
+    }
+    const namespace =
+      plugResource.spec?.socket?.namespace || plugResource.metadata.namespace;
+    try {
+      const socketResource = (
+        await this.customObjectsApi.getNamespacedCustomObject(
+          this.group,
+          ResourceVersion.V1alpha1,
+          namespace,
+          kind2plural(ResourceKind.IntegrationSocket),
+          plugResource.spec.socket.name
+        )
+      ).body as IntegrationSocketResource;
+      return socketResource;
+    } catch (err) {
+      if (err.statusCode !== 404) throw err;
+      return null;
+    }
   }
 
   async applyKustomization(resource: IntegrationPlugResource): Promise<void> {

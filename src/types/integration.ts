@@ -18,11 +18,12 @@ import { KubernetesObject, V1JobSpec } from '@kubernetes/client-node';
 import { KustomizationSpec } from 'kustomize-operator';
 
 export interface IntegrationPlugSpec {
+  configmapPostfix?: string; // string `json:"configmapPostfix,omitempty"`
   kustomization?: KustomizationSpec; // KustomizationSpec `json:"kustomization,omitempty" yaml:"kustomization,omitempty"`
   mergeConfigmaps?: IntegrationPlugSpecMergeConfigmaps[]; // []*IntegrationPlugSpecMergeConfigmaps `json:"mergeConfigmaps,omitempty"`
   mergeSecrets?: IntegrationPlugSpecMergeSecrets[]; // []*IntegrationPlugSpecMergeSecrets `json:"mergeSecrets,omitempty"`
   replications?: Replication[]; // []*Replication `json:"replications,omitempty"`
-  resourcePostfix?: string; // string `json:"resourcePostfix,omitempty"`
+  secretPostfix?: string; // string `json:"secretPostfix,omitempty"`
   socket?: IntegrationPlugSpecSocket; // IntegrationPlugSpecSocket `json:"socket,omitempty"`
 }
 

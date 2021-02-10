@@ -16,4 +16,4 @@
 
 import Controller from './controller';
 
-export default class ConnectionMongo extends Controller {}
+export default class IntegrationSocket extends Controller {}
