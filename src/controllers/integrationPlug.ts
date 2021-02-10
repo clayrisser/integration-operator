@@ -26,6 +26,7 @@ import {
   IntegrationPlugSpecMergeConfigmaps,
   IntegrationPlugSpecMergeSecrets,
   IntegrationSocketResource,
+  IntegrationSocketSpecHook,
   Replication
 } from '~/types';
 import {
@@ -44,12 +45,15 @@ export default class IntegrationPlug extends Controller {
 
   kubeConfig: k8s.KubeConfig;
 
+  batchV1Api: k8s.BatchV1Api;
+
   spinner = ora();
 
   constructor(groupnameprefix: string, kind: string) {
     super(groupnameprefix, kind);
     this.kubeConfig = new k8s.KubeConfig();
     this.kubeConfig.loadFromDefault();
+    this.batchV1Api = this.kubeConfig.makeApiClient(k8s.BatchV1Api);
     this.coreV1Api = this.kubeConfig.makeApiClient(k8s.CoreV1Api);
     this.customObjectsApi = this.kubeConfig.makeApiClient(k8s.CustomObjectsApi);
   }
@@ -93,10 +97,35 @@ export default class IntegrationPlug extends Controller {
     await this.copyAndMergeSecrets(plugResource, socketResource);
     await this.replicateSocketResources(socketResource);
     await this.replicatePlugResources(plugResource);
+    await this.callHook(Hook.Ready, plugResource, socketResource);
     if (plugResource?.spec?.kustomization) {
       await this.applyKustomization(plugResource);
     }
     return null;
+  }
+
+  private async callHook(
+    hookName: Hook,
+    plugResource: IntegrationPlugResource,
+    socketResource: IntegrationSocketResource
+  ) {
+    const ns = plugResource.metadata?.namespace!;
+    const filteredHooks = (socketResource.spec?.hooks || []).filter(
+      (hook: IntegrationSocketSpecHook) => {
+        return hook.name === hookName;
+      }
+    );
+    await Promise.all(
+      filteredHooks.map(async (hook: IntegrationSocketSpecHook, i: number) => {
+        await this.batchV1Api.createNamespacedJob(ns, {
+          metadata: {
+            name: `${plugResource.metadata?.name!}-${hookName}-${i.toString()}`,
+            namespace: ns
+          },
+          spec: hook.job
+        });
+      })
+    );
   }
 
   private async replicatePlugResources(plugResource: IntegrationPlugResource) {
@@ -405,4 +434,9 @@ export default class IntegrationPlug extends Controller {
       );
     }
   }
+}
+
+export enum Hook {
+  Cleanup = 'CLEANUP',
+  Ready = 'READY'
 }
