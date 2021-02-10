@@ -90,11 +90,13 @@ export default class IntegrationPlug extends Controller {
       );
       return null;
     }
+    await this.callHook(Hook.BeforeCleanup, plugResource, socketResource);
     await this.callHook(Hook.Cleanup, plugResource, socketResource);
+    await this.callHook(Hook.AfterCleanup, plugResource, socketResource);
     return null;
   }
 
-  async addedOrModified(
+  async added(
     plugResource: IntegrationPlugResource,
     _meta: ResourceMeta,
     oldPlugResource?: IntegrationPlugResource
@@ -121,17 +123,19 @@ export default class IntegrationPlug extends Controller {
         },
         plugResource
       );
-      await this.callHook(Hook.Before, plugResource, socketResource);
+      await Promise.all([
+        this.callHook(Hook.BeforeCreate, plugResource, socketResource),
+        this.callHook(Hook.BeforeCreateOrUpdate, plugResource, socketResource)
+      ]);
       await this.copyAndMergeConfigmaps(plugResource, socketResource);
       await this.copyAndMergeSecrets(plugResource, socketResource);
       await this.replicateSocketResources(socketResource);
       await this.replicatePlugResources(plugResource);
-      const integrateHookResults = await this.callHook(
-        Hook.Integrate,
-        plugResource,
-        socketResource
-      );
-      const statusMessage = integrateHookResults
+      const [createResult, createOrUpdateResult] = await Promise.all([
+        this.callHook(Hook.Create, plugResource, socketResource),
+        this.callHook(Hook.CreateOrUpdate, plugResource, socketResource)
+      ]);
+      const statusMessage = [...createResult, ...createOrUpdateResult]
         .map(
           ({ name, namespace, message }: HookResult) =>
             `${name} ${namespace} ${message}`
@@ -140,7 +144,84 @@ export default class IntegrationPlug extends Controller {
       if (plugResource?.spec?.kustomization) {
         await this.applyKustomization(plugResource);
       }
-      await this.callHook(Hook.After, plugResource, socketResource);
+      await Promise.all([
+        this.callHook(Hook.AfterCreate, plugResource, socketResource),
+        this.callHook(Hook.AfterCreateOrUpdate, plugResource, socketResource)
+      ]);
+      await this.updateStatus(
+        {
+          message: statusMessage,
+          phase: IntegrationPlugStatusPhase.Succeeded,
+          ready: true
+        },
+        plugResource
+      );
+    } catch (err) {
+      await this.updateStatus(
+        {
+          message: err.message?.toString() || '',
+          phase: IntegrationPlugStatusPhase.Failed,
+          ready: false
+        },
+        plugResource
+      );
+      throw err;
+    }
+    return null;
+  }
+
+  async modified(
+    plugResource: IntegrationPlugResource,
+    _meta: ResourceMeta,
+    oldPlugResource?: IntegrationPlugResource
+  ): Promise<any> {
+    if (
+      plugResource.metadata?.generation ===
+      oldPlugResource?.metadata?.generation
+    ) {
+      return null;
+    }
+    const socketResource = await this.getSocketResource(plugResource);
+    if (!socketResource) {
+      this.spinner.warn(
+        `integrationsocket/${plugResource.spec?.socket?.name} does not exist in namespace ${plugResource.spec?.socket?.namespace}`
+      );
+      return null;
+    }
+    try {
+      await this.updateStatus(
+        {
+          message: 'pending',
+          phase: IntegrationPlugStatusPhase.Pending,
+          ready: false
+        },
+        plugResource
+      );
+      await Promise.all([
+        this.callHook(Hook.BeforeUpdate, plugResource, socketResource),
+        this.callHook(Hook.BeforeCreateOrUpdate, plugResource, socketResource)
+      ]);
+      await this.copyAndMergeConfigmaps(plugResource, socketResource);
+      await this.copyAndMergeSecrets(plugResource, socketResource);
+      await this.replicateSocketResources(socketResource);
+      await this.replicatePlugResources(plugResource);
+      const [updateResult, createOrUpdateResult] = await Promise.all([
+        this.callHook(Hook.Update, plugResource, socketResource),
+        this.callHook(Hook.CreateOrUpdate, plugResource, socketResource)
+      ]);
+      const statusMessage = [...updateResult, ...createOrUpdateResult]
+        .map(
+          ({ name, namespace, message }: HookResult) =>
+            `${name} ${namespace} ${message}`
+        )
+        .join('\n');
+      if (plugResource?.spec?.kustomization) {
+        await this.applyKustomization(plugResource);
+      }
+      await Promise.all([
+        this.callHook(Hook.AfterUpdate, plugResource, socketResource),
+        this.callHook(Hook.AfterCreateOrUpdate, plugResource, socketResource)
+      ]);
       await this.updateStatus(
         {
           message: statusMessage,
@@ -186,6 +267,7 @@ export default class IntegrationPlug extends Controller {
             spec: hook.job
           })
         ).body;
+        await this.waitForJobToFinish(job);
         const logs = await this.getJobLogs(job);
         let message = '';
         if (hook.messageRegex) {
@@ -199,6 +281,23 @@ export default class IntegrationPlug extends Controller {
         };
       })
     );
+  }
+
+  private async waitForJobToFinish(
+    job: k8s.V1Job,
+    timeout = 60000,
+    interval = 1000
+  ) {
+    interval = Math.max(timeout / 10, interval);
+    const jobStatus = (
+      await this.batchV1Api.readNamespacedJobStatus(
+        job.metadata?.name!,
+        job.metadata?.namespace!
+      )
+    ).body.status;
+    if (jobStatus?.succeeded) return;
+    await new Promise((r) => setTimeout(r, interval));
+    await this.waitForJobToFinish(job, timeout - interval, interval);
   }
 
   private async getJobLogs(job: k8s.V1Job): Promise<string> {
@@ -557,10 +656,18 @@ export default class IntegrationPlug extends Controller {
 }
 
 export enum Hook {
-  After = 'after',
-  Before = 'before',
+  AfterCleanup = 'after-cleanup',
+  AfterCreate = 'after-create',
+  AfterCreateOrUpdate = 'after-create-or-update',
+  AfterUpdate = 'after-update',
+  BeforeCleanup = 'before-cleanup',
+  BeforeCreate = 'before-create',
+  BeforeCreateOrUpdate = 'before-create-or-update',
+  BeforeUpdate = 'before-update',
   Cleanup = 'cleanup',
-  Integrate = 'integrate'
+  Create = 'create',
+  CreateOrUpdate = 'create-or-update',
+  Update = 'update'
 }
 
 export interface HookResult {

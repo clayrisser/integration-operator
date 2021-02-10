@@ -115,10 +115,6 @@ export default class Kubectl extends Command {
       }
     );
   }
-
-  async kustomize(args: string[] = []) {
-    return this.run(['kustomize', ...args]);
-  }
 }
 
 export interface GetOptions {
