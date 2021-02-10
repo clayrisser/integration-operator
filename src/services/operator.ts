@@ -25,6 +25,38 @@ export default class OperatorService {
     fs.readFileSync(path.resolve(__dirname, '../../PROJECT')).toString()
   );
 
+  getFullName({
+    apiVersion,
+    group,
+    kind,
+    name,
+    resource,
+    ns,
+    version
+  }: {
+    apiVersion?: string;
+    group?: string;
+    kind?: string;
+    name?: string;
+    ns?: string;
+    resource?: KubernetesObject;
+    version?: string;
+  }) {
+    if (resource) {
+      ({ kind, apiVersion } = resource);
+      name = resource.metadata?.name;
+      ns = resource.metadata?.namespace;
+    }
+    if (apiVersion) {
+      const splitApiVersion = apiVersion.split('/');
+      group = splitApiVersion.length > 1 ? splitApiVersion[0] : undefined;
+      version = splitApiVersion[splitApiVersion.length - 1];
+    }
+    return `${kind ? `${this.getFullType(kind, version, group)}/` : ''}${name}${
+      ns ? `in namespace ${ns}` : ''
+    }`;
+  }
+
   kind2plural(kind: string) {
     let lowercasedKind = kind.toLowerCase();
     if (lowercasedKind[lowercasedKind.length - 1] === 's') {
@@ -44,8 +76,10 @@ export default class OperatorService {
     return `${group ? `${group}/` : ''}${version}`;
   }
 
-  getFullType(kind: string, version: string, group?: string): string {
-    return `${this.kind2plural(kind)}.${this.getApiVersion(version, group)}`;
+  getFullType(kind: string, version?: string, group?: string): string {
+    return `${this.kind2plural(kind)}${
+      version ? `.${this.getApiVersion(version, group)}` : ''
+    }`;
   }
 
   getOwnerReference(owner: KubernetesObject, childNamespace: string) {

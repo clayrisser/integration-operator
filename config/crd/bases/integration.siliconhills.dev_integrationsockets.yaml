@@ -46,11 +46,6 @@ spec:
                   description: hooks that trigger during the lifecycle of an integration
                   items:
                     properties:
-                      interval:
-                        description:
-                          interval in milliseconds to query for jobs while
-                          waiting
-                        type: integer
                       job:
                         description: job to run when hook is triggered
                         properties:
@@ -8255,11 +8250,6 @@ spec:
                 wait:
                   description: configuration for wait
                   properties:
-                    interval:
-                      description:
-                        interval in milliseconds to query for resources while
-                        waiting
-                      type: integer
                     resources:
                       description: resources to wait on
                       items:

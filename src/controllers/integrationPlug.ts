@@ -68,7 +68,10 @@ export default class IntegrationPlug extends Controller {
     const socketResource = await this.getSocketResource(plugResource);
     if (!socketResource) {
       this.spinner.warn(
-        `integrationsocket/${plugResource.spec?.socket?.name} does not exist in namespace ${plugResource.spec?.socket?.namespace}`
+        `${this.operatorService.getFullName({
+          kind: ResourceKind.IntegrationSocket,
+          name: plugResource.spec?.socket?.name || ''
+        })} does not exist in namespace ${plugResource.spec?.socket?.namespace}`
       );
       return null;
     }
@@ -91,20 +94,23 @@ export default class IntegrationPlug extends Controller {
     }
     const socketResource = await this.getSocketResource(plugResource);
     if (!socketResource) {
-      this.spinner.warn(
-        `integrationsocket/${plugResource.spec?.socket?.name} does not exist in namespace ${plugResource.spec?.socket?.namespace}`
-      );
-      return null;
-    }
-    try {
+      const message = `${this.operatorService.getFullName({
+        kind: ResourceKind.IntegrationSocket,
+        name: plugResource.spec?.socket?.name || ''
+      })} does not exist in namespace ${plugResource.spec?.socket?.namespace}`;
+      this.spinner.fail(message);
       await this.updateStatus(
         {
-          message: 'pending',
-          phase: IntegrationPlugStatusPhase.Pending,
+          message,
+          phase: IntegrationPlugStatusPhase.Failed,
           ready: false
         },
         plugResource
       );
+      return null;
+    }
+    try {
+      await this.beginApply(plugResource, socketResource);
       await Promise.all([
         this.callHook(Hook.BeforeCreate, plugResource, socketResource),
         this.callHook(Hook.BeforeCreateOrUpdate, plugResource, socketResource)
@@ -116,8 +122,13 @@ export default class IntegrationPlug extends Controller {
       ]);
       const statusMessage = [...createResult, ...createOrUpdateResult]
         .map(
-          ({ name, namespace, message }: HookResult) =>
-            `${name} ${namespace} ${message}`
+          ({ name, namespace, message, hookName }: HookResult) =>
+            `${message} in ${this.operatorService.getFullName({
+              kind: 'Job',
+              apiVersion: 'batch/v1',
+              name,
+              ns: namespace
+            })} for hook ${hookName}`
         )
         .join('\n');
       if (plugResource?.spec?.kustomization) {
@@ -127,14 +138,7 @@ export default class IntegrationPlug extends Controller {
         this.callHook(Hook.AfterCreate, plugResource, socketResource),
         this.callHook(Hook.AfterCreateOrUpdate, plugResource, socketResource)
       ]);
-      await this.updateStatus(
-        {
-          message: statusMessage,
-          phase: IntegrationPlugStatusPhase.Succeeded,
-          ready: true
-        },
-        plugResource
-      );
+      await this.endApply(plugResource, socketResource);
     } catch (err) {
       await this.updateStatus(
         {
@@ -162,20 +166,23 @@ export default class IntegrationPlug extends Controller {
     }
     const socketResource = await this.getSocketResource(plugResource);
     if (!socketResource) {
-      this.spinner.warn(
-        `integrationsocket/${plugResource.spec?.socket?.name} does not exist in namespace ${plugResource.spec?.socket?.namespace}`
-      );
-      return null;
-    }
-    try {
+      const message = `${this.operatorService.getFullName({
+        kind: ResourceKind.IntegrationSocket,
+        name: plugResource.spec?.socket?.name || ''
+      })} does not exist in namespace ${plugResource.spec?.socket?.namespace}`;
+      this.spinner.fail(message);
       await this.updateStatus(
         {
-          message: 'pending',
-          phase: IntegrationPlugStatusPhase.Pending,
+          message,
+          phase: IntegrationPlugStatusPhase.Failed,
           ready: false
         },
         plugResource
       );
+      return null;
+    }
+    try {
+      await this.beginApply(plugResource, socketResource);
       await Promise.all([
         this.callHook(Hook.BeforeUpdate, plugResource, socketResource),
         this.callHook(Hook.BeforeCreateOrUpdate, plugResource, socketResource)
@@ -187,8 +194,13 @@ export default class IntegrationPlug extends Controller {
       ]);
       const statusMessage = [...updateResult, ...createOrUpdateResult]
         .map(
-          ({ name, namespace, message }: HookResult) =>
-            `${name} ${namespace} ${message}`
+          ({ name, namespace, message, hookName }: HookResult) =>
+            `${message} in ${this.operatorService.getFullName({
+              kind: 'Job',
+              apiVersion: 'batch/v1',
+              name,
+              ns: namespace
+            })} for hook ${hookName}`
         )
         .join('\n');
       if (plugResource?.spec?.kustomization) {
@@ -198,14 +210,7 @@ export default class IntegrationPlug extends Controller {
         this.callHook(Hook.AfterUpdate, plugResource, socketResource),
         this.callHook(Hook.AfterCreateOrUpdate, plugResource, socketResource)
       ]);
-      await this.updateStatus(
-        {
-          message: statusMessage,
-          phase: IntegrationPlugStatusPhase.Succeeded,
-          ready: true
-        },
-        plugResource
-      );
+      await this.endApply(plugResource, socketResource);
     } catch (err) {
       await this.updateStatus(
         {
@@ -220,6 +225,28 @@ export default class IntegrationPlug extends Controller {
     return null;
   }
 
+  private async beginApply(
+    plugResource: IntegrationPlugResource,
+    socketResource: IntegrationSocketResource
+  ) {
+    const message = `integrating with ${this.operatorService.getFullName({
+      resource: socketResource
+    })}`;
+    this.spinner.info(
+      `${this.operatorService.getFullName({
+        resource: plugResource
+      })} is ${message}`
+    );
+    await this.updateStatus(
+      {
+        message,
+        phase: IntegrationPlugStatusPhase.Pending,
+        ready: false
+      },
+      plugResource
+    );
+  }
+
   private async apply(
     plugResource: IntegrationPlugResource,
     socketResource: IntegrationSocketResource
@@ -229,6 +256,30 @@ export default class IntegrationPlug extends Controller {
     await this.copyAndMergeSecrets(plugResource, socketResource);
     await this.replicateSocketResources(socketResource);
     await this.replicatePlugResources(plugResource);
+  }
+
+  private async endApply(
+    plugResource: IntegrationPlugResource,
+    socketResource: IntegrationSocketResource
+  ) {
+    const message = `successfully integrated with ${this.operatorService.getFullName(
+      {
+        resource: socketResource
+      }
+    )}`;
+    this.spinner.info(
+      `${this.operatorService.getFullName({
+        resource: plugResource
+      })} has ${message}`
+    );
+    await this.updateStatus(
+      {
+        message,
+        phase: IntegrationPlugStatusPhase.Succeeded,
+        ready: true
+      },
+      plugResource
+    );
   }
 
   private async getResources(
@@ -251,16 +302,11 @@ export default class IntegrationPlug extends Controller {
   private async waitForResources(
     plugResource: IntegrationPlugResource,
     socketResource: IntegrationSocketResource,
-    timeout?: number,
-    interval = 5000
+    timeout = 60000,
+    timeLeft?: number
   ) {
-    if (typeof timeout === 'undefined') {
-      timeout = socketResource?.spec?.wait?.timeout || 60000;
-    }
-    interval = Math.max(
-      socketResource?.spec?.wait?.interval || interval,
-      timeout / 10
-    );
+    const waitTime = Math.max(5000, timeout / 10);
+    if (typeof timeLeft !== 'number') timeLeft = timeout;
     try {
       const resources = await this.getResources(
         (socketResource.spec?.wait?.resources || []).map<k8s.KubernetesObject>(
@@ -318,12 +364,12 @@ export default class IntegrationPlug extends Controller {
       );
       if (!ready) throw new Error('not ready');
     } catch (err) {
-      await new Promise((r) => setTimeout(r, interval));
+      await new Promise((r) => setTimeout(r, waitTime));
       await this.waitForResources(
         plugResource,
         socketResource,
-        timeout - interval,
-        interval
+        timeout,
+        timeLeft - waitTime
       );
     }
   }
@@ -354,17 +400,23 @@ export default class IntegrationPlug extends Controller {
             spec: hook.job
           })
         ).body;
-        await this.waitForJobToFinish(job, hook.timeout, hook.interval);
+        this.spinner.succeed(
+          `created ${this.operatorService.getFullName({
+            resource: job
+          })}`
+        );
+        await this.waitForJobToFinish(job, hook.timeout);
         const logs = await this.getJobLogs(job);
-        let message = '';
+        let message = 'completed';
         if (hook.messageRegex) {
           const messageMatches = logs.match(newRegExp(hook.messageRegex));
           message = [...(messageMatches || [])].join('\n');
         }
         return {
+          hookName: hook.name!,
+          message,
           name: job.metadata?.name!,
-          namespace: job.metadata?.namespace!,
-          message
+          namespace: job.metadata?.namespace!
         };
       })
     );
@@ -373,9 +425,10 @@ export default class IntegrationPlug extends Controller {
   private async waitForJobToFinish(
     job: k8s.V1Job,
     timeout = 60000,
-    interval = 5000
+    timeLeft?: number
   ) {
-    interval = Math.max(timeout / 10, interval);
+    const waitTime = Math.max(5000, timeout / 10);
+    if (typeof timeLeft !== 'number') timeLeft = timeout;
     const jobStatus = (
       await this.batchV1Api.readNamespacedJobStatus(
         job.metadata?.name!,
@@ -383,8 +436,8 @@ export default class IntegrationPlug extends Controller {
       )
     ).body.status;
     if (jobStatus?.succeeded) return;
-    await new Promise((r) => setTimeout(r, interval));
-    await this.waitForJobToFinish(job, timeout - interval, interval);
+    await new Promise((r) => setTimeout(r, waitTime));
+    await this.waitForJobToFinish(job, timeout, timeLeft - waitTime);
   }
 
   private async getJobLogs(job: k8s.V1Job): Promise<string> {
@@ -713,8 +766,9 @@ export default class IntegrationPlug extends Controller {
   private async applyKustomization(
     plugResource: IntegrationPlugResource
   ): Promise<void> {
-    if (!plugResource.metadata?.name || !plugResource.metadata.namespace)
+    if (!plugResource.metadata?.name || !plugResource.metadata.namespace) {
       return;
+    }
     try {
       await this.customObjectsApi.getNamespacedCustomObject(
         this.operatorService.getGroupName(
@@ -797,6 +851,7 @@ export enum Hook {
 }
 
 export interface HookResult {
+  hookName: string;
   message: string;
   name: string;
   namespace: string;
