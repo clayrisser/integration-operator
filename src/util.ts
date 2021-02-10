@@ -17,6 +17,7 @@
 import YAML from 'yaml';
 import fs from 'fs-extra';
 import path from 'path';
+import { KubernetesObject } from '@kubernetes/client-node';
 import { OperatorFrameworkProject } from './types';
 
 export const project: OperatorFrameworkProject = YAML.parse(
@@ -36,4 +37,31 @@ export function kind2plural(kind: string) {
 
 export function getGroupName(groupNamePrefix: string, domain?: string) {
   return `${groupNamePrefix}.${domain || project.domain}`;
+}
+
+export function resources2String(resources: KubernetesObject[]): string {
+  return resources
+    .map((resource: KubernetesObject) => YAML.stringify(resource))
+    .join('---\n');
+}
+
+export function string2Resources(resourcesStr: string): KubernetesObject[] {
+  return `\n${resourcesStr}\n`
+    .split(/\n---+\n/)
+    .map(
+      (resourceStr: string) =>
+        YAML.parse(resourceStr.trim()) as KubernetesObject
+    );
+}
+
+export function getApiVersion(version: string, group?: string): string {
+  return `${group ? `${group}/` : ''}${version}`;
+}
+
+export function getFullType(
+  kind: string,
+  version: string,
+  group?: string
+): string {
+  return `${kind2plural(kind)}.${getApiVersion(version, group)}`;
 }

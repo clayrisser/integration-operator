@@ -18,14 +18,16 @@ import * as k8s from '@kubernetes/client-node';
 import ora from 'ora';
 import { KustomizationResource } from 'kustomize-operator';
 import { ResourceMeta } from '@dot-i/k8s-operator';
+import { Replicate } from '~/services';
+import { kind2plural, getGroupName } from '~/util';
 import {
   HashMap,
   IntegrationPlugResource,
   IntegrationPlugSpecMergeConfigmaps,
   IntegrationPlugSpecMergeSecrets,
-  IntegrationSocketResource
+  IntegrationSocketResource,
+  Replication
 } from '~/types';
-import { kind2plural, getGroupName } from '~/util';
 import {
   KustomizeResourceGroup,
   KustomizeResourceKind,
@@ -52,7 +54,9 @@ export default class IntegrationPlug extends Controller {
     this.customObjectsApi = this.kubeConfig.makeApiClient(k8s.CustomObjectsApi);
   }
 
-  static base64DecodeSecretData(data: HashMap<string> = {}): HashMap<string> {
+  private static base64DecodeSecretData(
+    data: HashMap<string> = {}
+  ): HashMap<string> {
     return Object.entries(data).reduce(
       (
         stringData: HashMap<string>,
@@ -87,11 +91,35 @@ export default class IntegrationPlug extends Controller {
     }
     await this.copyAndMergeConfigmaps(plugResource, socketResource);
     await this.copyAndMergeSecrets(plugResource, socketResource);
-    await this.replicateResources();
+    await this.replicateSocketResources(socketResource);
+    await this.replicatePlugResources(plugResource);
+    if (plugResource?.spec?.kustomization) {
+      await this.applyKustomization(plugResource);
+    }
     return null;
   }
 
-  async copyAndMergeConfigmaps(
+  private async replicatePlugResources(plugResource: IntegrationPlugResource) {
+    const replicate = new Replicate(plugResource.metadata?.namespace!);
+    await Promise.all(
+      (
+        plugResource.spec?.replications || []
+      ).map(async (replication: Replication) => replicate.apply(replication))
+    );
+  }
+
+  private async replicateSocketResources(
+    socketResource: IntegrationSocketResource
+  ) {
+    const replicate = new Replicate(socketResource.metadata?.namespace!);
+    await Promise.all(
+      (
+        socketResource.spec?.replications || []
+      ).map(async (replication: Replication) => replicate.apply(replication))
+    );
+  }
+
+  private async copyAndMergeConfigmaps(
     plugResource: IntegrationPlugResource,
     socketResource: IntegrationSocketResource
   ) {
@@ -153,7 +181,7 @@ export default class IntegrationPlug extends Controller {
     );
   }
 
-  async copyAndMergeSecrets(
+  private async copyAndMergeSecrets(
     plugResource: IntegrationPlugResource,
     socketResource: IntegrationSocketResource
   ) {
@@ -218,9 +246,7 @@ export default class IntegrationPlug extends Controller {
     );
   }
 
-  async replicateResources() {}
-
-  async createOrUpdateSecret(
+  private async createOrUpdateSecret(
     name: string,
     namespace: string,
     data: HashMap<string>
@@ -257,7 +283,7 @@ export default class IntegrationPlug extends Controller {
     }
   }
 
-  async createOrUpdateConfigMap(
+  private async createOrUpdateConfigMap(
     name: string,
     namespace: string,
     data: HashMap<string>
@@ -294,7 +320,7 @@ export default class IntegrationPlug extends Controller {
     }
   }
 
-  async getSocketResource(
+  private async getSocketResource(
     plugResource: IntegrationPlugResource
   ): Promise<IntegrationSocketResource | null> {
     if (
@@ -323,27 +349,30 @@ export default class IntegrationPlug extends Controller {
     }
   }
 
-  async applyKustomization(resource: IntegrationPlugResource): Promise<void> {
-    if (!resource.metadata?.name || !resource.metadata.namespace) return;
+  private async applyKustomization(
+    plugResource: IntegrationPlugResource
+  ): Promise<void> {
+    if (!plugResource.metadata?.name || !plugResource.metadata.namespace)
+      return;
     try {
       await this.customObjectsApi.getNamespacedCustomObject(
         getGroupName(KustomizeResourceGroup.Kustomize, 'siliconhills.dev'),
         KustomizeResourceVersion.V1alpha1,
-        resource.metadata.namespace,
+        plugResource.metadata.namespace,
         kind2plural(KustomizeResourceKind.Kustomization),
-        resource.metadata.name
+        plugResource.metadata.name
       );
       await this.customObjectsApi.patchNamespacedCustomObject(
         getGroupName(KustomizeResourceGroup.Kustomize, 'siliconhills.dev'),
         KustomizeResourceVersion.V1alpha1,
-        resource.metadata.namespace,
+        plugResource.metadata.namespace,
         kind2plural(KustomizeResourceKind.Kustomization),
-        resource.metadata.name,
+        plugResource.metadata.name,
         [
           {
             op: 'replace',
             path: '/spec',
-            value: resource.spec?.kustomization
+            value: plugResource.spec?.kustomization
           }
         ],
         undefined,
@@ -362,15 +391,15 @@ export default class IntegrationPlug extends Controller {
         )}/${KustomizeResourceVersion.V1alpha1}`,
         kind: KustomizeResourceKind.Kustomization,
         metadata: {
-          name: resource.metadata.name,
-          namespace: resource.metadata.namespace
+          name: plugResource.metadata.name,
+          namespace: plugResource.metadata.namespace
         },
-        spec: resource.spec?.kustomization
+        spec: plugResource.spec?.kustomization
       };
       await this.customObjectsApi.createNamespacedCustomObject(
         getGroupName(KustomizeResourceGroup.Kustomize, 'siliconhills.dev'),
         KustomizeResourceVersion.V1alpha1,
-        resource.metadata.namespace,
+        plugResource.metadata.namespace,
         kind2plural(KustomizeResourceKind.Kustomization),
         kustomizationResource
       );
