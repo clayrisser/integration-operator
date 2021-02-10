@@ -21,16 +21,18 @@ import {
 } from '@kubernetes/client-node';
 import { Replication, ReplicationFrom, ReplicationTo } from '~/types';
 import Kubectl, { Output } from './kubectl';
-import { getApiVersion, getFullType, resources2String } from '~/util';
+import OperatorService from './operator';
 
-export default class Replicate {
+export default class ReplicationService {
   private spinner = ora();
 
   private kubectl = new Kubectl();
 
+  private operatorService = new OperatorService();
+
   constructor(private namespace: string) {}
 
-  async apply(replication: Replication) {
+  async apply(replication: Replication, owner?: KubernetesObject) {
     if (!replication.from) {
       throw new Error('replication from not defined');
     }
@@ -40,7 +42,7 @@ export default class Replicate {
     const fromResource = await this.getFromResource(replication.from);
     if (!fromResource) {
       throw new Error(
-        `from resource ${getFullType(
+        `from resource ${this.operatorService.getFullType(
           replication.from.kind || '',
           replication.from.version || '',
           replication.from.group
@@ -49,8 +51,8 @@ export default class Replicate {
         }`
       );
     }
-    const status = await this.replicateTo(fromResource, replication.to);
-    const fullType = getFullType(
+    const status = await this.replicateTo(fromResource, replication.to, owner);
+    const fullType = this.operatorService.getFullType(
       fromResource.kind || '',
       fromResource.apiVersion || ''
     );
@@ -65,17 +67,18 @@ export default class Replicate {
 
   private async replicateTo(
     fromResource: KubernetesObject,
-    replicationTo: ReplicationTo
+    replicationTo: ReplicationTo,
+    owner?: KubernetesObject
   ) {
     const name = replicationTo.name || fromResource.metadata?.name;
-    const ns = replicationTo.namespace || fromResource.metadata?.namespace;
+    const ns = replicationTo.namespace;
     if (
       typeof name === 'undefined' ||
       typeof ns === 'undefined' ||
       !name ||
       !ns
     ) {
-      const fullType = getFullType(
+      const fullType = this.operatorService.getFullType(
         fromResource.kind || '',
         fromResource.apiVersion || ''
       );
@@ -87,17 +90,21 @@ export default class Replicate {
         } to ${fullType}/${name} in namespace ${ns}`
       );
     }
-    const resourcesStr = resources2String([
-      {
+    await this.kubectl.apply({
+      stdin: {
         ...fromResource,
         metadata: {
           name,
-          namespace: ns
+          namespace: ns,
+          ...(typeof owner !== 'undefined' && owner.metadata?.namespace === ns
+            ? {
+                ownerReferences: [
+                  this.operatorService.getOwnerReference(owner, ns)
+                ]
+              }
+            : {})
         }
-      }
-    ]);
-    await this.kubectl.apply({
-      stdin: resourcesStr,
+      },
       stdout: true
     });
     return { name, namespace: ns };
@@ -106,23 +113,20 @@ export default class Replicate {
   private async getFromResource(
     replicationFrom: ReplicationFrom
   ): Promise<KubernetesObject | null> {
-    const resourcesStr = resources2String([
-      {
-        apiVersion: getApiVersion(
-          replicationFrom.version || '',
-          replicationFrom.group
-        ),
-        kind: replicationFrom?.kind,
-        metadata: {
-          name: replicationFrom?.name,
-          namespace: this.namespace
-        }
-      }
-    ]);
     return (
       ((
         await this.kubectl.get<KubernetesListObject<KubernetesObject>>({
-          stdin: resourcesStr,
+          stdin: {
+            apiVersion: this.operatorService.getApiVersion(
+              replicationFrom.version || '',
+              replicationFrom.group
+            ),
+            kind: replicationFrom?.kind,
+            metadata: {
+              name: replicationFrom?.name,
+              namespace: this.namespace
+            }
+          },
           output: Output.Json
         })
       )?.items || [])?.[0] || null

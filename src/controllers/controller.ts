@@ -17,13 +17,15 @@
 import ora from 'ora';
 import { KubernetesObject } from '@kubernetes/client-node';
 import { ResourceMeta } from '@dot-i/k8s-operator';
-import { getGroupName, kind2plural } from '~/util';
+import { OperatorService } from '~/services';
 
 export default abstract class Controller {
   constructor(protected groupNamePrefix: string, protected kind: string) {
-    this.group = getGroupName(this.groupNamePrefix);
-    this.plural = kind2plural(this.kind);
+    this.group = this.operatorService.getGroupName(this.groupNamePrefix);
+    this.plural = this.operatorService.kind2plural(this.kind);
   }
+
+  protected operatorService = new OperatorService();
 
   protected group: string;
 

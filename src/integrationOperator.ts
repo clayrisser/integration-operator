@@ -16,17 +16,18 @@
 
 import Operator, { ResourceEventType } from '@dot-i/k8s-operator';
 import ora from 'ora';
-import ResourceTracker from './resourceTracker';
-import { Config } from './config';
-import { getGroupName, kind2plural } from './util';
-import { Controller, IntegrationPlug, IntegrationSocket } from './controllers';
+import { Config } from '~/config';
+import { Controller, IntegrationPlug, IntegrationSocket } from '~/controllers';
+import { OperatorService, ResourceTrackerService } from '~/services';
 
 const logger = console;
 
 export default class IntegrationOperator extends Operator {
   spinner = ora();
 
-  resourceTracker = new ResourceTracker();
+  private resourceTrackerService = new ResourceTrackerService();
+
+  private operatorService = new OperatorService();
 
   constructor(protected config: Config) {
     super(logger);
@@ -54,16 +55,16 @@ export default class IntegrationOperator extends Operator {
     controller: Controller
   ) {
     this.watchResource(
-      getGroupName(ResourceGroup.Integration),
+      this.operatorService.getGroupName(ResourceGroup.Integration),
       ResourceVersion.V1alpha1,
-      kind2plural(resourceKind),
+      this.operatorService.kind2plural(resourceKind),
       async (e) => {
         // spawn as non blocking process
         (async () => {
           const {
             oldResource,
             newResource
-          } = this.resourceTracker.rotateResource(e.object);
+          } = this.resourceTrackerService.rotateResource(e.object);
           try {
             switch (e.type) {
               case ResourceEventType.Added:
@@ -75,7 +76,7 @@ export default class IntegrationOperator extends Operator {
                 );
                 return;
               case ResourceEventType.Deleted:
-                this.resourceTracker.resetResource(e.object);
+                this.resourceTrackerService.resetResource(e.object);
                 await controller.deleted(newResource, e.meta, oldResource);
                 return;
               case ResourceEventType.Modified:

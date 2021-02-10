@@ -14,12 +14,26 @@
  * limitations under the License.
  */
 
+import YAML from 'yaml';
 import { ExecaChildProcess, Options } from 'execa';
+import { KubernetesObject } from '@kubernetes/client-node';
 import { Readable } from 'stream';
-import Command, { RunCallback } from './command';
+import CommandService, { RunCallback } from './command';
 
-export default class Kubectl extends Command {
+export default class KubectlService extends CommandService {
   command = 'kubectl';
+
+  private getStdin(
+    stdin: string | KubernetesObject | KubernetesObject[]
+  ): string {
+    if (Array.isArray(stdin)) {
+      return this.resources2String(stdin);
+    }
+    if (typeof stdin === 'object') {
+      return this.resources2String([stdin]);
+    }
+    return stdin as string;
+  }
 
   async help(options?: Options, cb?: RunCallback) {
     return this.run('--help', options, cb);
@@ -42,7 +56,7 @@ export default class Kubectl extends Command {
       options,
       (p: ExecaChildProcess) => {
         if (stdin) {
-          const stream = Readable.from([stdin]);
+          const stream = Readable.from([this.getStdin(stdin)]);
           if (p.stdin) stream.pipe(p.stdin);
         }
         if (stdout) {
@@ -77,7 +91,7 @@ export default class Kubectl extends Command {
       options,
       (p: ExecaChildProcess) => {
         if (stdin) {
-          const stream = Readable.from([stdin]);
+          const stream = Readable.from([this.getStdin(stdin)]);
           if (p.stdin) stream.pipe(p.stdin);
         }
         if (stdout) {
@@ -105,7 +119,7 @@ export default class Kubectl extends Command {
       options,
       (p: ExecaChildProcess) => {
         if (stdin) {
-          const stream = Readable.from([stdin]);
+          const stream = Readable.from([this.getStdin(stdin)]);
           if (p.stdin) stream.pipe(p.stdin);
         }
         if (stdout) {
@@ -115,25 +129,40 @@ export default class Kubectl extends Command {
       }
     );
   }
+
+  resources2String(resources: KubernetesObject[]): string {
+    return resources
+      .map((resource: KubernetesObject) => YAML.stringify(resource))
+      .join('---\n');
+  }
+
+  string2Resources(resourcesStr: string): KubernetesObject[] {
+    return `\n${resourcesStr}\n`
+      .split(/\n---+\n/)
+      .map(
+        (resourceStr: string) =>
+          YAML.parse(resourceStr.trim()) as KubernetesObject
+      );
+  }
 }
 
 export interface GetOptions {
   file?: string;
   ignoreNotFound?: boolean;
   output?: Output;
-  stdin?: string;
+  stdin?: string | KubernetesObject | KubernetesObject[];
   stdout?: boolean;
 }
 
 export interface ApplyOptions {
   file?: string;
-  stdin?: string;
+  stdin?: string | KubernetesObject | KubernetesObject[];
   stdout?: boolean;
 }
 
 export interface DeleteOptions {
   file?: string;
-  stdin?: string;
+  stdin?: string | KubernetesObject | KubernetesObject[];
   stdout?: boolean;
 }
 

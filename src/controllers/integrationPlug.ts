@@ -18,13 +18,7 @@ import * as k8s from '@kubernetes/client-node';
 import newRegExp from 'newregexp';
 import { KustomizationResource } from 'kustomize-operator';
 import { ResourceMeta } from '@dot-i/k8s-operator';
-import { Replicate, Kubectl, Output } from '~/services';
-import {
-  kind2plural,
-  getGroupName,
-  resources2String,
-  getApiVersion
-} from '~/util';
+import { ReplicationService, KubectlService, Output } from '~/services';
 import {
   HashMap,
   IntegrationPlugResource,
@@ -55,7 +49,7 @@ export default class IntegrationPlug extends Controller {
 
   private batchV1Api: k8s.BatchV1Api;
 
-  private kubectl = new Kubectl();
+  private kubectl = new KubectlService();
 
   constructor(groupnameprefix: string, kind: string) {
     super(groupnameprefix, kind);
@@ -64,23 +58,6 @@ export default class IntegrationPlug extends Controller {
     this.batchV1Api = this.kubeConfig.makeApiClient(k8s.BatchV1Api);
     this.coreV1Api = this.kubeConfig.makeApiClient(k8s.CoreV1Api);
     this.customObjectsApi = this.kubeConfig.makeApiClient(k8s.CustomObjectsApi);
-  }
-
-  private static base64DecodeSecretData(
-    data: HashMap<string> = {}
-  ): HashMap<string> {
-    return Object.entries(data).reduce(
-      (
-        stringData: HashMap<string>,
-        [key, base64EncodedValue]: [string, string]
-      ) => {
-        stringData[key] = Buffer.from(base64EncodedValue, 'base64').toString(
-          'utf8'
-        );
-        return stringData;
-      },
-      {}
-    );
   }
 
   async deleted(
@@ -132,11 +109,7 @@ export default class IntegrationPlug extends Controller {
         this.callHook(Hook.BeforeCreate, plugResource, socketResource),
         this.callHook(Hook.BeforeCreateOrUpdate, plugResource, socketResource)
       ]);
-      await this.waitForResources(plugResource, socketResource);
-      await this.copyAndMergeConfigmaps(plugResource, socketResource);
-      await this.copyAndMergeSecrets(plugResource, socketResource);
-      await this.replicateSocketResources(socketResource);
-      await this.replicatePlugResources(plugResource);
+      await this.apply(plugResource, socketResource);
       const [createResult, createOrUpdateResult] = await Promise.all([
         this.callHook(Hook.Create, plugResource, socketResource),
         this.callHook(Hook.CreateOrUpdate, plugResource, socketResource)
@@ -207,11 +180,7 @@ export default class IntegrationPlug extends Controller {
         this.callHook(Hook.BeforeUpdate, plugResource, socketResource),
         this.callHook(Hook.BeforeCreateOrUpdate, plugResource, socketResource)
       ]);
-      await this.waitForResources(plugResource, socketResource);
-      await this.copyAndMergeConfigmaps(plugResource, socketResource);
-      await this.copyAndMergeSecrets(plugResource, socketResource);
-      await this.replicateSocketResources(socketResource);
-      await this.replicatePlugResources(plugResource);
+      await this.apply(plugResource, socketResource);
       const [updateResult, createOrUpdateResult] = await Promise.all([
         this.callHook(Hook.Update, plugResource, socketResource),
         this.callHook(Hook.CreateOrUpdate, plugResource, socketResource)
@@ -251,6 +220,17 @@ export default class IntegrationPlug extends Controller {
     return null;
   }
 
+  private async apply(
+    plugResource: IntegrationPlugResource,
+    socketResource: IntegrationSocketResource
+  ) {
+    await this.waitForResources(plugResource, socketResource);
+    await this.copyAndMergeConfigmaps(plugResource, socketResource);
+    await this.copyAndMergeSecrets(plugResource, socketResource);
+    await this.replicateSocketResources(socketResource);
+    await this.replicatePlugResources(plugResource);
+  }
+
   private async getResources(
     resources: k8s.KubernetesObject[]
   ): Promise<
@@ -258,11 +238,10 @@ export default class IntegrationPlug extends Controller {
       status?: { [key: string]: any; phase?: string };
     })[]
   > {
-    const resourcesStr = resources2String(resources);
     return (
       (
         await this.kubectl.get<k8s.KubernetesListObject<k8s.KubernetesObject>>({
-          stdin: resourcesStr,
+          stdin: resources,
           output: Output.Json
         })
       )?.items || []
@@ -290,7 +269,10 @@ export default class IntegrationPlug extends Controller {
               throw new Error('resource version not defined');
             }
             return {
-              apiVersion: getApiVersion(resource.version, resource.group),
+              apiVersion: this.operatorService.getApiVersion(
+                resource.version,
+                resource.group
+              ),
               kind: resource.kind,
               metadata: {
                 name: resource.name,
@@ -318,7 +300,8 @@ export default class IntegrationPlug extends Controller {
                 version
               }: IntegrationPlugSpecWaitResource) => {
                 return (
-                  resource.apiVersion === getApiVersion(version!, group) &&
+                  resource.apiVersion ===
+                    this.operatorService.getApiVersion(version!, group) &&
                   resource.metadata?.name === name &&
                   resource.kind === kind
                 );
@@ -364,7 +347,9 @@ export default class IntegrationPlug extends Controller {
               name: `${plugResource.metadata
                 ?.name!}-${hookName}-${i.toString()}`,
               namespace: ns,
-              ownerReferences: [this.getOwnerReference(plugResource, ns)]
+              ownerReferences: [
+                this.operatorService.getOwnerReference(plugResource, ns)
+              ]
             },
             spec: hook.job
           })
@@ -422,22 +407,30 @@ export default class IntegrationPlug extends Controller {
   }
 
   private async replicatePlugResources(plugResource: IntegrationPlugResource) {
-    const replicate = new Replicate(plugResource.metadata?.namespace!);
+    const replicationService = new ReplicationService(
+      plugResource.metadata?.namespace!
+    );
     await Promise.all(
       (
         plugResource.spec?.replications || []
-      ).map(async (replication: Replication) => replicate.apply(replication))
+      ).map(async (replication: Replication) =>
+        replicationService.apply(replication)
+      )
     );
   }
 
   private async replicateSocketResources(
     socketResource: IntegrationSocketResource
   ) {
-    const replicate = new Replicate(socketResource.metadata?.namespace!);
+    const replicationService = new ReplicationService(
+      socketResource.metadata?.namespace!
+    );
     await Promise.all(
       (
         socketResource.spec?.replications || []
-      ).map(async (replication: Replication) => replicate.apply(replication))
+      ).map(async (replication: Replication) =>
+        replicationService.apply(replication)
+      )
     );
   }
 
@@ -531,7 +524,7 @@ export default class IntegrationPlug extends Controller {
           }
           return [
             to || null,
-            IntegrationPlug.base64DecodeSecretData(plugSecret?.data)
+            this.operatorService.base64DecodeSecretData(plugSecret?.data)
           ];
         }
       )
@@ -544,7 +537,7 @@ export default class IntegrationPlug extends Controller {
             socketResource.metadata?.namespace!
           )
         ).body;
-        let mergedStringData = IntegrationPlug.base64DecodeSecretData(
+        let mergedStringData = this.operatorService.base64DecodeSecretData(
           socketSecret?.data
         );
         mergeSecretsStringData.forEach(
@@ -604,7 +597,9 @@ export default class IntegrationPlug extends Controller {
           namespace,
           ...(typeof owner !== 'undefined'
             ? {
-                ownerReferences: [this.getOwnerReference(owner, namespace)]
+                ownerReferences: [
+                  this.operatorService.getOwnerReference(owner, namespace)
+                ]
               }
             : {})
         },
@@ -647,7 +642,9 @@ export default class IntegrationPlug extends Controller {
           namespace,
           ...(typeof owner !== 'undefined'
             ? {
-                ownerReferences: [this.getOwnerReference(owner, namespace)]
+                ownerReferences: [
+                  this.operatorService.getOwnerReference(owner, namespace)
+                ]
               }
             : {})
         },
@@ -674,7 +671,7 @@ export default class IntegrationPlug extends Controller {
           this.group,
           ResourceVersion.V1alpha1,
           namespace,
-          kind2plural(ResourceKind.IntegrationSocket),
+          this.operatorService.kind2plural(ResourceKind.IntegrationSocket),
           plugResource.spec.socket.name
         )
       ).body as IntegrationSocketResource;
@@ -720,17 +717,23 @@ export default class IntegrationPlug extends Controller {
       return;
     try {
       await this.customObjectsApi.getNamespacedCustomObject(
-        getGroupName(KustomizeResourceGroup.Kustomize, 'siliconhills.dev'),
+        this.operatorService.getGroupName(
+          KustomizeResourceGroup.Kustomize,
+          'siliconhills.dev'
+        ),
         KustomizeResourceVersion.V1alpha1,
         plugResource.metadata.namespace,
-        kind2plural(KustomizeResourceKind.Kustomization),
+        this.operatorService.kind2plural(KustomizeResourceKind.Kustomization),
         plugResource.metadata.name
       );
       await this.customObjectsApi.patchNamespacedCustomObject(
-        getGroupName(KustomizeResourceGroup.Kustomize, 'siliconhills.dev'),
+        this.operatorService.getGroupName(
+          KustomizeResourceGroup.Kustomize,
+          'siliconhills.dev'
+        ),
         KustomizeResourceVersion.V1alpha1,
         plugResource.metadata.namespace,
-        kind2plural(KustomizeResourceKind.Kustomization),
+        this.operatorService.kind2plural(KustomizeResourceKind.Kustomization),
         plugResource.metadata.name,
         [
           {
@@ -750,7 +753,7 @@ export default class IntegrationPlug extends Controller {
       if (err.statusCode !== 404) throw err;
       const ns = plugResource.metadata.namespace;
       const kustomizationResource: KustomizationResource = {
-        apiVersion: `${getGroupName(
+        apiVersion: `${this.operatorService.getGroupName(
           KustomizeResourceGroup.Kustomize,
           'siliconhills.dev'
         )}/${KustomizeResourceVersion.V1alpha1}`,
@@ -758,43 +761,23 @@ export default class IntegrationPlug extends Controller {
         metadata: {
           name: plugResource.metadata.name,
           namespace: ns,
-          ownerReferences: [this.getOwnerReference(plugResource, ns)]
+          ownerReferences: [
+            this.operatorService.getOwnerReference(plugResource, ns)
+          ]
         },
         spec: plugResource.spec?.kustomization
       };
       await this.customObjectsApi.createNamespacedCustomObject(
-        getGroupName(KustomizeResourceGroup.Kustomize, 'siliconhills.dev'),
+        this.operatorService.getGroupName(
+          KustomizeResourceGroup.Kustomize,
+          'siliconhills.dev'
+        ),
         KustomizeResourceVersion.V1alpha1,
         plugResource.metadata.namespace,
-        kind2plural(KustomizeResourceKind.Kustomization),
+        this.operatorService.kind2plural(KustomizeResourceKind.Kustomization),
         kustomizationResource
       );
     }
-  }
-
-  private getOwnerReference(
-    owner: k8s.KubernetesObject,
-    childNamespace: string
-  ) {
-    const ownerNamespace = owner.metadata?.namespace;
-    if (!childNamespace) {
-      throw new Error(
-        `cluster-scoped resource must not have a namespace-scoped owner, owner's namespace ${ownerNamespace}`
-      );
-    }
-    if (ownerNamespace !== childNamespace) {
-      throw new Error(
-        `cross-namespace owner references are disallowed, owner's namespace ${ownerNamespace}, obj's namespace ${childNamespace}`
-      );
-    }
-    return {
-      apiVersion: owner?.apiVersion!,
-      blockOwnerDeletion: true,
-      controller: true,
-      kind: owner?.kind!,
-      name: owner?.metadata?.name!,
-      uid: owner?.metadata?.uid!
-    };
   }
 }
 

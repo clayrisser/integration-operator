@@ -15,11 +15,11 @@
  */
 
 import execa, { ExecaChildProcess, ExecaReturnValue, Options } from 'execa';
-import { HashMap } from '../types';
+import { HashMap } from '~/types';
 
 const logger = console;
 
-export default abstract class Command {
+export default abstract class CommandService {
   protected config: CommandConfig;
 
   protected abstract command: string;
