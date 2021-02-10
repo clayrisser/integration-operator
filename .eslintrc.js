@@ -32,7 +32,7 @@ module.exports = {
     'import/no-cycle': 'off',
     'import/prefer-default-export': 'off',
     'max-classes-per-file': 'off',
-    'max-lines': ['error', 800],
+    'max-lines': ['error', 999],
     'max-lines-per-function': ['error', 150],
     'no-await-in-loop': 'off',
     'no-empty-function': 'off',

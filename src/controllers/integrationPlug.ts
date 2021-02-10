@@ -16,10 +16,9 @@
 
 import * as k8s from '@kubernetes/client-node';
 import newRegExp from 'newregexp';
-import ora from 'ora';
 import { KustomizationResource } from 'kustomize-operator';
 import { ResourceMeta } from '@dot-i/k8s-operator';
-import { Replicate, Kubectl } from '~/services';
+import { Replicate, Kubectl, Output } from '~/services';
 import {
   kind2plural,
   getGroupName,
@@ -55,8 +54,6 @@ export default class IntegrationPlug extends Controller {
   private kubeConfig: k8s.KubeConfig;
 
   private batchV1Api: k8s.BatchV1Api;
-
-  private spinner = ora();
 
   private kubectl = new Kubectl();
 
@@ -256,40 +253,87 @@ export default class IntegrationPlug extends Controller {
 
   private async getResources(
     resources: k8s.KubernetesObject[]
-  ): k8s.KubernetesObject[] {
+  ): Promise<
+    (k8s.KubernetesObject & {
+      status?: { [key: string]: any; phase?: string };
+    })[]
+  > {
     const resourcesStr = resources2String(resources);
-    const resources =
+    return (
       (
-        await this.kubectl.get<KubernetesListObject<KubernetesObject>>({
+        await this.kubectl.get<k8s.KubernetesListObject<k8s.KubernetesObject>>({
           stdin: resourcesStr,
           output: Output.Json
         })
-      )?.items || [];
-    return resources;
+      )?.items || []
+    );
   }
 
   private async waitForResources(
     plugResource: IntegrationPlugResource,
-    socketResource: IntegrationSocketResource
+    socketResource: IntegrationSocketResource,
+    timeout?: number,
+    interval = 5000
   ) {
-    const timeout = socketResource?.spec?.wait?.timeout || 60000;
-    const interval = Math.max(
-      socketResource?.spec?.wait?.interval || 5000,
+    if (typeof timeout === 'undefined') {
+      timeout = socketResource?.spec?.wait?.timeout || 60000;
+    }
+    interval = Math.max(
+      socketResource?.spec?.wait?.interval || interval,
       timeout / 10
     );
     try {
-      await this.getResources(
+      const resources = await this.getResources(
         (socketResource.spec?.wait?.resources || []).map<k8s.KubernetesObject>(
-          (resource: IntegrationPlugSpecWaitResource) => ({
-            apiVersion: getApiVersion(resource.version, resource.group),
-            kind: resource.kind,
-            metadata: {
-              name: resource.name,
-              namespace: plugResource.metadata?.namespace
+          (resource: IntegrationPlugSpecWaitResource) => {
+            if (!resource.version) {
+              throw new Error('resource version not defined');
             }
-          })
+            return {
+              apiVersion: getApiVersion(resource.version, resource.group),
+              kind: resource.kind,
+              metadata: {
+                name: resource.name,
+                namespace: plugResource.metadata?.namespace
+              }
+            };
+          }
         )
       );
+      const ready = resources.reduce(
+        (
+          ready: boolean,
+          resource: k8s.KubernetesObject & {
+            [key: string]: any;
+            status?: { phase?: string };
+          }
+        ) => {
+          if (!ready) return ready;
+          const statusPhases =
+            (socketResource.spec?.wait?.resources || []).find(
+              ({
+                group,
+                kind,
+                name,
+                version
+              }: IntegrationPlugSpecWaitResource) => {
+                return (
+                  resource.apiVersion === getApiVersion(version!, group) &&
+                  resource.metadata?.name === name &&
+                  resource.kind === kind
+                );
+              }
+            )?.statusPhases || [];
+          return !!(
+            !statusPhases.length ||
+            statusPhases.find(
+              (statusPhase: string) => statusPhase === resource?.status?.phase
+            )
+          );
+        },
+        true
+      );
+      if (!ready) throw new Error('not ready');
     } catch (err) {
       await new Promise((r) => setTimeout(r, interval));
       await this.waitForResources(
