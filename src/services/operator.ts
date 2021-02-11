@@ -15,6 +15,7 @@
  */
 
 import YAML from 'yaml';
+import chalk from 'chalk';
 import fs from 'fs-extra';
 import path from 'path';
 import { KubernetesObject } from '@kubernetes/client-node';
@@ -28,20 +29,21 @@ export default class OperatorService {
   getFullName({
     apiVersion,
     group,
+    hideGroup,
     kind,
     name,
-    resource,
     ns,
-    version
+    resource
   }: {
     apiVersion?: string;
     group?: string;
+    hideGroup?: boolean;
     kind?: string;
     name?: string;
     ns?: string;
     resource?: KubernetesObject;
-    version?: string;
   }) {
+    if (typeof hideGroup === 'undefined') hideGroup = true;
     if (resource) {
       ({ kind, apiVersion } = resource);
       name = resource.metadata?.name;
@@ -50,11 +52,11 @@ export default class OperatorService {
     if (apiVersion) {
       const splitApiVersion = apiVersion.split('/');
       group = splitApiVersion.length > 1 ? splitApiVersion[0] : undefined;
-      version = splitApiVersion[splitApiVersion.length - 1];
     }
-    return `${kind ? `${this.getFullType(kind, version, group)}/` : ''}${name}${
-      ns ? `in namespace ${ns}` : ''
-    }`;
+    if (hideGroup) group = undefined;
+    return `${chalk.yellow.bold(
+      `${kind ? `${this.getFullType(kind, group)}/` : ''}${name}`
+    )}${ns ? ` in ns ${chalk.blueBright.bold(ns)}` : ''}`;
   }
 
   kind2plural(kind: string) {
@@ -76,10 +78,8 @@ export default class OperatorService {
     return `${group ? `${group}/` : ''}${version}`;
   }
 
-  getFullType(kind: string, version?: string, group?: string): string {
-    return `${this.kind2plural(kind)}${
-      version ? `.${this.getApiVersion(version, group)}` : ''
-    }`;
+  getFullType(kind: string, group?: string): string {
+    return `${this.kind2plural(kind)}${group ? `.${group}` : ''}`;
   }
 
   getOwnerReference(owner: KubernetesObject, childNamespace: string) {
@@ -117,5 +117,12 @@ export default class OperatorService {
       },
       {}
     );
+  }
+
+  getErrorMessage(err: any) {
+    return [
+      err.message || '',
+      err.body?.message || err.response?.body?.message || ''
+    ].join(': ');
   }
 }

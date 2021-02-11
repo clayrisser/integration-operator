@@ -1,0 +1,51 @@
+apiVersion: integration.siliconhills.dev/v1alpha1
+kind: IntegrationSocket
+metadata:
+  name: some-socket
+  namespace: tmp-socket
+spec:
+  configmaps:
+    - some-configmap
+  secrets:
+    - some-secret
+#  hooks:
+#    - job: {}
+#      messageRegex: string
+#      name: string
+#      timeout: int
+#  replications:
+#    - from:
+#        group: string
+#        kind: string
+#        name: string
+#        version: string
+#      to:
+#        name: string
+#        namespace: string
+#  wait:
+#    resources:
+#      - group: string
+#        kind: string
+#        name: string
+#        statusPhases:
+#          - string
+#        version: string
+#    timeout: int
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: some-secret
+  namespace: tmp-socket
+type: Opaque
+stringData:
+  hello: world
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: some-configmap
+  namespace: tmp-socket
+data:
+  hello: world

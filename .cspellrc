@@ -2,6 +2,7 @@
   "language": "en",
   "version": "0.1",
   "words": [
+    "ansi",
     "babelrc",
     "batchv1",
     "bool",

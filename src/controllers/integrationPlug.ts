@@ -16,6 +16,7 @@
 
 import * as k8s from '@kubernetes/client-node';
 import newRegExp from 'newregexp';
+import stripAnsi from 'strip-ansi';
 import { KustomizationResource } from 'kustomize-operator';
 import { ResourceMeta } from '@dot-i/k8s-operator';
 import { ReplicationService, KubectlService, Output } from '~/services';
@@ -66,15 +67,7 @@ export default class IntegrationPlug extends Controller {
     _oldPlugResource?: IntegrationPlugResource
   ) {
     const socketResource = await this.getSocketResource(plugResource);
-    if (!socketResource) {
-      this.spinner.warn(
-        `${this.operatorService.getFullName({
-          kind: ResourceKind.IntegrationSocket,
-          name: plugResource.spec?.socket?.name || ''
-        })} does not exist in namespace ${plugResource.spec?.socket?.namespace}`
-      );
-      return null;
-    }
+    if (!socketResource) return null;
     await this.callHook(Hook.BeforeCleanup, plugResource, socketResource);
     await this.callHook(Hook.Cleanup, plugResource, socketResource);
     await this.callHook(Hook.AfterCleanup, plugResource, socketResource);
@@ -120,17 +113,6 @@ export default class IntegrationPlug extends Controller {
         this.callHook(Hook.Create, plugResource, socketResource),
         this.callHook(Hook.CreateOrUpdate, plugResource, socketResource)
       ]);
-      const statusMessage = [...createResult, ...createOrUpdateResult]
-        .map(
-          ({ name, namespace, message, hookName }: HookResult) =>
-            `${message} in ${this.operatorService.getFullName({
-              kind: 'Job',
-              apiVersion: 'batch/v1',
-              name,
-              ns: namespace
-            })} for hook ${hookName}`
-        )
-        .join('\n');
       if (plugResource?.spec?.kustomization) {
         await this.applyKustomization(plugResource);
       }
@@ -138,11 +120,14 @@ export default class IntegrationPlug extends Controller {
         this.callHook(Hook.AfterCreate, plugResource, socketResource),
         this.callHook(Hook.AfterCreateOrUpdate, plugResource, socketResource)
       ]);
-      await this.endApply(plugResource, socketResource);
+      await this.endApply(plugResource, socketResource, [
+        ...createResult,
+        ...createOrUpdateResult
+      ]);
     } catch (err) {
       await this.updateStatus(
         {
-          message: err.message?.toString() || '',
+          message: this.operatorService.getErrorMessage(err),
           phase: IntegrationPlugStatusPhase.Failed,
           ready: false
         },
@@ -192,17 +177,6 @@ export default class IntegrationPlug extends Controller {
         this.callHook(Hook.Update, plugResource, socketResource),
         this.callHook(Hook.CreateOrUpdate, plugResource, socketResource)
       ]);
-      const statusMessage = [...updateResult, ...createOrUpdateResult]
-        .map(
-          ({ name, namespace, message, hookName }: HookResult) =>
-            `${message} in ${this.operatorService.getFullName({
-              kind: 'Job',
-              apiVersion: 'batch/v1',
-              name,
-              ns: namespace
-            })} for hook ${hookName}`
-        )
-        .join('\n');
       if (plugResource?.spec?.kustomization) {
         await this.applyKustomization(plugResource);
       }
@@ -210,11 +184,14 @@ export default class IntegrationPlug extends Controller {
         this.callHook(Hook.AfterUpdate, plugResource, socketResource),
         this.callHook(Hook.AfterCreateOrUpdate, plugResource, socketResource)
       ]);
-      await this.endApply(plugResource, socketResource);
+      await this.endApply(plugResource, socketResource, [
+        ...updateResult,
+        ...createOrUpdateResult
+      ]);
     } catch (err) {
       await this.updateStatus(
         {
-          message: err.message?.toString() || '',
+          message: this.operatorService.getErrorMessage(err),
           phase: IntegrationPlugStatusPhase.Failed,
           ready: false
         },
@@ -260,21 +237,33 @@ export default class IntegrationPlug extends Controller {
 
   private async endApply(
     plugResource: IntegrationPlugResource,
-    socketResource: IntegrationSocketResource
+    socketResource: IntegrationSocketResource,
+    hookResults: HookResult[]
   ) {
+    const statusMessage = hookResults
+      .map(
+        ({ name, namespace, message, hookName }: HookResult) =>
+          `${message} in ${this.operatorService.getFullName({
+            kind: 'Job',
+            apiVersion: 'batch/v1',
+            name,
+            ns: namespace
+          })} for hook ${hookName}`
+      )
+      .join('\n');
     const message = `successfully integrated with ${this.operatorService.getFullName(
       {
         resource: socketResource
       }
     )}`;
-    this.spinner.info(
+    this.spinner.succeed(
       `${this.operatorService.getFullName({
         resource: plugResource
       })} has ${message}`
     );
     await this.updateStatus(
       {
-        message,
+        message: statusMessage || message,
         phase: IntegrationPlugStatusPhase.Succeeded,
         ready: true
       },
@@ -739,8 +728,10 @@ export default class IntegrationPlug extends Controller {
     plugStatus: IntegrationPlugStatus,
     plugResource: IntegrationPlugResource
   ): Promise<void> {
-    if (!plugResource.metadata?.name || !plugResource.metadata.namespace)
+    if (!plugResource.metadata?.name || !plugResource.metadata.namespace) {
       return;
+    }
+    plugStatus.message = stripAnsi(plugStatus.message || '');
     await this.customObjectsApi.patchNamespacedCustomObjectStatus(
       this.group,
       ResourceVersion.V1alpha1,
