@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
+import chalk from 'chalk';
 import ora from 'ora';
 import {
   KubernetesListObject,
   KubernetesObject
 } from '@kubernetes/client-node';
-import { Replication, ReplicationFrom, ReplicationTo } from '~/types';
+import { Replication } from '~/types';
 import Kubectl, { Output } from './kubectl';
 import OperatorService from './operator';
 
@@ -32,52 +33,38 @@ export default class ReplicationService {
 
   constructor(private namespace: string) {}
 
-  async apply(replication: Replication, owner?: KubernetesObject) {
-    if (!replication.from) {
-      throw new Error('replication from not defined');
-    }
-    if (!replication.to) {
-      throw new Error('replication to not defined');
-    }
-    const fromResource = await this.getFromResource(replication.from);
+  async apply(
+    replication: Replication,
+    toNamespace?: string,
+    owner?: KubernetesObject
+  ) {
+    const fromResource = await this.getFromResource(replication);
     if (!fromResource) {
       throw new Error(
-        `from resource ${this.operatorService.getFullType(
-          replication.from.kind || '',
-          replication.from.version || '',
-          replication.from.group
-        )}/${replication.from.name || ''} not found in namespace ${
-          this.namespace
-        }`
+        `from resource ${this.operatorService.getFullName({
+          resource: fromResource
+        })} not found in ns ${chalk.blueBright.bold(this.namespace)}`
       );
     }
-    const status = await this.replicateTo(fromResource, replication.to, owner);
-    const fullType = this.operatorService.getFullType(
-      fromResource.kind || '',
-      fromResource.apiVersion || ''
-    );
+    await this.replicateTo(fromResource, toNamespace, owner);
     this.spinner.succeed(
-      `replicated resource ${fullType}/${
-        fromResource.metadata?.name || ''
-      } from namespace ${this.namespace} to ${fullType}/${
-        status.name
-      } in namespace ${status.namespace}`
+      `replicated ${this.operatorService.getFullName({
+        resource: fromResource
+      })} to ${this.operatorService.getFullName({
+        apiVersion: fromResource.apiVersion,
+        name: fromResource.metadata?.name,
+        kind: fromResource.kind,
+        ns: toNamespace
+      })}`
     );
   }
 
   private async replicateTo(
     fromResource: KubernetesObject,
-    replicationTo: ReplicationTo,
+    toNamespace?: string,
     owner?: KubernetesObject
   ) {
-    const name = replicationTo.name || fromResource.metadata?.name;
-    const ns = replicationTo.namespace;
-    if (
-      typeof name === 'undefined' ||
-      typeof ns === 'undefined' ||
-      !name ||
-      !ns
-    ) {
+    if (typeof toNamespace === 'undefined' || !toNamespace) {
       const fullType = this.operatorService.getFullType(
         fromResource.kind || '',
         fromResource.apiVersion || ''
@@ -85,21 +72,22 @@ export default class ReplicationService {
       throw new Error(
         `cannot replicate ${fullType}/${
           fromResource.metadata?.name || ''
-        } from namespace ${
-          this.namespace
-        } to ${fullType}/${name} in namespace ${ns}`
+        } from namespace ${this.namespace} to ${fullType}/${
+          fromResource.metadata?.name || ''
+        } in namespace ${toNamespace}`
       );
     }
     await this.kubectl.apply({
       stdin: {
         ...fromResource,
         metadata: {
-          name,
-          namespace: ns,
-          ...(typeof owner !== 'undefined' && owner.metadata?.namespace === ns
+          name: fromResource.metadata?.name || '',
+          namespace: toNamespace,
+          ...(typeof owner !== 'undefined' &&
+          owner.metadata?.namespace === toNamespace
             ? {
                 ownerReferences: [
-                  this.operatorService.getOwnerReference(owner, ns)
+                  this.operatorService.getOwnerReference(owner, toNamespace)
                 ]
               }
             : {})
@@ -107,29 +95,26 @@ export default class ReplicationService {
       },
       stdout: true
     });
-    return { name, namespace: ns };
   }
 
   private async getFromResource(
-    replicationFrom: ReplicationFrom
-  ): Promise<KubernetesObject | null> {
-    return (
-      ((
-        await this.kubectl.get<KubernetesListObject<KubernetesObject>>({
-          stdin: {
-            apiVersion: this.operatorService.getApiVersion(
-              replicationFrom.version || '',
-              replicationFrom.group
-            ),
-            kind: replicationFrom?.kind,
-            metadata: {
-              name: replicationFrom?.name,
-              namespace: this.namespace
-            }
-          },
-          output: Output.Json
-        })
-      )?.items || [])?.[0] || null
-    );
+    replicationFrom: Replication
+  ): Promise<KubernetesObject | undefined> {
+    return ((
+      await this.kubectl.get<KubernetesListObject<KubernetesObject>>({
+        stdin: {
+          apiVersion: this.operatorService.getApiVersion(
+            replicationFrom.version || '',
+            replicationFrom.group
+          ),
+          kind: replicationFrom?.kind,
+          metadata: {
+            name: replicationFrom?.name,
+            namespace: this.namespace
+          }
+        },
+        output: Output.Json
+      })
+    )?.items || [])?.[0];
   }
 }

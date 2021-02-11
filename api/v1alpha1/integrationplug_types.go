@@ -32,20 +32,8 @@ type IntegrationPlugSpec struct {
 	// kustomization to apply after success
 	Kustomization KustomizationSpec `json:"kustomization,omitempty" yaml:"kustomization,omitempty"`
 
-        // postfix to apply to copied configmaps
-        ConfigmapPostfix string `json:"configmapPostfix,omitempty"`
-
-        // postfix to apply to copied secrets
-        SecretPostfix string `json:"secretPostfix,omitempty"`
-
         // resources to replicate
         Replications []*Replication `json:"replications,omitempty"`
-
-        // configmaps to merge with copied configmaps
-        MergeConfigmaps []*IntegrationPlugSpecMergeConfigmaps `json:"mergeConfigmaps,omitempty"`
-
-        // secrets to merge with copied secrets
-        MergeSecrets []*IntegrationPlugSpecMergeSecrets `json:"mergeSecrets,omitempty"`
 }
 
 // IntegrationPlugStatus defines the observed state of IntegrationPlug

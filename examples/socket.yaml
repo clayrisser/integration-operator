@@ -4,10 +4,6 @@ metadata:
   name: some-socket
   namespace: tmp-socket
 spec:
-  # configmaps:
-  #   - some-configmap
-  secrets:
-    - some-secret
   wait:
     timeout: 60000
     resources:
@@ -20,14 +16,10 @@ spec:
 #      name: string
 #      timeout: int
 #  replications:
-#    - from:
-#        group: string
-#        kind: string
-#        name: string
-#        version: string
-#      to:
-#        name: string
-#        namespace: string
+#    - group: string
+#      kind: string
+#      name: string
+#      version: string
 ---
 apiVersion: v1
 kind: Secret

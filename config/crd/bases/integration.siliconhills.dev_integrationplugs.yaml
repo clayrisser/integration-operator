@@ -37,9 +37,6 @@ spec:
             spec:
               description: IntegrationPlugSpec defines the desired state of IntegrationPlug
               properties:
-                configmapPostfix:
-                  description: postfix to apply to copied configmaps
-                  type: string
                 kustomization:
                   description: kustomization to apply after success
                   properties:
@@ -754,65 +751,24 @@ spec:
                         type: object
                       type: array
                   type: object
-                mergeConfigmaps:
-                  description: configmaps to merge with copied configmaps
-                  items:
-                    properties:
-                      from:
-                        description: name of the plug configmap to merge from
-                        type: string
-                      to:
-                        description: name of the copied socket configmap to merge to
-                        type: string
-                    type: object
-                  type: array
-                mergeSecrets:
-                  description: secrets to merge with copied secrets
-                  items:
-                    properties:
-                      from:
-                        description: name of the plug secret to merge from
-                        type: string
-                      to:
-                        description: name of the copied socket secret to merge to
-                        type: string
-                    type: object
-                  type: array
                 replications:
                   description: resources to replicate
                   items:
                     properties:
-                      from:
-                        description: resource to replicate from
-                        properties:
-                          group:
-                            description: resource group to replicate from
-                            type: string
-                          kind:
-                            description: resource kind to replicate from
-                            type: string
-                          name:
-                            description: resource name to replicate from
-                            type: string
-                          version:
-                            description: resource version to replicate from
-                            type: string
-                        type: object
-                      to:
-                        description: resource name to replicate to
-                        properties:
-                          name:
-                            description: resource name to replicate to
-                            type: string
-                          namespace:
-                            description: namespace to replicate to
-                            type: string
-                        type: object
+                      group:
+                        description: resource group to replicate from
+                        type: string
+                      kind:
+                        description: resource kind to replicate from
+                        type: string
+                      name:
+                        description: resource name to replicate from
+                        type: string
+                      version:
+                        description: resource version to replicate from
+                        type: string
                     type: object
                   type: array
-                secretPostfix:
-                  description: postfix to apply to copied secrets
-                  type: string
                 socket:
                   description: socket to integrate with
                   properties:

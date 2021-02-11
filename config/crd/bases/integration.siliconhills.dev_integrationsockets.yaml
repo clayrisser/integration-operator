@@ -37,11 +37,6 @@ spec:
             spec:
               description: IntegrationSocketSpec defines the desired state of IntegrationSocket
               properties:
-                configmaps:
-                  description: configmaps to copy to plug namespace when integrating
-                  items:
-                    type: string
-                  type: array
                 hooks:
                   description: hooks that trigger during the lifecycle of an integration
                   items:
@@ -8214,38 +8209,19 @@ spec:
                   description: resources to replicate
                   items:
                     properties:
-                      from:
-                        description: resource to replicate from
-                        properties:
-                          group:
-                            description: resource group to replicate from
-                            type: string
-                          kind:
-                            description: resource kind to replicate from
-                            type: string
-                          name:
-                            description: resource name to replicate from
-                            type: string
-                          version:
-                            description: resource version to replicate from
-                            type: string
-                        type: object
-                      to:
-                        description: resource name to replicate to
-                        properties:
-                          name:
-                            description: resource name to replicate to
-                            type: string
-                          namespace:
-                            description: namespace to replicate to
-                            type: string
-                        type: object
+                      group:
+                        description: resource group to replicate from
+                        type: string
+                      kind:
+                        description: resource kind to replicate from
+                        type: string
+                      name:
+                        description: resource name to replicate from
+                        type: string
+                      version:
+                        description: resource version to replicate from
+                        type: string
                     type: object
-                  type: array
-                secrets:
-                  description: secrets to copy to plug namespace when integrating
-                  items:
-                    type: string
                   type: array
                 wait:
                   description: configuration for wait

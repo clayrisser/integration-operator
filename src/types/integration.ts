@@ -18,12 +18,8 @@ import { KubernetesObject, V1JobSpec } from '@kubernetes/client-node';
 import { KustomizationSpec } from 'kustomize-operator';
 
 export interface IntegrationPlugSpec {
-  configmapPostfix?: string; // string `json:"configmapPostfix,omitempty"`
   kustomization?: KustomizationSpec; // KustomizationSpec `json:"kustomization,omitempty" yaml:"kustomization,omitempty"`
-  mergeConfigmaps?: IntegrationPlugSpecMergeConfigmaps[]; // []*IntegrationPlugSpecMergeConfigmaps `json:"mergeConfigmaps,omitempty"`
-  mergeSecrets?: IntegrationPlugSpecMergeSecrets[]; // []*IntegrationPlugSpecMergeSecrets `json:"mergeSecrets,omitempty"`
   replications?: Replication[]; // []*Replication `json:"replications,omitempty"`
-  secretPostfix?: string; // string `json:"secretPostfix,omitempty"`
   socket?: IntegrationPlugSpecSocket; // IntegrationPlugSpecSocket `json:"socket,omitempty"`
 }
 
@@ -39,10 +35,8 @@ export interface IntegrationPlugResource extends KubernetesObject {
 }
 
 export interface IntegrationSocketSpec {
-  configmaps?: string[]; // []string `json:"configmaps,omitempty"`
   hooks?: IntegrationSocketSpecHook[]; // []*IntegrationSocketSpecHook `json:"hooks,omitempty"`
   replications?: Replication[]; // []*Replication `json:"replications,omitempty"`
-  secrets?: string[]; // []string `json:"secrets,omitempty"`
   wait?: IntegrationPlugSpecWait; // IntegrationPlugSpecWait `json:"wait,omitempty"`
 }
 
@@ -73,16 +67,6 @@ export interface IntegrationPlugSpecWaitResource {
   version?: string; // string `json:"version,omitempty"`
 }
 
-export interface IntegrationPlugSpecMergeConfigmaps {
-  from?: string; // string `json:"from,omitempty"`
-  to?: string; // string `json:"to,omitempty"`
-}
-
-export interface IntegrationPlugSpecMergeSecrets {
-  from?: string; // string `json:"from,omitempty"`
-  to?: string; // string `json:"to,omitempty"`
-}
-
 export interface IntegrationPlugSpecSocket {
   name?: string; // string `json:"name,omitempty"`
   namespace?: string; // string `json:"namespace,omitempty"`
@@ -96,16 +80,6 @@ export interface IntegrationSocketSpecHook {
 }
 
 export interface Replication {
-  from?: ReplicationFrom; // ReplicationFrom `json:"from,omitempty"`
-  to?: ReplicationTo; // ReplicationTo `json:"to,omitempty"`
-}
-
-export interface ReplicationTo {
-  name?: string; // string `json:"name,omitempty"`
-  namespace?: string; // string `json:"namespace,omitempty"`
-}
-
-export interface ReplicationFrom {
   group?: string; // string `json:"group,omitempty"`
   kind?: string; // string `json:"kind,omitempty"`
   name?: string; // string `json:"name,omitempty"`

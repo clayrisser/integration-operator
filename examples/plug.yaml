@@ -7,24 +7,12 @@ spec:
   socket:
     name: some-socket
     namespace: tmp-socket
-  # mergeConfigmaps:
-  #   - from: some-configmap2
-  #     to: some-configmap
-  mergeSecrets:
-    - from: some-secret2
-      to: some-secret
-  #  kustomization: {}
-  #  replications:
-  #    - from:
-  #        group: string
-  #        kind: string
-  #        name: string
-  #        version: string
-  #      to:
-  #        name: string
-  #        namespace: string
-  secretPostfix: s
-  configmapPostfix: s
+  # replications:
+  #   - group: string
+  #     kind: string
+  #     name: string
+  #     version: string
+  # kustomization: {}
 ---
 apiVersion: v1
 kind: Secret

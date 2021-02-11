@@ -30,12 +30,6 @@ type IntegrationSocketSpec struct {
         // configuration for wait
         Wait IntegrationPlugSpecWait `json:"wait,omitempty"`
 
-        // configmaps to copy to plug namespace when integrating
-	Configmaps []string `json:"configmaps,omitempty"`
-
-        // secrets to copy to plug namespace when integrating
-	Secrets []string `json:"secrets,omitempty"`
-
         // resources to replicate
         Replications []*Replication `json:"replications,omitempty"`
 

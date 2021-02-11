@@ -17,22 +17,6 @@
 package v1alpha1
 
 type Replication struct {
-        // resource to replicate from
-        From ReplicationFrom `json:"from,omitempty"`
-
-        // resource name to replicate to
-        To ReplicationTo `json:"to,omitempty"`
-}
-
-type ReplicationTo struct {
-        // resource name to replicate to
-        Name string `json:"name,omitempty"`
-
-        // namespace to replicate to
-        Namespace string `json:"namespace,omitempty"`
-}
-
-type ReplicationFrom struct {
         // resource group to replicate from
         Group string `json:"group,omitempty"`
 
