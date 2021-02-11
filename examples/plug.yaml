@@ -5,171 +5,40 @@ metadata:
   namespace: tmp-plug
 spec:
   socket:
-    name: some-socket1
+    name: some-socket
     namespace: tmp-socket
-#  kustomization:
-#    commonAnnotations:
-#      key: string
-#    commonLabels:
-#      key: string
-#    configMapGenerator:
-#      - behavior: string
-#        envs:
-#          - string
-#        files:
-#          - string
-#        literals:
-#          - string
-#        name: string
-#        namespace: string
-#        options:
-#          annotations:
-#            key: string
-#          disableNameSuffixHash: boolean
-#          labels:
-#            key: string
-#    configuration:
-#      commonAnnotations:
-#        - create: boolean
-#          group: string
-#          kind: string
-#          path: string
-#          version: string
-#      commonLabels:
-#        - create: boolean
-#          group: string
-#          kind: string
-#          path: string
-#          version: string
-#      images:
-#        - create: boolean
-#          group: string
-#          kind: string
-#          path: string
-#          version: string
-#      namePrefix:
-#        - create: boolean
-#          group: string
-#          kind: string
-#          path: string
-#          version: string
-#      nameSuffix:
-#        - create: boolean
-#          group: string
-#          kind: string
-#          path: string
-#          version: string
-#      namespace:
-#        - create: boolean
-#          group: string
-#          kind: string
-#          path: string
-#          version: string
-#      replicas:
-#        - create: boolean
-#          group: string
-#          kind: string
-#          path: string
-#          version: string
-#      varReference:
-#        - create: boolean
-#          group: string
-#          kind: string
-#          path: string
-#          version: string
-#    crds:
-#      - string
-#    generatorOptions:
-#      annotations:
-#        key: string
-#      disableNameSuffixHash: boolean
-#      labels:
-#        key: string
-#    images:
-#      - digest: string
-#        name: string
-#        newName: string
-#        newTag: string
-#    namePrefix: string
-#    nameSuffix: string
-#    namespace: string
-#    patches:
-#      - patch: string
-#        path: string
-#        target:
-#          annotationSelector: string
-#          group: string
-#          kind: string
-#          labelSelector: string
-#          name: string
-#          namespace: string
-#          version: string
-#    patchesJson6902:
-#      - patch: string
-#        path: string
-#        target:
-#          annotationSelector: string
-#          group: string
-#          kind: string
-#          labelSelector: string
-#          name: string
-#          namespace: string
-#          version: string
-#    patchesStrategicMerge:
-#      - string
-#    replicas:
-#      - count: int
-#        name: string
-#    resources:
-#      - annotationSelector: string
-#        group: string
-#        kind: string
-#        labelSelector: string
-#        name: string
-#        namespace: string
-#        version: string
-#    retryTimeout: int
-#    secretGenerator:
-#      - type: string
-#        behavior: string
-#        envs:
-#          - string
-#        files:
-#          - string
-#        literals:
-#          - string
-#        name: string
-#        namespace: string
-#        options:
-#          annotations:
-#            key: string
-#          disableNameSuffixHash: boolean
-#          labels:
-#            key: string
-#    vars:
-#      - fieldref:
-#          fieldPath: string
-#        name: string
-#        objref:
-#          apiVersion: string
-#          group: string
-#          kind: string
-#          name: string
-#          namespace: string
-#          version: string
-#  mergeConfigmaps:
-#    - from: string
-#      to: string
-#  mergeSecrets:
-#    - from: string
-#      to: string
-#  replications:
-#    - from:
-#        group: string
-#        kind: string
-#        name: string
-#        version: string
-#      to:
-#        name: string
-#        namespace: string
-#  resourcePostfix: string
+  mergeConfigmaps:
+    - from: some-configmap2
+      to: some-configmap
+  mergeSecrets:
+    - from: some-secret2
+      to: some-secret
+  #  kustomization: {}
+  #  replications:
+  #    - from:
+  #        group: string
+  #        kind: string
+  #        name: string
+  #        version: string
+  #      to:
+  #        name: string
+  #        namespace: string
+  secretPostfix: s
+  configmapPostfix: s
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: some-secret2
+  namespace: tmp-plug
+type: Opaque
+stringData:
+  howdy: texas
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: some-configmap2
+  namespace: tmp-plug
+data:
+  howdy: texas

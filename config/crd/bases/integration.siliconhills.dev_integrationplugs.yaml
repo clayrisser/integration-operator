@@ -37,6 +37,9 @@ spec:
             spec:
               description: IntegrationPlugSpec defines the desired state of IntegrationPlug
               properties:
+                configmapPostfix:
+                  description: postfix to apply to copied configmaps
+                  type: string
                 kustomization:
                   description: kustomization to apply after success
                   properties:
@@ -807,8 +810,8 @@ spec:
                         type: object
                     type: object
                   type: array
-                resourcePostfix:
-                  description: postfix to apply to copied resource names
+                secretPostfix:
+                  description: postfix to apply to copied secrets
                   type: string
                 socket:
                   description: socket to integrate with

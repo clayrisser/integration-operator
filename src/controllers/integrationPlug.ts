@@ -15,6 +15,7 @@
  */
 
 import * as k8s from '@kubernetes/client-node';
+import chalk from 'chalk';
 import newRegExp from 'newregexp';
 import stripAnsi from 'strip-ansi';
 import { KustomizationResource } from 'kustomize-operator';
@@ -90,7 +91,9 @@ export default class IntegrationPlug extends Controller {
       const message = `${this.operatorService.getFullName({
         kind: ResourceKind.IntegrationSocket,
         name: plugResource.spec?.socket?.name || ''
-      })} does not exist in namespace ${plugResource.spec?.socket?.namespace}`;
+      })} does not exist in namespace ${chalk.blueBright.bold(
+        plugResource.spec?.socket?.namespace
+      )}`;
       this.spinner.fail(message);
       await this.updateStatus(
         {
@@ -154,7 +157,9 @@ export default class IntegrationPlug extends Controller {
       const message = `${this.operatorService.getFullName({
         kind: ResourceKind.IntegrationSocket,
         name: plugResource.spec?.socket?.name || ''
-      })} does not exist in namespace ${plugResource.spec?.socket?.namespace}`;
+      })} does not exist in namespace ${chalk.blueBright.bold(
+        plugResource.spec?.socket?.namespace
+      )}`;
       this.spinner.fail(message);
       await this.updateStatus(
         {

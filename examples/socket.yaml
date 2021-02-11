@@ -31,7 +31,6 @@ spec:
 #          - string
 #        version: string
 #    timeout: int
-
 ---
 apiVersion: v1
 kind: Secret
