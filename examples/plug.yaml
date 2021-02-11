@@ -7,9 +7,9 @@ spec:
   socket:
     name: some-socket
     namespace: tmp-socket
-  mergeConfigmaps:
-    - from: some-configmap2
-      to: some-configmap
+  # mergeConfigmaps:
+  #   - from: some-configmap2
+  #     to: some-configmap
   mergeSecrets:
     - from: some-secret2
       to: some-secret

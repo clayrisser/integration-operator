@@ -74,6 +74,14 @@ export default class OperatorService {
     return `${groupNamePrefix}.${domain || this.project.domain}`;
   }
 
+  splitApiVersion(apiVersion: string): [string, string] {
+    const splitApiVersion = apiVersion.split('/');
+    return [
+      splitApiVersion.length > 1 ? splitApiVersion[0] : 'core',
+      splitApiVersion[splitApiVersion.length - 1]
+    ];
+  }
+
   getApiVersion(version: string, group?: string): string {
     return `${group ? `${group}/` : ''}${version}`;
   }
@@ -120,9 +128,13 @@ export default class OperatorService {
   }
 
   getErrorMessage(err: any) {
-    return [
-      err.message || '',
-      err.body?.message || err.response?.body?.message || ''
-    ].join(': ');
+    const bodyMessage: string = (
+      err.body?.message ||
+      err.response?.body?.message ||
+      ''
+    ).trim();
+    const messageArr = [err.message || ''];
+    if (bodyMessage) messageArr.push(bodyMessage);
+    return messageArr.join(': ');
   }
 }

@@ -301,63 +301,74 @@ export default class IntegrationPlug extends Controller {
   ) {
     const waitTime = Math.max(5000, timeout / 10);
     if (typeof timeLeft !== 'number') timeLeft = timeout;
-    try {
-      const resources = await this.getResources(
-        (socketResource.spec?.wait?.resources || []).map<k8s.KubernetesObject>(
-          (resource: IntegrationPlugSpecWaitResource) => {
-            if (!resource.version) {
-              throw new Error('resource version not defined');
+    const resources = await this.getResources(
+      (socketResource.spec?.wait?.resources || []).map<k8s.KubernetesObject>(
+        (waitResource: IntegrationPlugSpecWaitResource) => {
+          if (!waitResource.version) {
+            throw new Error('resource version is not defined');
+          }
+          if (!waitResource.kind) {
+            throw new Error('resource kind is not defined');
+          }
+          if (!waitResource.name) {
+            throw new Error('resource name is not defined');
+          }
+          return {
+            apiVersion: this.operatorService.getApiVersion(
+              waitResource.version,
+              waitResource.group
+            ),
+            kind: waitResource.kind,
+            metadata: {
+              name: waitResource.name,
+              namespace: plugResource.metadata?.namespace
             }
-            return {
-              apiVersion: this.operatorService.getApiVersion(
-                resource.version,
-                resource.group
-              ),
-              kind: resource.kind,
-              metadata: {
-                name: resource.name,
-                namespace: plugResource.metadata?.namespace
-              }
-            };
-          }
-        )
-      );
-      const ready = resources.reduce(
-        (
-          ready: boolean,
-          resource: k8s.KubernetesObject & {
-            [key: string]: any;
-            status?: { phase?: string };
-          }
-        ) => {
-          if (!ready) return ready;
-          const statusPhases =
-            (socketResource.spec?.wait?.resources || []).find(
-              ({
-                group,
-                kind,
-                name,
-                version
-              }: IntegrationPlugSpecWaitResource) => {
-                return (
-                  resource.apiVersion ===
-                    this.operatorService.getApiVersion(version!, group) &&
-                  resource.metadata?.name === name &&
-                  resource.kind === kind
-                );
-              }
-            )?.statusPhases || [];
-          return !!(
-            !statusPhases.length ||
-            statusPhases.find(
-              (statusPhase: string) => statusPhase === resource?.status?.phase
-            )
+          };
+        }
+      )
+    );
+    const foundAllResources = (
+      socketResource.spec?.wait?.resources || []
+    ).reduce(
+      (ready: boolean, waitResource: IntegrationPlugSpecWaitResource) => {
+        if (!ready) return ready;
+        const resource = resources.find((resource: k8s.KubernetesObject) => {
+          return (
+            waitResource.name === resource.metadata?.name &&
+            waitResource.kind === resource.kind &&
+            this.operatorService.getApiVersion(
+              waitResource.version!,
+              waitResource.group
+            ) === resource.apiVersion
           );
-        },
-        true
+        });
+        if (typeof resource === 'undefined' || !resource) return false;
+        return !!(
+          !waitResource.statusPhases?.length ||
+          (waitResource.statusPhases || []).find(
+            (statusPhase: string) => statusPhase === resource?.status?.phase
+          )
+        );
+      },
+      true
+    );
+    if (!foundAllResources) {
+      if (timeLeft < 0) {
+        throw new Error(
+          `failed to find some resources for ${this.operatorService.getFullName(
+            {
+              resource: plugResource
+            }
+          )}`
+        );
+      }
+      this.spinner.info(
+        `waiting ${timeLeft}ms on resources for ${this.operatorService.getFullName(
+          {
+            resource: plugResource
+          }
+        )}`
       );
-      if (!ready) throw new Error('not ready');
-    } catch (err) {
       await new Promise((r) => setTimeout(r, waitTime));
       await this.waitForResources(
         plugResource,

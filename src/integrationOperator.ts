@@ -89,12 +89,7 @@ export default class IntegrationOperator extends Operator {
                 return;
             }
           } catch (err) {
-            this.spinner.fail(
-              [
-                err.message || '',
-                err.body?.message || err.response?.body?.message || ''
-              ].join(': ')
-            );
+            this.spinner.fail(this.operatorService.getErrorMessage(err));
             if (this.config.debug) logger.error(err);
           }
         })().catch(logger.error);
