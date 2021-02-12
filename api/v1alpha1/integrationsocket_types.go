@@ -35,6 +35,9 @@ type IntegrationSocketSpec struct {
 
         // hooks that trigger during the lifecycle of an integration
         Hooks []*IntegrationSocketSpecHook `json:"hooks,omitempty"`
+
+        // name to append to replication resource name
+        ReplicationAppendName string `json:"replicationAppendName,omitempty"`
 }
 
 // IntegrationPlugSpecWait defines what to wait on before integrating

@@ -6,6 +6,7 @@ export interface IntegrationPlugSpec {
   kustomization?: KustomizationSpec; // KustomizationSpec `json:"kustomization,omitempty" yaml:"kustomization,omitempty"`
   replications?: Replication[]; // []*Replication `json:"replications,omitempty"`
   socket?: IntegrationPlugSpecSocket; // IntegrationPlugSpecSocket `json:"socket,omitempty"`
+  replicationAppendName?: string; // string `json:"replicationAppendName,omitempty"`
 }
 
 export interface IntegrationPlugStatus {
@@ -23,6 +24,7 @@ export interface IntegrationSocketSpec {
   hooks?: IntegrationSocketSpecHook[]; // []*IntegrationSocketSpecHook `json:"hooks,omitempty"`
   replications?: Replication[]; // []*Replication `json:"replications,omitempty"`
   wait?: IntegrationPlugSpecWait; // IntegrationPlugSpecWait `json:"wait,omitempty"`
+  replicationAppendName?: string; // string `json:"replicationAppendName,omitempty"`
 }
 
 export interface IntegrationSocketStatus {}

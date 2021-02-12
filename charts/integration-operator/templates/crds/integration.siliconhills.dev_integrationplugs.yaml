@@ -754,6 +754,9 @@ spec:
                         type: object
                       type: array
                   type: object
+                replicationAppendName:
+                  description: name to append to replication resource name
+                  type: string
                 replications:
                   description: resources to replicate
                   items:

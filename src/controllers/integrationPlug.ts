@@ -471,7 +471,11 @@ export default class IntegrationPlug extends Controller {
       (
         plugResource.spec?.replications || []
       ).map(async (replication: Replication) =>
-        replicationService.cleanupToResources(replication, toNamespace)
+        replicationService.cleanupToResources(
+          replication,
+          toNamespace,
+          plugResource.spec?.replicationAppendName || 'plug'
+        )
       )
     );
   }
@@ -501,7 +505,11 @@ export default class IntegrationPlug extends Controller {
       (
         plugResource.spec?.replications || []
       ).map(async (replication: Replication) =>
-        replicationService.apply(replication, toNamespace)
+        replicationService.apply(
+          replication,
+          toNamespace,
+          plugResource.spec?.replicationAppendName || 'plug'
+        )
       )
     );
   }
@@ -531,7 +539,12 @@ export default class IntegrationPlug extends Controller {
       (
         socketResource.spec?.replications || []
       ).map(async (replication: Replication) =>
-        replicationService.apply(replication, toNamespace, plugResource)
+        replicationService.apply(
+          replication,
+          toNamespace,
+          socketResource.spec?.replicationAppendName || 'socket',
+          plugResource
+        )
       )
     );
   }
