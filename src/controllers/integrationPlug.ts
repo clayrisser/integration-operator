@@ -66,9 +66,12 @@ export default class IntegrationPlug extends Controller {
   ) {
     const socketResource = await this.getSocketResource(plugResource);
     if (!socketResource) return null;
-    await this.callHook(Hook.BeforeCleanup, plugResource, socketResource);
-    await this.callHook(Hook.Cleanup, plugResource, socketResource);
-    await this.callHook(Hook.AfterCleanup, plugResource, socketResource);
+    await this.cleanupReplicatedPlugResources(plugResource, socketResource);
+    if (plugResource.spec?.cleanup) {
+      await this.callHook(Hook.BeforeCleanup, plugResource, socketResource);
+      await this.callHook(Hook.Cleanup, plugResource, socketResource);
+      await this.callHook(Hook.AfterCleanup, plugResource, socketResource);
+    }
     return null;
   }
 
@@ -231,8 +234,8 @@ export default class IntegrationPlug extends Controller {
     socketResource: IntegrationSocketResource
   ) {
     await this.waitForResources(plugResource, socketResource);
-    await this.replicateSocketResources(socketResource);
-    await this.replicatePlugResources(plugResource);
+    await this.replicateSocketResources(plugResource, socketResource);
+    await this.replicatePlugResources(plugResource, socketResource);
   }
 
   private async endApply(
@@ -459,30 +462,92 @@ export default class IntegrationPlug extends Controller {
     ).body;
   }
 
-  private async replicatePlugResources(plugResource: IntegrationPlugResource) {
-    const replicationService = new ReplicationService(
-      plugResource.metadata?.namespace!
-    );
+  private async cleanupReplicatedPlugResources(
+    plugResource: IntegrationPlugResource,
+    socketResource: IntegrationSocketResource
+  ) {
+    const fromNamespace = plugResource.metadata?.namespace;
+    const toNamespace = socketResource.metadata?.namespace;
+    if (typeof fromNamespace === 'undefined') {
+      throw new Error(
+        `${this.operatorService.getFullName({
+          resource: plugResource
+        })} ns is undefined`
+      );
+    }
+    if (typeof toNamespace === 'undefined') {
+      throw new Error(
+        `${this.operatorService.getFullName({
+          resource: socketResource
+        })} ns is undefined`
+      );
+    }
+    const replicationService = new ReplicationService(fromNamespace);
     await Promise.all(
       (
         plugResource.spec?.replications || []
       ).map(async (replication: Replication) =>
-        replicationService.apply(replication)
+        replicationService.cleanupToResources(replication, toNamespace)
+      )
+    );
+  }
+
+  private async replicatePlugResources(
+    plugResource: IntegrationPlugResource,
+    socketResource: IntegrationSocketResource
+  ) {
+    const fromNamespace = plugResource.metadata?.namespace;
+    const toNamespace = socketResource.metadata?.namespace;
+    if (typeof fromNamespace === 'undefined') {
+      throw new Error(
+        `${this.operatorService.getFullName({
+          resource: plugResource
+        })} ns is undefined`
+      );
+    }
+    if (typeof toNamespace === 'undefined') {
+      throw new Error(
+        `${this.operatorService.getFullName({
+          resource: socketResource
+        })} ns is undefined`
+      );
+    }
+    const replicationService = new ReplicationService(fromNamespace);
+    await Promise.all(
+      (
+        plugResource.spec?.replications || []
+      ).map(async (replication: Replication) =>
+        replicationService.apply(replication, toNamespace)
       )
     );
   }
 
   private async replicateSocketResources(
+    plugResource: IntegrationPlugResource,
     socketResource: IntegrationSocketResource
   ) {
-    const replicationService = new ReplicationService(
-      socketResource.metadata?.namespace!
-    );
+    const fromNamespace = socketResource.metadata?.namespace;
+    const toNamespace = plugResource.metadata?.namespace;
+    if (typeof fromNamespace === 'undefined') {
+      throw new Error(
+        `${this.operatorService.getFullName({
+          resource: socketResource
+        })} ns is undefined`
+      );
+    }
+    if (typeof toNamespace === 'undefined') {
+      throw new Error(
+        `${this.operatorService.getFullName({
+          resource: plugResource
+        })} ns is undefined`
+      );
+    }
+    const replicationService = new ReplicationService(fromNamespace);
     await Promise.all(
       (
         socketResource.spec?.replications || []
       ).map(async (replication: Replication) =>
-        replicationService.apply(replication)
+        replicationService.apply(replication, toNamespace, plugResource)
       )
     );
   }

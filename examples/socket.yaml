@@ -4,22 +4,24 @@ metadata:
   name: some-socket
   namespace: tmp-socket
 spec:
-  wait:
-    timeout: 60000
-    resources:
-      - name: some-secret2
-        version: v1
-        kind: Secret
-#  hooks:
-#    - job: {}
-#      messageRegex: string
-#      name: string
-#      timeout: int
-#  replications:
-#    - group: string
-#      kind: string
-#      name: string
-#      version: string
+  # wait:
+  #   timeout: 60000
+  #   resources:
+  #     - version: v1
+  #       kind: Secret
+  #       name: some-secret2
+  replications:
+    - version: v1
+      kind: Secret
+      name: some-secret
+    - version: v1
+      kind: ConfigMap
+      name: some-configmap
+  # hooks:
+  #   - job: {}
+  #     messageRegex: string
+  #     name: string
+  #     timeout: int
 ---
 apiVersion: v1
 kind: Secret

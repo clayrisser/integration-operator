@@ -21,6 +21,7 @@ import {
   KubernetesObject
 } from '@kubernetes/client-node';
 import { Replication } from '~/types';
+import { ResourceGroup } from '~/integrationOperator';
 import Kubectl, { Output } from './kubectl';
 import OperatorService from './operator';
 
@@ -31,19 +32,27 @@ export default class ReplicationService {
 
   private operatorService = new OperatorService();
 
-  constructor(private namespace: string) {}
+  private replicatedFromAnnotationKey: string;
+
+  constructor(private fromNamespace: string) {
+    this.replicatedFromAnnotationKey = `${this.operatorService.getGroupName(
+      ResourceGroup.Integration
+    )}/replicated-from`;
+  }
 
   async apply(
     replication: Replication,
-    toNamespace?: string,
+    toNamespace: string,
     owner?: KubernetesObject
   ) {
     const fromResource = await this.getFromResource(replication);
     if (!fromResource) {
       throw new Error(
-        `from resource ${this.operatorService.getFullName({
-          resource: fromResource
-        })} not found in ns ${chalk.blueBright.bold(this.namespace)}`
+        `${this.operatorService.getFullName({
+          group: replication.group,
+          kind: replication.kind,
+          name: replication.name
+        })} not found in ns ${chalk.blueBright.bold(this.fromNamespace)}`
       );
     }
     await this.replicateTo(fromResource, toNamespace, owner);
@@ -59,32 +68,79 @@ export default class ReplicationService {
     );
   }
 
+  async cleanupToResources(replicationFrom: Replication, toNamespace: string) {
+    const resources =
+      (
+        await this.kubectl.get<KubernetesListObject<KubernetesObject>>({
+          stdin: {
+            apiVersion: this.operatorService.getApiVersion(
+              replicationFrom.version || '',
+              replicationFrom.group
+            ),
+            kind: replicationFrom?.kind,
+            metadata: {
+              name: replicationFrom?.name,
+              namespace: toNamespace
+            }
+          },
+          output: Output.Json
+        })
+      )?.items || [];
+    await Promise.all(
+      resources.map(async (resource: KubernetesObject) => {
+        if (
+          (resource.metadata?.annotations || {})[
+            this.replicatedFromAnnotationKey
+          ] === `${replicationFrom?.name}.${this.fromNamespace}`
+        ) {
+          await this.kubectl.delete({
+            stdin: {
+              apiVersion: resource.apiVersion,
+              kind: resource.kind,
+              metadata: {
+                name: resource.metadata?.name,
+                namespace: resource.metadata?.namespace
+              }
+            }
+          });
+          this.spinner.succeed(
+            `deleted replicated resource ${this.operatorService.getFullName({
+              resource
+            })}`
+          );
+        }
+      })
+    );
+  }
+
   private async replicateTo(
     fromResource: KubernetesObject,
-    toNamespace?: string,
-    owner?: KubernetesObject
+    toNamespace: string,
+    owner?: KubernetesObject,
+    ownerReferences = false
   ) {
-    if (typeof toNamespace === 'undefined' || !toNamespace) {
-      const fullType = this.operatorService.getFullType(
-        fromResource.kind || '',
-        fromResource.apiVersion || ''
-      );
+    if (typeof fromResource.metadata?.namespace === 'undefined') {
       throw new Error(
-        `cannot replicate ${fullType}/${
-          fromResource.metadata?.name || ''
-        } from namespace ${this.namespace} to ${fullType}/${
-          fromResource.metadata?.name || ''
-        } in namespace ${toNamespace}`
+        `${this.operatorService.getFullName({
+          resource: fromResource
+        })} ns is not defined`
       );
     }
+    const annotations = fromResource.metadata?.annotations || {};
+    annotations[
+      this.replicatedFromAnnotationKey
+    ] = `${fromResource.metadata.name}.${fromResource.metadata.namespace}`;
     await this.kubectl.apply({
       stdin: {
         ...fromResource,
         metadata: {
+          annotations,
+          labels: fromResource.metadata?.labels,
           name: fromResource.metadata?.name || '',
           namespace: toNamespace,
           ...(typeof owner !== 'undefined' &&
-          owner.metadata?.namespace === toNamespace
+          owner.metadata?.namespace === toNamespace &&
+          ownerReferences
             ? {
                 ownerReferences: [
                   this.operatorService.getOwnerReference(owner, toNamespace)
@@ -110,7 +166,7 @@ export default class ReplicationService {
           kind: replicationFrom?.kind,
           metadata: {
             name: replicationFrom?.name,
-            namespace: this.namespace
+            namespace: this.fromNamespace
           }
         },
         output: Output.Json

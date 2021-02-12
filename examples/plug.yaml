@@ -7,11 +7,13 @@ spec:
   socket:
     name: some-socket
     namespace: tmp-socket
-  # replications:
-  #   - group: string
-  #     kind: string
-  #     name: string
-  #     version: string
+  replications:
+    - version: v1
+      kind: Secret
+      name: some-secret2
+    - version: v1
+      kind: ConfigMap
+      name: some-configmap2
   # kustomization: {}
 ---
 apiVersion: v1

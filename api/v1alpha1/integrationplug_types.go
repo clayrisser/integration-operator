@@ -34,6 +34,9 @@ type IntegrationPlugSpec struct {
 
         // resources to replicate
         Replications []*Replication `json:"replications,omitempty"`
+
+        // run cleanup jobs
+        Cleanup bool `json:"cleanup,omitempty"`
 }
 
 // IntegrationPlugStatus defines the observed state of IntegrationPlug

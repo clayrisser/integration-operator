@@ -37,6 +37,9 @@ spec:
             spec:
               description: IntegrationPlugSpec defines the desired state of IntegrationPlug
               properties:
+                cleanup:
+                  description: run cleanup jobs
+                  type: boolean
                 kustomization:
                   description: kustomization to apply after success
                   properties:

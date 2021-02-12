@@ -18,6 +18,7 @@ import { KubernetesObject, V1JobSpec } from '@kubernetes/client-node';
 import { KustomizationSpec } from 'kustomize-operator';
 
 export interface IntegrationPlugSpec {
+  cleanup?: boolean; // bool `json:"cleanup,omitempty"`
   kustomization?: KustomizationSpec; // KustomizationSpec `json:"kustomization,omitempty" yaml:"kustomization,omitempty"`
   replications?: Replication[]; // []*Replication `json:"replications,omitempty"`
   socket?: IntegrationPlugSpecSocket; // IntegrationPlugSpecSocket `json:"socket,omitempty"`
