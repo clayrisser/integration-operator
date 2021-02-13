@@ -29,8 +29,8 @@ type IntegrationPlugSpec struct {
         // socket to integrate with
         Socket IntegrationPlugSpecSocket `json:"socket,omitempty"`
 
-	      // kustomization to apply after success
-	      Kustomization KustomizationSpec `json:"kustomization,omitempty" yaml:"kustomization,omitempty"`
+        // kustomization to apply after success
+        Kustomization KustomizationSpec `json:"kustomization,omitempty" yaml:"kustomization,omitempty"`
 
         // resources to replicate
         Replications []*Replication `json:"replications,omitempty"`
@@ -38,8 +38,8 @@ type IntegrationPlugSpec struct {
         // run cleanup jobs
         Cleanup bool `json:"cleanup,omitempty"`
 
-        // name to append to replication resource name
-        ReplicationAppendName string `json:"replicationAppendName,omitempty"`
+        // name to append to resource name
+        AppendName string `json:"appendName,omitempty"`
 }
 
 // IntegrationPlugStatus defines the observed state of IntegrationPlug

@@ -84,7 +84,7 @@ export default class ReplicationService {
               }
             }
           });
-          this.spinner.succeed(
+          this.spinner.info(
             `deleted replicated resource ${this.operatorService.getFullName({
               resource
             })}`
@@ -136,7 +136,7 @@ export default class ReplicationService {
       },
       stdout: true
     });
-    this.spinner.succeed(
+    this.spinner.info(
       `replicated ${this.operatorService.getFullName({
         resource: fromResource
       })} to ${this.operatorService.getFullName({

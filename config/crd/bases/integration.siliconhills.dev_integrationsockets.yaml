@@ -37,6 +37,9 @@ spec:
             spec:
               description: IntegrationSocketSpec defines the desired state of IntegrationSocket
               properties:
+                appendName:
+                  description: name to append to resource name
+                  type: string
                 hooks:
                   description: hooks that trigger during the lifecycle of an integration
                   items:
@@ -8205,9 +8208,6 @@ spec:
                         type: integer
                     type: object
                   type: array
-                replicationAppendName:
-                  description: name to append to replication resource name
-                  type: string
                 replications:
                   description: resources to replicate
                   items:

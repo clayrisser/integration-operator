@@ -372,25 +372,19 @@ export default class IntegrationPlug extends Controller {
         return hook.name === hookName;
       }
     );
+    const append = socketResource.spec?.appendName;
     return Promise.all(
       filteredHooks.map(async (hook: IntegrationSocketSpecHook, i: number) => {
-        const job = (
-          await this.batchV1Api.createNamespacedJob(ns, {
-            metadata: {
-              name: `${plugResource.metadata
-                ?.name!}-${hookName}-${i.toString()}`,
-              namespace: ns,
-              ownerReferences: [
-                this.operatorService.getOwnerReference(plugResource, ns)
-              ]
-            },
-            spec: hook.job
-          })
-        ).body;
-        this.spinner.succeed(
-          `created ${this.operatorService.getFullName({
-            resource: job
-          })}`
+        const name = `${plugResource.metadata
+          ?.name!}-${hookName}-${i.toString()}${append ? `-${append}` : ''}`;
+        if (typeof hook.job === 'undefined') {
+          throw new Error(`hook ${hookName} job is undefined`);
+        }
+        const job = await this.createOrUpdateJob(
+          name,
+          ns,
+          hook.job,
+          plugResource
         );
         await this.waitForJobToFinish(job, hook.timeout);
         const logs = await this.getJobLogs(job);
@@ -437,13 +431,15 @@ export default class IntegrationPlug extends Controller {
           pod.metadata?.labels?.['job-name'] === job.metadata?.name
       )?.metadata?.name || '';
     return (
-      await this.coreV1Api.readNamespacedPodLog(
-        podName,
-        job.metadata?.namespace || '',
-        undefined,
-        false
-      )
-    ).body;
+      (
+        await this.coreV1Api.readNamespacedPodLog(
+          podName,
+          job.metadata?.namespace || '',
+          undefined,
+          false
+        )
+      ).body || ''
+    ).toString();
   }
 
   private async cleanupReplicatedPlugResources(
@@ -474,7 +470,7 @@ export default class IntegrationPlug extends Controller {
         replicationService.cleanupToResources(
           replication,
           toNamespace,
-          plugResource.spec?.replicationAppendName || 'plug'
+          plugResource.spec?.appendName || 'plug'
         )
       )
     );
@@ -508,7 +504,7 @@ export default class IntegrationPlug extends Controller {
         replicationService.apply(
           replication,
           toNamespace,
-          plugResource.spec?.replicationAppendName || 'plug'
+          plugResource.spec?.appendName || 'plug'
         )
       )
     );
@@ -542,7 +538,7 @@ export default class IntegrationPlug extends Controller {
         replicationService.apply(
           replication,
           toNamespace,
-          socketResource.spec?.replicationAppendName || 'socket',
+          socketResource.spec?.appendName || 'socket',
           plugResource
         )
       )
@@ -676,6 +672,82 @@ export default class IntegrationPlug extends Controller {
         this.operatorService.kind2plural(KustomizeResourceKind.Kustomization),
         kustomizationResource
       );
+    }
+  }
+
+  private async createOrUpdateJob(
+    name: string,
+    ns: string,
+    spec: k8s.V1JobSpec,
+    owner?: k8s.KubernetesObject
+  ) {
+    try {
+      let job = (await this.batchV1Api.readNamespacedJob(name, ns)).body;
+      job = (
+        await this.batchV1Api.patchNamespacedJob(
+          name,
+          ns,
+          [
+            {
+              op: 'replace',
+              path: '/spec',
+              value: {
+                ...(job.spec || {}),
+                ...spec,
+                template: {
+                  ...(job.spec?.template || {}),
+                  ...(spec.template || {}),
+                  metadata: {
+                    ...(job.spec?.template?.metadata || {}),
+                    ...(spec.template?.metadata || {}),
+                    labels: {
+                      ...(job.spec?.template?.metadata?.labels || {}),
+                      ...(spec.template?.metadata?.labels || {})
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          {
+            headers: { 'Content-Type': 'application/json-patch+json' }
+          }
+        )
+      ).body;
+      this.spinner.info(
+        `updated ${this.operatorService.getFullName({
+          resource: job
+        })}`
+      );
+      return job;
+    } catch (err) {
+      if (err.statusCode !== 404) throw err;
+      const job = (
+        await this.batchV1Api.createNamespacedJob(ns, {
+          metadata: {
+            name,
+            namespace: ns,
+            ...(typeof owner !== 'undefined' && owner.metadata?.namespace === ns
+              ? {
+                  ownerReferences: [
+                    this.operatorService.getOwnerReference(owner, ns)
+                  ]
+                }
+              : {})
+          },
+          spec
+        })
+      ).body;
+      this.spinner.info(
+        `created ${this.operatorService.getFullName({
+          resource: job
+        })}`
+      );
+      return job;
     }
   }
 }

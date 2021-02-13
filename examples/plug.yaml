@@ -17,15 +17,6 @@ spec:
   # kustomization: {}
 ---
 apiVersion: v1
-kind: Secret
-metadata:
-  name: some-secret2
-  namespace: tmp-plug
-type: Opaque
-stringData:
-  howdy: texas
----
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: some-configmap2
