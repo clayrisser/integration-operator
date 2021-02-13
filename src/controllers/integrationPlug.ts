@@ -119,14 +119,16 @@ export default class IntegrationPlug extends Controller {
         ...createOrUpdateResult
       ]);
     } catch (err) {
-      await this.updateStatus(
-        {
-          message: this.operatorService.getErrorMessage(err),
-          phase: IntegrationPlugStatusPhase.Failed,
-          ready: false
-        },
-        plugResource
-      );
+      if (this.isTracking(plugResource)) {
+        await this.updateStatus(
+          {
+            message: this.operatorService.getErrorMessage(err),
+            phase: IntegrationPlugStatusPhase.Failed,
+            ready: false
+          },
+          plugResource
+        );
+      }
       throw err;
     }
     return null;
@@ -186,14 +188,16 @@ export default class IntegrationPlug extends Controller {
         ...createOrUpdateResult
       ]);
     } catch (err) {
-      await this.updateStatus(
-        {
-          message: this.operatorService.getErrorMessage(err),
-          phase: IntegrationPlugStatusPhase.Failed,
-          ready: false
-        },
-        plugResource
-      );
+      if (this.isTracking(plugResource)) {
+        await this.updateStatus(
+          {
+            message: this.operatorService.getErrorMessage(err),
+            phase: IntegrationPlugStatusPhase.Failed,
+            ready: false
+          },
+          plugResource
+        );
+      }
       throw err;
     }
     return null;

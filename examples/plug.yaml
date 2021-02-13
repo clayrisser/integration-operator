@@ -15,7 +15,53 @@ spec:
     - version: v1
       kind: ConfigMap
       name: some-configmap2
-  # kustomization: {}
+  kustomization:
+    configuration:
+      varReference:
+        - version: v1
+          kind: Secret
+          path: stringData
+    resources:
+      - version: v1
+        kind: Secret
+        name: some-secret2
+        namespace: tmp-plug
+      - version: v1
+        kind: ConfigMap
+        name: some-configmap-socket
+        namespace: tmp-plug
+      - version: v1
+        kind: ConfigMap
+        name: some-configmap-k
+        namespace: tmp-plug
+    patches:
+      - patch: |
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: some-secret2
+            namespace: tmp-plug
+          type: Opaque
+          stringData:
+            hello: $(HELLO)
+            foo: $(FOO)
+    vars:
+      - name: HELLO
+        fieldref:
+          fieldPath: data.hello
+        objref:
+          apiVersion: v1
+          kind: ConfigMap
+          name: some-configmap-socket
+          namespace: tmp-plug
+      - name: FOO
+        fieldref:
+          fieldPath: data.foo
+        objref:
+          apiVersion: v1
+          kind: ConfigMap
+          name: some-configmap-k
+          namespace: tmp-plug
 ---
 apiVersion: v1
 kind: ConfigMap
