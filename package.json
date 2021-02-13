@@ -1,6 +1,6 @@
 {
   "name": "integration-operator",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "kubernetes operator to integrate deployments",
   "private": true,
   "sideEffects": false,
@@ -61,6 +61,7 @@
     "test:watch": "make -s test-watch"
   },
   "dependencies": {
+    "@babel/polyfill": "^7.12.1",
     "@babel/runtime": "^7.12.13",
     "@dot-i/k8s-operator": "^1.1.0",
     "@kubernetes/client-node": "^0.13.2",

@@ -42,6 +42,8 @@ spec:
                       operator: In
                       values:
                         - {{ template "integration-operator.name" . }}-integration-operator
+      imagePullSecrets:
+        - name: dockerhub
       containers:
         - name: {{ template "integration-operator.fullname" . }}-integration-operator
           image: {{ .Values.images.integrationOperator.repository }}:{{ .Values.images.integrationOperator.tag }}
