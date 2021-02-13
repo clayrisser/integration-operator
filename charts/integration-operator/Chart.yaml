@@ -2,8 +2,8 @@ name: integration-operator
 apiVersion: v1
 home: https://nuevesolutions.com
 icon: ''
-version: 0.0.3
-appVersion: 0.0.3
+version: 0.0.4
+appVersion: 0.0.4
 description: 'operator to create external databases'
 keywords:
   - silicon
