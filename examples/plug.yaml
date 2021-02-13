@@ -7,6 +7,7 @@ spec:
   socket:
     name: some-socket
     namespace: tmp-socket
+  cleanup: false
   replications:
     - version: v1
       kind: Secret
@@ -23,3 +24,11 @@ metadata:
   namespace: tmp-plug
 data:
   howdy: texas
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: some-socket-socket
+  namespace: tmp-plug
+data:
+  foo: bar

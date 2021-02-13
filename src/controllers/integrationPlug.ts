@@ -6,6 +6,7 @@ import { KustomizationResource } from 'kustomize-operator';
 import { ResourceMeta } from '@dot-i/k8s-operator';
 import { ReplicationService, KubectlService, Output } from '~/services';
 import {
+  HashMap,
   IntegrationPlugResource,
   IntegrationPlugSpecWaitResource,
   IntegrationPlugStatus,
@@ -34,6 +35,10 @@ export default class IntegrationPlug extends Controller {
 
   private kubectl = new KubectlService();
 
+  private tracking: HashMap<string | true> = {};
+
+  private runningHooks: Set<string> = new Set();
+
   constructor(groupnameprefix: string, kind: string) {
     super(groupnameprefix, kind);
     this.kubeConfig = new k8s.KubeConfig();
@@ -56,6 +61,7 @@ export default class IntegrationPlug extends Controller {
       await this.callHook(Hook.Cleanup, plugResource, socketResource);
       await this.callHook(Hook.AfterCleanup, plugResource, socketResource);
     }
+    this.unregisterTracking(plugResource);
     return null;
   }
 
@@ -70,6 +76,7 @@ export default class IntegrationPlug extends Controller {
     ) {
       return null;
     }
+    this.registerTracking(plugResource);
     const socketResource = await this.getSocketResource(plugResource);
     if (!socketResource) {
       const message = `${this.operatorService.getFullName({
@@ -136,6 +143,7 @@ export default class IntegrationPlug extends Controller {
     ) {
       return null;
     }
+    this.registerTracking(plugResource);
     const socketResource = await this.getSocketResource(plugResource);
     if (!socketResource) {
       const message = `${this.operatorService.getFullName({
@@ -217,6 +225,7 @@ export default class IntegrationPlug extends Controller {
     plugResource: IntegrationPlugResource,
     socketResource: IntegrationSocketResource
   ) {
+    if (!this.isTracking(plugResource)) return;
     await this.waitForResources(plugResource, socketResource);
     await this.replicateSocketResources(plugResource, socketResource);
     await this.replicatePlugResources(plugResource, socketResource);
@@ -227,6 +236,7 @@ export default class IntegrationPlug extends Controller {
     socketResource: IntegrationSocketResource,
     hookResults: HookResult[]
   ) {
+    if (!this.isTracking(plugResource)) return;
     const statusMessage = hookResults
       .map(
         ({ name, namespace, message, hookName }: HookResult) =>
@@ -258,6 +268,47 @@ export default class IntegrationPlug extends Controller {
     );
   }
 
+  private registerTracking(
+    plugResource: IntegrationPlugResource,
+    waitingOn?: string
+  ) {
+    this.tracking[
+      `${plugResource.metadata?.name || ''}.${
+        plugResource.metadata?.namespace || ''
+      }`
+    ] = waitingOn || true;
+  }
+
+  private unregisterTracking(plugResource: IntegrationPlugResource) {
+    const waitingOn = this.tracking[
+      `${plugResource.metadata?.name || ''}.${
+        plugResource.metadata?.namespace || ''
+      }`
+    ];
+    delete this.tracking[
+      `${plugResource.metadata?.name || ''}.${
+        plugResource.metadata?.namespace || ''
+      }`
+    ];
+    if (waitingOn !== true) {
+      this.spinner.info(
+        `stopped waiting on ${waitingOn} for ${this.operatorService.getFullName(
+          {
+            resource: plugResource
+          }
+        )}`
+      );
+    }
+  }
+
+  private isTracking(plugResource: IntegrationPlugResource) {
+    return !!this.tracking[
+      `${plugResource.metadata?.name || ''}.${
+        plugResource.metadata?.namespace || ''
+      }`
+    ];
+  }
+
   private async getResources(
     resources: k8s.KubernetesObject[]
   ): Promise<
@@ -281,6 +332,8 @@ export default class IntegrationPlug extends Controller {
     timeout = 60000,
     timeLeft?: number
   ) {
+    if (!this.isTracking(plugResource)) return;
+    this.registerTracking(plugResource, 'resources');
     const waitTime = Math.max(5000, timeout / 10);
     if (typeof timeLeft !== 'number') timeLeft = timeout;
     const resources = await this.getResources(
@@ -334,31 +387,29 @@ export default class IntegrationPlug extends Controller {
       },
       true
     );
-    if (!foundAllResources) {
-      if (timeLeft < 0) {
-        throw new Error(
-          `failed to find some resources for ${this.operatorService.getFullName(
-            {
-              resource: plugResource
-            }
-          )}`
-        );
-      }
-      this.spinner.info(
-        `waiting ${timeLeft}ms on resources for ${this.operatorService.getFullName(
-          {
-            resource: plugResource
-          }
-        )}`
-      );
-      await new Promise((r) => setTimeout(r, waitTime));
-      await this.waitForResources(
-        plugResource,
-        socketResource,
-        timeout,
-        timeLeft - waitTime
+    if (foundAllResources || !this.isTracking(plugResource)) return;
+    if (timeLeft <= 0) {
+      throw new Error(
+        `failed to find some resources for ${this.operatorService.getFullName({
+          resource: plugResource
+        })}`
       );
     }
+    this.spinner.info(
+      `waiting ${timeLeft}ms on resources for ${this.operatorService.getFullName(
+        {
+          resource: plugResource
+        }
+      )}`
+    );
+    await new Promise((r) => setTimeout(r, waitTime));
+    await this.waitForResources(
+      plugResource,
+      socketResource,
+      timeout,
+      timeLeft - waitTime
+    );
+    if (this.isTracking(plugResource)) this.registerTracking(plugResource);
   }
 
   private async callHook(
@@ -366,14 +417,17 @@ export default class IntegrationPlug extends Controller {
     plugResource: IntegrationPlugResource,
     socketResource: IntegrationSocketResource
   ) {
+    if (!this.isTracking(plugResource)) return [];
+    this.registerTracking(plugResource, 'jobs');
+    this.runningHooks.add(hookName);
     const ns = plugResource.metadata?.namespace!;
     const filteredHooks = (socketResource.spec?.hooks || []).filter(
       (hook: IntegrationSocketSpecHook) => {
         return hook.name === hookName;
       }
     );
-    const append = socketResource.spec?.appendName;
-    return Promise.all(
+    const append = socketResource.spec?.appendName || 'socket';
+    const result = await Promise.all(
       filteredHooks.map(async (hook: IntegrationSocketSpecHook, i: number) => {
         const name = `${plugResource.metadata
           ?.name!}-${hookName}-${i.toString()}${append ? `-${append}` : ''}`;
@@ -386,12 +440,20 @@ export default class IntegrationPlug extends Controller {
           hook.job,
           plugResource
         );
-        await this.waitForJobToFinish(job, hook.timeout);
+        await this.waitForJobToFinish(plugResource, job, hook.timeout);
+        if (!this.isTracking(plugResource)) {
+          return {
+            hookName: hook.name!,
+            message: '',
+            name: job.metadata?.name!,
+            namespace: job.metadata?.namespace!
+          };
+        }
         const logs = await this.getJobLogs(job);
-        let message = 'completed';
+        let message = '';
         if (hook.messageRegex) {
           const messageMatches = logs.match(newRegExp(hook.messageRegex));
-          message = [...(messageMatches || [])].join('\n');
+          message = [...(messageMatches || [])].join('\n').trim();
         }
         return {
           hookName: hook.name!,
@@ -401,13 +463,20 @@ export default class IntegrationPlug extends Controller {
         };
       })
     );
+    this.runningHooks.delete(hookName);
+    if (this.isTracking(plugResource) && !this.runningHooks.size) {
+      this.registerTracking(plugResource);
+    }
+    return result;
   }
 
   private async waitForJobToFinish(
+    plugResource: IntegrationPlugResource,
     job: k8s.V1Job,
     timeout = 60000,
     timeLeft?: number
   ) {
+    if (!this.isTracking(plugResource)) return;
     const waitTime = Math.max(5000, timeout / 10);
     if (typeof timeLeft !== 'number') timeLeft = timeout;
     const jobStatus = (
@@ -416,9 +485,28 @@ export default class IntegrationPlug extends Controller {
         job.metadata?.namespace!
       )
     ).body.status;
-    if (jobStatus?.succeeded) return;
+    if (jobStatus?.succeeded || !this.isTracking(plugResource)) {
+      return;
+    }
+    if (timeLeft <= 0) {
+      throw new Error(
+        `${this.operatorService.getFullName({
+          resource: job
+        })} timed out before completing`
+      );
+    }
+    this.spinner.info(
+      `waiting ${timeLeft}ms for ${this.operatorService.getFullName({
+        resource: job
+      })} to complete`
+    );
     await new Promise((r) => setTimeout(r, waitTime));
-    await this.waitForJobToFinish(job, timeout, timeLeft - waitTime);
+    await this.waitForJobToFinish(
+      plugResource,
+      job,
+      timeout,
+      timeLeft - waitTime
+    );
   }
 
   private async getJobLogs(job: k8s.V1Job): Promise<string> {
@@ -480,6 +568,7 @@ export default class IntegrationPlug extends Controller {
     plugResource: IntegrationPlugResource,
     socketResource: IntegrationSocketResource
   ) {
+    if (!this.isTracking(plugResource)) return;
     const fromNamespace = plugResource.metadata?.namespace;
     const toNamespace = socketResource.metadata?.namespace;
     if (typeof fromNamespace === 'undefined') {
@@ -514,6 +603,7 @@ export default class IntegrationPlug extends Controller {
     plugResource: IntegrationPlugResource,
     socketResource: IntegrationSocketResource
   ) {
+    if (!this.isTracking(plugResource)) return;
     const fromNamespace = socketResource.metadata?.namespace;
     const toNamespace = plugResource.metadata?.namespace;
     if (typeof fromNamespace === 'undefined') {
@@ -551,7 +641,8 @@ export default class IntegrationPlug extends Controller {
     if (
       !plugResource.metadata?.name ||
       !plugResource.metadata?.namespace ||
-      !plugResource.spec?.socket?.name
+      !plugResource.spec?.socket?.name ||
+      !this.isTracking(plugResource)
     ) {
       return null;
     }
@@ -578,7 +669,11 @@ export default class IntegrationPlug extends Controller {
     plugStatus: IntegrationPlugStatus,
     plugResource: IntegrationPlugResource
   ): Promise<void> {
-    if (!plugResource.metadata?.name || !plugResource.metadata.namespace) {
+    if (
+      !plugResource.metadata?.name ||
+      !plugResource.metadata.namespace ||
+      !this.isTracking(plugResource)
+    ) {
       return;
     }
     plugStatus.message = stripAnsi(plugStatus.message || '');
@@ -607,7 +702,11 @@ export default class IntegrationPlug extends Controller {
   private async applyKustomization(
     plugResource: IntegrationPlugResource
   ): Promise<void> {
-    if (!plugResource.metadata?.name || !plugResource.metadata.namespace) {
+    if (
+      !plugResource.metadata?.name ||
+      !plugResource.metadata.namespace ||
+      !this.isTracking(plugResource)
+    ) {
       return;
     }
     try {

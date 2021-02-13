@@ -21,11 +21,18 @@ spec:
     - job:
         template:
           spec:
-            containers:
-              - name: pi
-                image: perl
-                command: ['perl', '-Mbignum=bpi', '-wle', 'print bpi(2000)']
             restartPolicy: Never
+            containers:
+              - name: some-job
+                image: busybox
+                command: ['cat', '/tmp/config/foo']
+                volumeMounts:
+                  - name: config
+                    mountPath: /tmp/config
+            volumes:
+              - name: config
+                configMap:
+                  name: some-socket-socket
         backoffLimit: 4
       messageRegex: '/3\.14/g'
       name: create-or-update

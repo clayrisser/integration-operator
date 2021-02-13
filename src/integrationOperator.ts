@@ -25,13 +25,6 @@ export default class IntegrationOperator extends Operator {
         ResourceKind.IntegrationPlug
       )
     );
-    this.watchController(
-      ResourceKind.IntegrationSocket,
-      new IntegrationSocket(
-        ResourceGroup.Integration,
-        ResourceKind.IntegrationSocket
-      )
-    );
   }
 
   protected watchController(
