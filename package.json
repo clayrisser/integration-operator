@@ -2,6 +2,7 @@
   "name": "integration-operator",
   "version": "0.0.2",
   "description": "kubernetes operator to integrate deployments",
+  "private": true,
   "sideEffects": false,
   "keywords": [
     "integration-operator",
