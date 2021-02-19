@@ -456,7 +456,8 @@ export default class IntegrationPlug extends Controller {
         const logs = await this.getJobLogs(job);
         let message = '';
         if (hook.messageRegex) {
-          const messageMatches = logs.match(newRegExp(hook.messageRegex));
+          const REGEX = newRegExp(hook.messageRegex);
+          const messageMatches = logs.match(newRegExp(REGEX));
           message = [...(messageMatches || [])].join('\n').trim();
         }
         return {
@@ -514,14 +515,19 @@ export default class IntegrationPlug extends Controller {
   }
 
   private async getJobLogs(job: k8s.V1Job): Promise<string> {
-    const pods = (
+    const pod = (
       await this.coreV1Api.listNamespacedPod(job.metadata?.namespace || '')
-    ).body;
-    const podName =
-      pods.items.find(
-        (pod: k8s.V1Pod) =>
-          pod.metadata?.labels?.['job-name'] === job.metadata?.name
-      )?.metadata?.name || '';
+    ).body.items.find((pod: k8s.V1Pod) => {
+      return (pod.metadata?.ownerReferences || []).reduce(
+        (found: boolean, ownerReference: k8s.V1OwnerReference) => {
+          if (found) return true;
+          if (job.metadata?.uid === ownerReference.uid) return true;
+          return false;
+        },
+        false
+      );
+    });
+    const podName = pod?.metadata?.name || '';
     return (
       (
         await this.coreV1Api.readNamespacedPodLog(
