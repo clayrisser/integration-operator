@@ -11,6 +11,7 @@ RUN mkdir src && make install
 FROM node:12-alpine
 
 RUN apk add --no-cache \
+  bash \
   make
 
 COPY docker/latest/entrypoint.sh /usr/local/sbin/entrypoint
@@ -26,4 +27,4 @@ RUN make +build
 
 ENV DEBUG_OPERATOR=false
 
-ENTRYPOINT [ "/usr/local/sbin/entrypoint" ]
+ENTRYPOINT [ "/bin/bash" "/usr/local/sbin/entrypoint" ]
