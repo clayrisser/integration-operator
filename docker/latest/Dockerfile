@@ -27,4 +27,4 @@ RUN make +build
 
 ENV DEBUG_OPERATOR=false
 
-ENTRYPOINT [ "/bin/bash" "/usr/local/sbin/entrypoint" ]
+ENTRYPOINT [ "/bin/bash", "/usr/local/sbin/entrypoint" ]
