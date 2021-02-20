@@ -1,3 +1,3 @@
-#!/bin/bash
+#!/bin/sh
 
 exec node bin/integrationOperator.js $@

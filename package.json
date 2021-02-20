@@ -1,6 +1,6 @@
 {
   "name": "integration-operator",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "kubernetes operator to integrate deployments",
   "private": true,
   "sideEffects": false,
