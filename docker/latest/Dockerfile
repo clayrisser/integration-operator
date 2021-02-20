@@ -12,7 +12,7 @@ FROM node:12-alpine
 
 RUN apk add --no-cache \
   make
-RUN curl -LO https://dl.k8s.io/release/v1.20.0/bin/linux/amd64/kubectl && \
+RUN wget https://dl.k8s.io/release/v1.20.0/bin/linux/amd64/kubectl && \
     mv kubectl /usr/local/bin/kubectl && \
     chmod +x /usr/local/bin/kubectl
 
