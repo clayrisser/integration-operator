@@ -11,8 +11,10 @@ RUN mkdir src && make install
 FROM node:12-alpine
 
 RUN apk add --no-cache \
-  bash \
   make
+RUN curl -LO https://dl.k8s.io/release/v1.20.0/bin/linux/amd64/kubectl && \
+    mv kubectl /usr/local/bin/kubectl && \
+    chmod +x /usr/local/bin/kubectl
 
 COPY docker/latest/entrypoint.sh /usr/local/sbin/entrypoint
 
@@ -27,4 +29,4 @@ RUN make +build
 
 ENV DEBUG_OPERATOR=false
 
-ENTRYPOINT [ "/bin/bash", "/usr/local/sbin/entrypoint" ]
+ENTRYPOINT [ "/usr/local/sbin/entrypoint" ]
