@@ -433,8 +433,9 @@ export default class IntegrationPlug extends Controller {
     const append = socketResource.spec?.appendName || '';
     const result = await Promise.all(
       filteredHooks.map(async (hook: IntegrationSocketSpecHook, i: number) => {
-        const name = `${plugResource.metadata
-          ?.name!}-${hookName}-${i.toString()}${append ? `-${append}` : ''}`;
+        const name = `${plugResource.metadata?.name!}-${
+          hookShortMap[hookName]
+        }-${i.toString()}${append ? `-${append}` : ''}`;
         if (typeof hook.job === 'undefined') {
           throw new Error(`hook ${hookName} job is undefined`);
         }
@@ -862,19 +863,34 @@ export default class IntegrationPlug extends Controller {
 }
 
 export enum Hook {
-  AfterCleanup = 'aCl',
-  AfterCreate = 'aCr',
-  AfterCreateOrUpdate = 'aCoU',
-  AfterUpdate = 'aU',
-  BeforeCleanup = 'bCl',
-  BeforeCreate = 'bCr',
-  BeforeCreateOrUpdate = 'bCoU',
-  BeforeUpdate = 'bU',
-  Cleanup = 'cl',
-  Create = 'cr',
-  CreateOrUpdate = 'CoU',
-  Update = 'u'
+  AfterCleanup = 'after-cleanup',
+  AfterCreate = 'after-create',
+  AfterCreateOrUpdate = 'after-create-or-update',
+  AfterUpdate = 'after-update',
+  BeforeCleanup = 'before-cleanup',
+  BeforeCreate = 'before-create',
+  BeforeCreateOrUpdate = 'before-create-or-update',
+  BeforeUpdate = 'before-update',
+  Cleanup = 'cleanup',
+  Create = 'create',
+  CreateOrUpdate = 'create-or-update',
+  Update = 'update'
 }
+
+export const hookShortMap = {
+  'after-cleanup': 'acl',
+  'after-create': 'acr',
+  'after-create-or-update': 'acou',
+  'after-update': 'au',
+  'before-cleanup': 'bcl',
+  'before-create': 'bcr',
+  'before-create-or-update': 'bcou',
+  'before-update': 'bu',
+  'create-or-update': 'cou',
+  cleanup: 'cl',
+  create: 'cr',
+  update: 'u'
+};
 
 export interface HookResult {
   hookName: string;
