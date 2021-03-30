@@ -430,7 +430,7 @@ export default class IntegrationPlug extends Controller {
         return hook.name === hookName;
       }
     );
-    const append = socketResource.spec?.appendName || 'socket';
+    const append = socketResource.spec?.appendName || '';
     const result = await Promise.all(
       filteredHooks.map(async (hook: IntegrationSocketSpecHook, i: number) => {
         const name = `${plugResource.metadata
@@ -862,18 +862,18 @@ export default class IntegrationPlug extends Controller {
 }
 
 export enum Hook {
-  AfterCleanup = 'after-cleanup',
-  AfterCreate = 'after-create',
-  AfterCreateOrUpdate = 'after-create-or-update',
-  AfterUpdate = 'after-update',
-  BeforeCleanup = 'before-cleanup',
-  BeforeCreate = 'before-create',
-  BeforeCreateOrUpdate = 'before-create-or-update',
-  BeforeUpdate = 'before-update',
-  Cleanup = 'cleanup',
-  Create = 'create',
-  CreateOrUpdate = 'create-or-update',
-  Update = 'update'
+  AfterCleanup = 'aCl',
+  AfterCreate = 'aCr',
+  AfterCreateOrUpdate = 'aCoU',
+  AfterUpdate = 'aU',
+  BeforeCleanup = 'bCl',
+  BeforeCreate = 'bCr',
+  BeforeCreateOrUpdate = 'bCoU',
+  BeforeUpdate = 'bU',
+  Cleanup = 'cl',
+  Create = 'cr',
+  CreateOrUpdate = 'CoU',
+  Update = 'u'
 }
 
 export interface HookResult {
