@@ -370,6 +370,11 @@ spec:
                       items:
                         type: string
                       type: array
+                    create:
+                      description: Create will create resources templated from vars
+                      items:
+                        type: string
+                      type: array
                     generatorOptions:
                       description:
                         GeneratorOptions modify behavior of all ConfigMap
