@@ -17,16 +17,19 @@
 package v1alpha1
 
 import (
-        kustomizeTypes "sigs.k8s.io/kustomize/api/types"
+	kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 )
 
 // KustomizationSpec defines the desired state of Kustomization
 type KustomizationSpec struct {
-        // keep retrying when fails until timeout in milliseconds expires
-        RetryTimeout uint `json:"retryTimeout,omitempty" yaml:"retryTimeout,omitempty"`
+	// keep retrying when fails until timeout in milliseconds expires
+	RetryTimeout uint `json:"retryTimeout,omitempty" yaml:"retryTimeout,omitempty"`
 
-        // kustomization config
-        Configuration TransformerConfig `json:"configuration,omitempty" yaml:"configuration,omitempty"`
+	// kustomization config
+	Configuration TransformerConfig `json:"configuration,omitempty" yaml:"configuration,omitempty"`
+
+	// Create will create resources templated from vars
+	Create []string `json:"create,omitempty" yaml:"create,omitempty"`
 
 	// CommonAnnotations to add to all objects.
 	CommonAnnotations map[string]string `json:"commonAnnotations,omitempty" yaml:"commonAnnotations,omitempty"`

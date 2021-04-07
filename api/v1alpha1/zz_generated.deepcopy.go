@@ -350,6 +350,11 @@ func (in *IntegrationSocketStatus) DeepCopy() *IntegrationSocketStatus {
 func (in *KustomizationSpec) DeepCopyInto(out *KustomizationSpec) {
 	*out = *in
 	in.Configuration.DeepCopyInto(&out.Configuration)
+	if in.Create != nil {
+		in, out := &in.Create, &out.Create
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.CommonAnnotations != nil {
 		in, out := &in.CommonAnnotations, &out.CommonAnnotations
 		*out = make(map[string]string, len(*in))
