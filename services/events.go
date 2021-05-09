@@ -20,7 +20,7 @@ func (e *EventsService) HandlePlugJoined(socket *integrationv1alpha2.Socket, plu
 func (e *EventsService) HandlePlugChanged(socket *integrationv1alpha2.Socket, plug *integrationv1alpha2.Plug, payload []byte) {
 }
 
-func (e *EventsService) HandlePlugDeparted(socket *integrationv1alpha2.Socket, plug *integrationv1alpha2.Plug, payload []byte) {
+func (e *EventsService) HandlePlugDeparted() {
 }
 
 func (e *EventsService) HandlePlugBroken(socket *integrationv1alpha2.Socket, plug *integrationv1alpha2.Plug, payload []byte) {
@@ -34,7 +34,7 @@ func (e *EventsService) HandleSocketJoined(plug *integrationv1alpha2.Plug, socke
 func (e *EventsService) HandleSocketChanged(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload []byte) {
 }
 
-func (e *EventsService) HandleSocketDeparted(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload []byte) {
+func (e *EventsService) HandleSocketDeparted() {
 }
 
 func (e *EventsService) HandleSocketBroken(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload []byte) {

@@ -14,13 +14,16 @@ func NewUtilService(services *Services) *UtilService {
 	return &UtilService{s: services}
 }
 
-func (u *UtilService) EnsureNamespacedName(partialNamespacedName *integrationv1alpha2.NamespacedName) types.NamespacedName {
+func (u *UtilService) EnsureNamespacedName(
+	partialNamespacedName *integrationv1alpha2.NamespacedName,
+	defaultNamespace string,
+) types.NamespacedName {
 	namespacedName := types.NamespacedName{
 		Name:      partialNamespacedName.Name,
 		Namespace: partialNamespacedName.Namespace,
 	}
 	if partialNamespacedName.Namespace == "" {
-		namespacedName.Namespace = u.s.req.Namespace
+		namespacedName.Namespace = defaultNamespace
 	}
 	return namespacedName
 }

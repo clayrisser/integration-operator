@@ -24,6 +24,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	integrationServices "github.com/silicon-hills/integration-operator/services"
@@ -50,7 +52,7 @@ type PlugReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	s := integrationServices.NewServices(&ctx, &req)
+	s := integrationServices.NewServices()
 	_ = r.Log.WithValues("plug", req.NamespacedName)
 
 	result := ctrl.Result{}
@@ -62,30 +64,45 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	socket := &integrationv1alpha2.Socket{}
-	err = r.Get(ctx, s.Util.EnsureNamespacedName(&plug.Spec.Socket), socket)
+	err = r.Get(ctx, s.Util.EnsureNamespacedName(&plug.Spec.Socket, req.Namespace), socket)
 	if err != nil {
 		return result, nil
 	}
 
 	plugInterface := &integrationv1alpha2.Interface{}
-	err = r.Get(ctx, s.Util.EnsureNamespacedName(&plug.Spec.Interface), plugInterface)
+	err = r.Get(ctx, s.Util.EnsureNamespacedName(&plug.Spec.Interface, req.Namespace), plugInterface)
 	if err != nil {
 		return result, nil
 	}
 
 	socketInterface := &integrationv1alpha2.Interface{}
-	err = r.Get(ctx, s.Util.EnsureNamespacedName(&socket.Spec.Interface), socketInterface)
+	err = r.Get(ctx, s.Util.EnsureNamespacedName(&socket.Spec.Interface, req.Namespace), socketInterface)
 	if err != nil {
 		return result, nil
 	}
 
-	// created
-	// joined
-	// changed
-	// departed
-	// broken
-
+	if plug.Generation <= 1 {
+		s.Events.HandlePlugCreated(plug)
+		// do stuff
+		s.Events.HandlePlugJoined(socket, plug, []byte(""))
+	} else {
+		// do stuff
+		s.Events.HandlePlugChanged(socket, plug, []byte(""))
+	}
 	return result, nil
+}
+
+func filterPredicate() predicate.Predicate {
+	s := integrationServices.NewServices()
+	return predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			s.Events.HandlePlugDeparted()
+			return !e.DeleteStateUnknown
+		},
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -93,5 +110,6 @@ func (r *PlugReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&integrationv1alpha2.Plug{}).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
+		WithEventFilter(filterPredicate()).
 		Complete(r)
 }
