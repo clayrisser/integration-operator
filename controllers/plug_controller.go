@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
-	"github.com/silicon-hills/integration-operator/services"
+	integrationServices "github.com/silicon-hills/integration-operator/services"
 )
 
 // PlugReconciler reconciles a Plug object
@@ -50,7 +50,7 @@ type PlugReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	s := services.NewServices(&ctx, &req)
+	s := integrationServices.NewServices(&ctx, &req)
 	_ = r.Log.WithValues("plug", req.NamespacedName)
 
 	result := ctrl.Result{}
