@@ -8,6 +8,7 @@
         "logr",
         "metav",
         "rbac",
-        "sigs"
+        "sigs",
+        "siliconhills"
     ]
 }

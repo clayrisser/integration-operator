@@ -2,6 +2,17 @@ apiVersion: integration.siliconhills.dev/v1alpha2
 kind: Plug
 metadata:
   name: plug-sample
-spec:
-  # Add fields here
-  foo: bar
+spec: 
+  interface:
+    name: hello
+  interfaceVersions: '*'
+  meta: |
+    hello: world
+  mapper: |
+    hello: resource.spec.meta.hello.world
+    howdy: meta.hello.world
+  namespaceScope: '*'
+  socket:
+    name: hello
+    namespace: world
+  vars: []
