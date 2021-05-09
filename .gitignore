@@ -15,4 +15,5 @@ bin
 testbin/*
 
 # custom
-integration-operator
+/integration-operator
+/main
