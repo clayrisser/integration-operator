@@ -1,8 +1,0 @@
-version: '3.7'
-
-services:
-  app:
-    container_name: ${NAME}
-    image: ${IMAGE}:latest
-    environment:
-      DEBUG_OPERATOR: 'false'

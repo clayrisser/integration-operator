@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: some-configmap-k
-  namespace: tmp-plug
-data:
-  foo: bar
