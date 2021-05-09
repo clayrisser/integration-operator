@@ -40,3 +40,9 @@ this can be overcome with converters, but that is beyond the scope of this analo
 
 Let's say I have an express application that needs to **integrate** with a mongo database. This means the **plug** requires a **socket**
 with a mongo **interface**. If the **interface** of the **socket** is a postgres **interface** then the integration will fail.
+
+### diagram
+
+Below is a UML diagram that shows how **plugs**, **sockets** and **interfaces** wire together.
+
+![UML Diagram](images/architecture-diagram.jpg)
