@@ -49,9 +49,6 @@ type InterfaceReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *InterfaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("interface", req.NamespacedName)
-
-	// your logic here
-
 	return ctrl.Result{}, nil
 }
 

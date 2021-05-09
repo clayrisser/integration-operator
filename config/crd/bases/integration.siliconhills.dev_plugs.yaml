@@ -36,10 +36,99 @@ spec:
           spec:
             description: PlugSpec defines the desired state of Plug
             properties:
-              foo:
-                description: Foo is an example field of Plug. Edit plug_types.go to
-                  remove/update
+              brokenMapper:
+                description: broken mapper
                 type: string
+              changedMapper:
+                description: changed mapper
+                type: string
+              departedMapper:
+                description: departed mapper
+                type: string
+              interface:
+                description: interface
+                properties:
+                  name:
+                    description: socket name
+                    type: string
+                  namespace:
+                    description: socket namespace
+                    type: string
+                type: object
+              interfaceVersions:
+                description: interface versions
+                type: string
+              joinedMapper:
+                description: joined mapper
+                type: string
+              mapper:
+                description: mapper
+                type: string
+              meta:
+                description: meta
+                type: string
+              namespaceScope:
+                description: namspace scope
+                type: string
+              socket:
+                description: socket
+                properties:
+                  name:
+                    description: socket name
+                    type: string
+                  namespace:
+                    description: socket namespace
+                    type: string
+                type: object
+              vars:
+                description: A var is a name (e.g. FOO) associated with a field in
+                  a specific resource instance.  The field must contain a value of
+                  type string/bool/int/float, and defaults to the name field of the
+                  instance.  Any appearance of "$(FOO)" in the object spec will be
+                  replaced, after the final value of the specified field has been
+                  determined.
+                items:
+                  description: Var represents a variable whose value will be sourced
+                    from a field in a Kubernetes object.
+                  properties:
+                    fieldref:
+                      description: 'FieldRef refers to the field of the object referred
+                        to by ObjRef whose value will be extracted for use in replacing
+                        $(FOO). If unspecified, this defaults to fieldPath: $defaultFieldPath'
+                      properties:
+                        fieldPath:
+                          type: string
+                      type: object
+                    name:
+                      description: Value of identifier name e.g. FOO used in container
+                        args, annotations Appears in pod template as $(FOO)
+                      type: string
+                    objref:
+                      description: ObjRef must refer to a Kubernetes resource under
+                        the purview of this kustomization. ObjRef should use the raw
+                        name of the object (the name specified in its YAML, before
+                        addition of a namePrefix and a nameSuffix).
+                      properties:
+                        apiVersion:
+                          type: string
+                        group:
+                          type: string
+                        kind:
+                          type: string
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        version:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                  required:
+                  - name
+                  - objref
+                  type: object
+                type: array
             type: object
           status:
             description: PlugStatus defines the observed state of Plug

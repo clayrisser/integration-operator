@@ -36,10 +36,21 @@ spec:
           spec:
             description: InterfaceSpec defines the desired state of Interface
             properties:
-              foo:
-                description: Foo is an example field of Interface. Edit interface_types.go
-                  to remove/update
-                type: string
+              schemas:
+                description: schemas
+                items:
+                  properties:
+                    plugDefinition:
+                      description: plug definition
+                      type: string
+                    socketDefinition:
+                      description: socket definition
+                      type: string
+                    version:
+                      description: version
+                      type: string
+                  type: object
+                type: array
             type: object
           status:
             description: InterfaceStatus defines the observed state of Interface

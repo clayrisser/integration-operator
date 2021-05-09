@@ -28,8 +28,19 @@ type InterfaceSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Interface. Edit interface_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// schemas
+	Schemas []*InterfaceSpecSchema `json:"schemas,omitempty"`
+}
+
+type InterfaceSpecSchema struct {
+	// version
+	Version string `json:"version,omitempty"`
+
+	// plug definition
+	PlugDefinition string `json:"plugDefinition,omitempty"`
+
+	// socket definition
+	SocketDefinition string `json:"socketDefinition,omitempty"`
 }
 
 // InterfaceStatus defines the observed state of Interface

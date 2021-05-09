@@ -1,7 +1,13 @@
 {
     "cSpell.words": [
+        "finalizers",
+        "integrationv",
         "kubebuilder",
         "kubernetes",
+        "kustomize",
+        "logr",
+        "metav",
+        "rbac",
         "sigs"
     ]
 }

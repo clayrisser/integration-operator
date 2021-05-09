@@ -18,6 +18,7 @@ package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -28,8 +29,43 @@ type SocketSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Socket. Edit socket_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// interface
+	Interface PlugSpecSocket `json:"interface,omitempty"`
+
+	// interface versions
+	InterfaceVersions string `json:"interfaceVersions,omitempty"`
+
+	// limit
+	Limit int32 `json:"limit,omitempty"`
+
+	// namspace scope
+	NamespaceScope string `json:"namespaceScope,omitempty"`
+
+	// A var is a name (e.g. FOO) associated
+	// with a field in a specific resource instance.  The field must
+	// contain a value of type string/bool/int/float, and defaults to the name field
+	// of the instance.  Any appearance of "$(FOO)" in the object
+	// spec will be replaced, after the final
+	// value of the specified field has been determined.
+	Vars []kustomizeTypes.Var `json:"vars,omitempty" yaml:"vars,omitempty"`
+
+	// meta
+	Meta string `json:"meta,omitempty"`
+
+	// mapper
+	Mapper string `json:"mapper,omitempty"`
+
+	// joined mapper
+	JoinedMapper string `json:"joinedMapper,omitempty"`
+
+	// changed mapper
+	ChangedMapper string `json:"changedMapper,omitempty"`
+
+	// departed mapper
+	DepartedMapper string `json:"departedMapper,omitempty"`
+
+	// broken mapper
+	BrokenMapper string `json:"brokenMapper,omitempty"`
 }
 
 // SocketStatus defines the observed state of Socket

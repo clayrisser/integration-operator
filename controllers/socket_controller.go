@@ -49,9 +49,6 @@ type SocketReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("socket", req.NamespacedName)
-
-	// your logic here
-
 	return ctrl.Result{}, nil
 }
 
