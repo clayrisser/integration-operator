@@ -12,6 +12,8 @@ docker-push:
 operator-framework-%:
 	@$(MAKE) -f operator-framework.mk $(shell echo $@ | sed "s/operator-framework-//")
 
-.PHONY: generate manifests
+.PHONY: generate manifests install-crds uninstall-crds
 generate: operator-framework-generate
+install-crds: generate operator-framework-install
 manifests: generate operator-framework-manifests
+uninstall-crds: generate operator-framework-uninstall
