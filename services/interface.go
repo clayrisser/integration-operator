@@ -1,7 +1,9 @@
 package services
 
-type InterfaceService struct{}
+type InterfaceService struct {
+	s *Services
+}
 
-func (i *InterfaceService) GetInterface() {
-
+func NewInterfaceService(services *Services) *InterfaceService {
+	return &InterfaceService{s: services}
 }

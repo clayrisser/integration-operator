@@ -50,33 +50,42 @@ type PlugReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	s := services.NewServices(&ctx, &req)
 	_ = r.Log.WithValues("plug", req.NamespacedName)
+
+	result := ctrl.Result{}
 
 	plug := &integrationv1alpha2.Plug{}
 	err := r.Get(ctx, req.NamespacedName, plug)
 	if err != nil {
-		return ctrl.Result{}, err
+		return result, nil
 	}
 
 	socket := &integrationv1alpha2.Socket{}
-	err = r.Get(ctx, services.EnsureNamespacedName(req, &plug.Spec.Socket), socket)
+	err = r.Get(ctx, s.Util.EnsureNamespacedName(&plug.Spec.Socket), socket)
 	if err != nil {
-		return ctrl.Result{}, err
+		return result, nil
 	}
 
 	plugInterface := &integrationv1alpha2.Interface{}
-	err = r.Get(ctx, services.EnsureNamespacedName(req, &plug.Spec.Interface), plugInterface)
+	err = r.Get(ctx, s.Util.EnsureNamespacedName(&plug.Spec.Interface), plugInterface)
 	if err != nil {
-		return ctrl.Result{}, err
+		return result, nil
 	}
 
 	socketInterface := &integrationv1alpha2.Interface{}
-	err = r.Get(ctx, services.EnsureNamespacedName(req, &socket.Spec.Interface), socketInterface)
+	err = r.Get(ctx, s.Util.EnsureNamespacedName(&socket.Spec.Interface), socketInterface)
 	if err != nil {
-		return ctrl.Result{}, err
+		return result, nil
 	}
 
-	return ctrl.Result{}, nil
+	// created
+	// joined
+	// changed
+	// departed
+	// broken
+
+	return result, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
