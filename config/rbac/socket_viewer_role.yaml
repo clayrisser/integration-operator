@@ -1,0 +1,20 @@
+# permissions for end users to view sockets.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: socket-viewer-role
+rules:
+- apiGroups:
+  - integration.siliconhills.dev
+  resources:
+  - sockets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - integration.siliconhills.dev
+  resources:
+  - sockets/status
+  verbs:
+  - get

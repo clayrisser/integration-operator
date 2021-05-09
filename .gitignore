@@ -1,0 +1,18 @@
+# operator framework
+!vendor/**/zz_generated.*
+*.dll
+*.dylib
+*.exe
+*.exe~
+*.out
+*.so
+*.swo
+*.swp
+*.test
+*~
+.idea
+bin
+testbin/*
+
+# custom
+integration-operator

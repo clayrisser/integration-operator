@@ -1,0 +1,24 @@
+# permissions for end users to edit interfaces.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: interface-editor-role
+rules:
+- apiGroups:
+  - integration.siliconhills.dev
+  resources:
+  - interfaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - integration.siliconhills.dev
+  resources:
+  - interfaces/status
+  verbs:
+  - get

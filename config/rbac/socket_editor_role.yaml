@@ -1,0 +1,24 @@
+# permissions for end users to edit sockets.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: socket-editor-role
+rules:
+- apiGroups:
+  - integration.siliconhills.dev
+  resources:
+  - sockets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - integration.siliconhills.dev
+  resources:
+  - sockets/status
+  verbs:
+  - get
