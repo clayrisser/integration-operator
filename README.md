@@ -41,7 +41,7 @@ this can be overcome with converters, but that is beyond the scope of this analo
 Let's say I have an express application that needs to **integrate** with a mongo database. The express deployment will have a **plug** with
 a mongo **interface** and the mongo deployment will have a **socket** with a mongo **interface**. If the **interface** of the **socket** is
 a postgres **interface** then the integration will fail. In other words, you cannot connect a mongo **plug** to a postgres **socket**. That
-would be like trying to plug a Type A **plug** into a Type D **socket**.
+would be like trying to plug a US Type A **plug** into an Indian Type D **socket**.
 
 ### diagram
 
