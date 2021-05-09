@@ -30,10 +30,10 @@ type PlugSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// socket
-	Socket PlugSpecSocket `json:"socket,omitempty"`
+	Socket NamespacedName `json:"socket,omitempty"`
 
 	// interface
-	Interface PlugSpecSocket `json:"interface,omitempty"`
+	Interface NamespacedName `json:"interface,omitempty"`
 
 	// interface versions
 	InterfaceVersions string `json:"interfaceVersions,omitempty"`
@@ -66,22 +66,6 @@ type PlugSpec struct {
 
 	// broken mapper
 	BrokenMapper string `json:"brokenMapper,omitempty"`
-}
-
-type PlugSpecSocket struct {
-	// socket name
-	Name string `json:"name,omitempty"`
-
-	// socket namespace
-	Namespace string `json:"namespace,omitempty"`
-}
-
-type PlugSpecInterface struct {
-	// interface name
-	Name string `json:"name,omitempty"`
-
-	// interface namespace
-	Namespace string `json:"namespace,omitempty"`
 }
 
 // PlugStatus defines the observed state of Plug

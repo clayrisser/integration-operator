@@ -30,7 +30,7 @@ type SocketSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// interface
-	Interface PlugSpecSocket `json:"interface,omitempty"`
+	Interface NamespacedName `json:"interface,omitempty"`
 
 	// interface versions
 	InterfaceVersions string `json:"interfaceVersions,omitempty"`

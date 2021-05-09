@@ -49,11 +49,13 @@ spec:
                 description: interface
                 properties:
                   name:
-                    description: socket name
+                    description: name
                     type: string
                   namespace:
-                    description: socket namespace
+                    description: namespace
                     type: string
+                required:
+                - name
                 type: object
               interfaceVersions:
                 description: interface versions
@@ -74,11 +76,13 @@ spec:
                 description: socket
                 properties:
                   name:
-                    description: socket name
+                    description: name
                     type: string
                   namespace:
-                    description: socket namespace
+                    description: namespace
                     type: string
+                required:
+                - name
                 type: object
               vars:
                 description: A var is a name (e.g. FOO) associated with a field in

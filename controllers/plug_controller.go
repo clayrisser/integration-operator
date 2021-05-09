@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
+	"github.com/silicon-hills/integration-operator/services"
 )
 
 // PlugReconciler reconciles a Plug object
@@ -50,11 +51,31 @@ type PlugReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("plug", req.NamespacedName)
+
 	plug := &integrationv1alpha2.Plug{}
 	err := r.Get(ctx, req.NamespacedName, plug)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
+	socket := &integrationv1alpha2.Socket{}
+	err = r.Get(ctx, services.EnsureNamespacedName(req, &plug.Spec.Socket), socket)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	plugInterface := &integrationv1alpha2.Interface{}
+	err = r.Get(ctx, services.EnsureNamespacedName(req, &plug.Spec.Interface), plugInterface)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	socketInterface := &integrationv1alpha2.Interface{}
+	err = r.Get(ctx, services.EnsureNamespacedName(req, &socket.Spec.Interface), socketInterface)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
