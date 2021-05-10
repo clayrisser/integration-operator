@@ -7,13 +7,19 @@ package coupler
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 )
 
 type Coupler struct {
 	Options  CouplerOptions
 	Finished bool
 	bus      *Bus
+	closeCh  chan os.Signal
+	ctx      context.Context
+	cancel   context.CancelFunc
 }
 
 type CouplerOptions struct {
@@ -22,14 +28,20 @@ type CouplerOptions struct {
 }
 
 func NewCoupler(options CouplerOptions) *Coupler {
+	closeCh := make(chan os.Signal, 1)
+	signal.Notify(closeCh, os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Coupler{
 		Finished: false,
 		Options:  options,
 		bus:      NewBus(),
+		cancel:   cancel,
+		closeCh:  closeCh,
+		ctx:      ctx,
 	}
 }
 
-func (c *Coupler) Run(ctx context.Context) {
+func (c *Coupler) Start() {
 	wg := sync.WaitGroup{}
 	for i := 0; i < c.Options.MaxWorkers; i++ {
 		wg.Add(1)
@@ -47,7 +59,7 @@ func (c *Coupler) Run(ctx context.Context) {
 			for {
 				event := Event{}
 				select {
-				case <-ctx.Done():
+				case <-c.ctx.Done():
 					c.bus.Teardown()
 					close(brokenCh)
 					close(changedCh)
@@ -75,4 +87,13 @@ func (c *Coupler) Run(ctx context.Context) {
 			}
 		}()
 	}
+}
+
+func (c *Coupler) Stop() {
+	c.cancel()
+}
+
+func (c *Coupler) Wait() {
+	<-c.closeCh
+	c.Stop()
 }
