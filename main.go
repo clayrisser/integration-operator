@@ -33,6 +33,7 @@ import (
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/controllers"
+	"github.com/silicon-hills/integration-operator/coupler"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -118,4 +119,11 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+
+	setupLog.Info("starting coupler")
+	c := coupler.NewCoupler(coupler.Options{
+		MaxQueueSize: 99,
+		MaxWorkers:   1,
+	})
+	c.Start()
 }

@@ -1,6 +1,9 @@
 {
     "cSpell.words": [
+        "Readyz",
+        "clientgoscheme",
         "finalizers",
+        "healthz",
         "integrationv",
         "kubebuilder",
         "kubernetes",

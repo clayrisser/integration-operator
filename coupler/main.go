@@ -14,7 +14,7 @@ import (
 )
 
 type Coupler struct {
-	Options  CouplerOptions
+	Options  Options
 	Finished bool
 	bus      *Bus
 	closeCh  chan os.Signal
@@ -22,12 +22,12 @@ type Coupler struct {
 	cancel   context.CancelFunc
 }
 
-type CouplerOptions struct {
+type Options struct {
 	MaxQueueSize int
 	MaxWorkers   int
 }
 
-func NewCoupler(options CouplerOptions) *Coupler {
+func NewCoupler(options Options) *Coupler {
 	closeCh := make(chan os.Signal, 1)
 	signal.Notify(closeCh, os.Interrupt, syscall.SIGTERM)
 	ctx, cancel := context.WithCancel(context.Background())
