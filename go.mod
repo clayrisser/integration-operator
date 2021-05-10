@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/go-logr/logr v0.3.0
+	github.com/go-resty/resty/v2 v2.6.0
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.2
 	k8s.io/apimachinery v0.20.2

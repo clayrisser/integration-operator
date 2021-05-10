@@ -11,6 +11,7 @@
         "logr",
         "metav",
         "rbac",
+        "resty",
         "sigs",
         "siliconhills"
     ]

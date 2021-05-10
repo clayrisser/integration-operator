@@ -17,19 +17,19 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnJoined: func(data interface{}) {
 			d := data.(struct {
-				plug    *integrationv1alpha2.Plug
-				socket  *integrationv1alpha2.Socket
-				payload interface{}
+				plug   *integrationv1alpha2.Plug
+				socket *integrationv1alpha2.Socket
+				config []byte
 			})
-			handlers.HandleJoined(d.plug, d.socket, d.payload)
+			handlers.HandleJoined(d.plug, d.socket, d.config)
 		},
 		OnPlugChanged: func(data interface{}) {
 			d := data.(struct {
-				plug    *integrationv1alpha2.Plug
-				socket  *integrationv1alpha2.Socket
-				payload interface{}
+				plug   *integrationv1alpha2.Plug
+				socket *integrationv1alpha2.Socket
+				config []byte
 			})
-			handlers.HandlePlugChanged(d.plug, d.socket, d.payload)
+			handlers.HandlePlugChanged(d.plug, d.socket, d.config)
 		},
 		OnSocketCreated: func(data interface{}) {
 			d := data.(struct {
@@ -39,11 +39,11 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnSocketChanged: func(data interface{}) {
 			d := data.(struct {
-				plug    *integrationv1alpha2.Plug
-				socket  *integrationv1alpha2.Socket
-				payload interface{}
+				plug   *integrationv1alpha2.Plug
+				socket *integrationv1alpha2.Socket
+				config []byte
 			})
-			handlers.HandleSocketChanged(d.plug, d.socket, d.payload)
+			handlers.HandleSocketChanged(d.plug, d.socket, d.config)
 		},
 		OnDeparted: func(data interface{}) {
 			handlers.HandleDeparted(nil, nil, nil)

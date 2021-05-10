@@ -73,9 +73,9 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		coupler.GlobalCoupler.CreatedSocket(struct{ socket *integrationv1alpha2.Socket }{socket})
 	} else {
 		coupler.GlobalCoupler.ChangedSocket(struct {
-			plug    *integrationv1alpha2.Plug
-			socket  *integrationv1alpha2.Socket
-			payload coupler.Payload
+			plug   *integrationv1alpha2.Plug
+			socket *integrationv1alpha2.Socket
+			config coupler.Config
 		}{nil, socket, []byte("")})
 	}
 

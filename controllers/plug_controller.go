@@ -84,15 +84,15 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if plug.Generation <= 1 {
 		coupler.GlobalCoupler.CreatedPlug(struct{ plug *integrationv1alpha2.Plug }{plug})
 		coupler.GlobalCoupler.Joined(struct {
-			plug    *integrationv1alpha2.Plug
-			socket  *integrationv1alpha2.Socket
-			payload coupler.Payload
+			plug   *integrationv1alpha2.Plug
+			socket *integrationv1alpha2.Socket
+			config coupler.Config
 		}{plug, socket, []byte("")})
 	} else {
 		coupler.GlobalCoupler.ChangedPlug(struct {
-			plug    *integrationv1alpha2.Plug
-			socket  *integrationv1alpha2.Socket
-			payload coupler.Payload
+			plug   *integrationv1alpha2.Plug
+			socket *integrationv1alpha2.Socket
+			config coupler.Config
 		}{plug, socket, []byte("")})
 	}
 
