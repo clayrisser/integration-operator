@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 )
 
 type Coupler struct {
@@ -45,17 +46,17 @@ func (c *Coupler) Start() {
 	wg := sync.WaitGroup{}
 	for i := 0; i < c.Options.MaxWorkers; i++ {
 		wg.Add(1)
+		brokenCh := make(chan Event, c.Options.MaxQueueSize)
+		changedCh := make(chan Event, c.Options.MaxQueueSize)
+		createdCh := make(chan Event, c.Options.MaxQueueSize)
+		departedCh := make(chan Event, c.Options.MaxQueueSize)
+		joinedCh := make(chan Event, c.Options.MaxQueueSize)
+		c.bus.Sub(BrokenTopic, brokenCh)
+		c.bus.Sub(ChangedTopic, changedCh)
+		c.bus.Sub(CreatedTopic, createdCh)
+		c.bus.Sub(DepartedTopic, departedCh)
+		c.bus.Sub(JoinedTopic, joinedCh)
 		go func() {
-			brokenCh := make(chan Event, c.Options.MaxQueueSize)
-			changedCh := make(chan Event, c.Options.MaxQueueSize)
-			createdCh := make(chan Event, c.Options.MaxQueueSize)
-			departedCh := make(chan Event, c.Options.MaxQueueSize)
-			joinedCh := make(chan Event, c.Options.MaxQueueSize)
-			c.bus.Sub(Broken, brokenCh)
-			c.bus.Sub(Changed, changedCh)
-			c.bus.Sub(Created, createdCh)
-			c.bus.Sub(Departed, departedCh)
-			c.bus.Sub(Joined, joinedCh)
 			for {
 				event := Event{}
 				select {
@@ -86,6 +87,7 @@ func (c *Coupler) Start() {
 				}
 			}
 		}()
+		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -96,4 +98,24 @@ func (c *Coupler) Stop() {
 func (c *Coupler) Wait() {
 	<-c.closeCh
 	c.Stop()
+}
+
+func (c *Coupler) Created(data interface{}) {
+	c.bus.Pub(CreatedTopic, data)
+}
+
+func (c *Coupler) Joined(data interface{}) {
+	c.bus.Pub(JoinedTopic, data)
+}
+
+func (c *Coupler) Changed(data interface{}) {
+	c.bus.Pub(ChangedTopic, data)
+}
+
+func (c *Coupler) Departed(data interface{}) {
+	c.bus.Pub(DepartedTopic, data)
+}
+
+func (c *Coupler) Broken(data interface{}) {
+	c.bus.Pub(BrokenTopic, data)
 }

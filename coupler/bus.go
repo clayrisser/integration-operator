@@ -9,11 +9,11 @@ import "sync"
 type Topic int
 
 const (
-	Created Topic = iota + 1
-	Joined
-	Changed
-	Departed
-	Broken
+	CreatedTopic Topic = iota + 1
+	JoinedTopic
+	ChangedTopic
+	DepartedTopic
+	BrokenTopic
 )
 
 type Event struct {
