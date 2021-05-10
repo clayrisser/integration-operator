@@ -1,7 +1,6 @@
 package services
 
 type Services struct {
-	Events   *EventsService
 	Intrface *InterfaceService
 	Plug     *PlugService
 	Util     *UtilService
@@ -9,7 +8,6 @@ type Services struct {
 
 func NewServices() *Services {
 	services := &Services{}
-	services.Events = NewEventsService(services)
 	services.Intrface = NewInterfaceService(services)
 	services.Plug = NewPlugService(services)
 	services.Util = NewUtilService(services)

@@ -16,7 +16,15 @@ const (
 	BrokenTopic
 )
 
+type Kind int
+
+const (
+	PlugKind Kind = iota + 1
+	SocketKind
+)
+
 type Event struct {
+	Kind  Kind
 	Data  interface{}
 	Topic Topic
 }
@@ -48,7 +56,7 @@ func (b *Bus) Teardown() {
 	b.subscribers = map[Topic][](chan<- Event){}
 }
 
-func (b *Bus) Pub(topic Topic, data interface{}) {
+func (b *Bus) Pub(topic Topic, kind Kind, data interface{}) {
 	b.rm.RLock()
 	if channels, found := b.subscribers[topic]; found {
 		go func(event Event, channels [](chan<- Event)) {
@@ -57,7 +65,7 @@ func (b *Bus) Pub(topic Topic, data interface{}) {
 					ch <- event
 				}
 			}
-		}(Event{Topic: topic, Data: data}, append([](chan<- Event){}, channels...))
+		}(Event{Topic: topic, Data: data, Kind: kind}, append([](chan<- Event){}, channels...))
 	}
 	b.rm.RUnlock()
 }

@@ -29,7 +29,7 @@ import (
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/coupler"
-	integrationServices "github.com/silicon-hills/integration-operator/services"
+	"github.com/silicon-hills/integration-operator/services"
 )
 
 // PlugReconciler reconciles a Plug object
@@ -53,7 +53,7 @@ type PlugReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	s := integrationServices.NewServices()
+	s := services.NewServices()
 	_ = r.Log.WithValues("plug", req.NamespacedName)
 
 	result := ctrl.Result{}
@@ -83,17 +83,17 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	if plug.Generation <= 1 {
-		coupler.GlobalCoupler.Created(struct{ plug *integrationv1alpha2.Plug }{plug})
-		coupler.GlobalCoupler.Joined(struct {
-			plug   *integrationv1alpha2.Plug
-			socket *integrationv1alpha2.Socket
-			data   []byte
+		coupler.GlobalCoupler.CreatedPlug(struct{ plug *integrationv1alpha2.Plug }{plug})
+		coupler.GlobalCoupler.JoinedPlug(struct {
+			plug    *integrationv1alpha2.Plug
+			socket  *integrationv1alpha2.Socket
+			payload coupler.Payload
 		}{plug, socket, []byte("")})
 	} else {
-		coupler.GlobalCoupler.Changed(struct {
-			plug   *integrationv1alpha2.Plug
-			socket *integrationv1alpha2.Socket
-			data   []byte
+		coupler.GlobalCoupler.ChangedPlug(struct {
+			plug    *integrationv1alpha2.Plug
+			socket  *integrationv1alpha2.Socket
+			payload coupler.Payload
 		}{plug, socket, []byte("")})
 	}
 	return result, nil
@@ -105,7 +105,7 @@ func filterPredicate() predicate.Predicate {
 			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			coupler.GlobalCoupler.Departed(struct{}{})
+			coupler.GlobalCoupler.DepartedPlug(struct{}{})
 			return !e.DeleteStateUnknown
 		},
 	}
