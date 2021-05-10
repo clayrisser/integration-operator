@@ -25,14 +25,11 @@ func (h *Handlers) HandlePlugChanged(plug *integrationv1alpha2.Plug, socket *int
 
 func (h *Handlers) HandleSocketCreated(socket *integrationv1alpha2.Socket) {}
 
-func (h *Handlers) HandleSocketJoined(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload Payload) {
-}
-
 func (h *Handlers) HandleSocketChanged(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload Payload) {
 }
 
-func (h *Handlers) HandleDeparted() {
+func (h *Handlers) HandleDeparted(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload Payload) {
 }
 
-func (h *Handlers) HandleBroken(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload Payload) {
+func (h *Handlers) HandleBroken(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket) {
 }
