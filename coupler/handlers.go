@@ -17,19 +17,13 @@ func NewHandlers() *Handlers {
 
 func (h *Handlers) HandlePlugCreated(plug *integrationv1alpha2.Plug) {}
 
-func (h *Handlers) HandlePlugJoined(socket *integrationv1alpha2.Socket, plug *integrationv1alpha2.Plug, payload Payload) {
+func (h *Handlers) HandleJoined(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload Payload) {
 }
 
-func (h *Handlers) HandlePlugChanged(socket *integrationv1alpha2.Socket, plug *integrationv1alpha2.Plug, payload Payload) {
+func (h *Handlers) HandlePlugChanged(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload Payload) {
 }
 
-func (h *Handlers) HandlePlugDeparted() {
-}
-
-func (h *Handlers) HandlePlugBroken(socket *integrationv1alpha2.Socket, plug *integrationv1alpha2.Plug, payload Payload) {
-}
-
-func (h *Handlers) HandleSocketCreated(plug *integrationv1alpha2.Plug) {}
+func (h *Handlers) HandleSocketCreated(socket *integrationv1alpha2.Socket) {}
 
 func (h *Handlers) HandleSocketJoined(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload Payload) {
 }
@@ -37,8 +31,8 @@ func (h *Handlers) HandleSocketJoined(plug *integrationv1alpha2.Plug, socket *in
 func (h *Handlers) HandleSocketChanged(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload Payload) {
 }
 
-func (h *Handlers) HandleSocketDeparted() {
+func (h *Handlers) HandleDeparted() {
 }
 
-func (h *Handlers) HandleSocketBroken(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload Payload) {
+func (h *Handlers) HandleBroken(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket, payload Payload) {
 }

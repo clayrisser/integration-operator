@@ -23,8 +23,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
+	"github.com/silicon-hills/integration-operator/coupler"
+	"github.com/silicon-hills/integration-operator/services"
 )
 
 // SocketReconciler reconciles a Socket object
@@ -49,12 +54,51 @@ type SocketReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("socket", req.NamespacedName)
-	return ctrl.Result{}, nil
+	s := services.NewServices()
+	result := ctrl.Result{}
+
+	socket := &integrationv1alpha2.Socket{}
+	err := r.Get(ctx, req.NamespacedName, socket)
+	if err != nil {
+		return result, nil
+	}
+
+	socketInterface := &integrationv1alpha2.Interface{}
+	err = r.Get(ctx, s.Util.EnsureNamespacedName(&socket.Spec.Interface, req.Namespace), socketInterface)
+	if err != nil {
+		return result, nil
+	}
+
+	if socket.Generation <= 1 {
+		coupler.GlobalCoupler.CreatedSocket(struct{ socket *integrationv1alpha2.Socket }{socket})
+	} else {
+		coupler.GlobalCoupler.ChangedSocket(struct {
+			plug    *integrationv1alpha2.Plug
+			socket  *integrationv1alpha2.Socket
+			payload coupler.Payload
+		}{nil, socket, []byte("")})
+	}
+
+	return result, nil
+}
+
+func filterSocketPredicate() predicate.Predicate {
+	return predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			coupler.GlobalCoupler.Departed(nil)
+			return !e.DeleteStateUnknown
+		},
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SocketReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&integrationv1alpha2.Socket{}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
+		WithEventFilter(filterSocketPredicate()).
 		Complete(r)
 }

@@ -32,16 +32,13 @@ type Options struct {
 }
 
 type Events struct {
-	OnPlugBroken     func(data interface{})
-	OnPlugChanged    func(data interface{})
-	OnPlugCreated    func(data interface{})
-	OnPlugDeparted   func(data interface{})
-	OnPlugJoined     func(data interface{})
-	OnSocketBroken   func(data interface{})
-	OnSocketChanged  func(data interface{})
-	OnSocketCreated  func(data interface{})
-	OnSocketDeparted func(data interface{})
-	OnSocketJoined   func(data interface{})
+	OnBroken        func(data interface{})
+	OnDeparted      func(data interface{})
+	OnJoined        func(data interface{})
+	OnPlugChanged   func(data interface{})
+	OnPlugCreated   func(data interface{})
+	OnSocketChanged func(data interface{})
+	OnSocketCreated func(data interface{})
 }
 
 func NewCoupler(options Options) *Coupler {
@@ -106,14 +103,8 @@ func (c *Coupler) Start() {
 						}
 					}
 				case event = <-joinedCh:
-					if event.Kind == PlugKind {
-						if c.events.OnPlugJoined != nil {
-							c.events.OnPlugJoined(event.Data)
-						}
-					} else if event.Kind == SocketKind {
-						if c.events.OnSocketJoined != nil {
-							c.events.OnSocketJoined(event.Data)
-						}
+					if c.events.OnJoined != nil {
+						c.events.OnJoined(event.Data)
 					}
 				case event = <-changedCh:
 					if event.Kind == PlugKind {
@@ -126,24 +117,12 @@ func (c *Coupler) Start() {
 						}
 					}
 				case event = <-departedCh:
-					if event.Kind == PlugKind {
-						if c.events.OnPlugDeparted != nil {
-							c.events.OnPlugDeparted(event.Data)
-						}
-					} else if event.Kind == SocketKind {
-						if c.events.OnSocketDeparted != nil {
-							c.events.OnSocketDeparted(event.Data)
-						}
+					if c.events.OnDeparted != nil {
+						c.events.OnDeparted(event.Data)
 					}
 				case event = <-brokenCh:
-					if event.Kind == PlugKind {
-						if c.events.OnPlugBroken != nil {
-							c.events.OnPlugBroken(event.Data)
-						}
-					} else if event.Kind == SocketKind {
-						if c.events.OnSocketBroken != nil {
-							c.events.OnSocketBroken(event.Data)
-						}
+					if c.events.OnBroken != nil {
+						c.events.OnBroken(event.Data)
 					}
 				}
 			}
@@ -165,40 +144,28 @@ func (c *Coupler) CreatedPlug(data interface{}) {
 	c.bus.Pub(CreatedTopic, PlugKind, data)
 }
 
-func (c *Coupler) JoinedPlug(data interface{}) {
-	c.bus.Pub(JoinedTopic, PlugKind, data)
+func (c *Coupler) Joined(data interface{}) {
+	c.bus.Pub(JoinedTopic, 0, data)
 }
 
 func (c *Coupler) ChangedPlug(data interface{}) {
 	c.bus.Pub(ChangedTopic, PlugKind, data)
 }
 
-func (c *Coupler) DepartedPlug(data interface{}) {
-	c.bus.Pub(DepartedTopic, PlugKind, data)
-}
-
-func (c *Coupler) BrokenPlug(data interface{}) {
-	c.bus.Pub(BrokenTopic, PlugKind, data)
-}
-
 func (c *Coupler) CreatedSocket(data interface{}) {
 	c.bus.Pub(CreatedTopic, SocketKind, data)
-}
-
-func (c *Coupler) JoinedSocket(data interface{}) {
-	c.bus.Pub(JoinedTopic, SocketKind, data)
 }
 
 func (c *Coupler) ChangedSocket(data interface{}) {
 	c.bus.Pub(ChangedTopic, SocketKind, data)
 }
 
-func (c *Coupler) DepartedSocket(data interface{}) {
-	c.bus.Pub(DepartedTopic, SocketKind, data)
+func (c *Coupler) Departed(data interface{}) {
+	c.bus.Pub(DepartedTopic, 0, data)
 }
 
-func (c *Coupler) BrokenSocket(data interface{}) {
-	c.bus.Pub(BrokenTopic, SocketKind, data)
+func (c *Coupler) Broken(data interface{}) {
+	c.bus.Pub(BrokenTopic, 0, data)
 }
 
 func CreateGlobalCoupler() Coupler {
@@ -214,13 +181,46 @@ func CreateGlobalCoupler() Coupler {
 			})
 			handlers.HandlePlugCreated(d.plug)
 		},
-		OnPlugBroken: func(data interface{}) {
+		OnJoined: func(data interface{}) {
 			d := data.(struct {
-				socket  *integrationv1alpha2.Socket
 				plug    *integrationv1alpha2.Plug
+				socket  *integrationv1alpha2.Socket
 				payload interface{}
 			})
-			handlers.HandlePlugBroken(d.socket, d.plug, d.payload)
+			handlers.HandleJoined(d.plug, d.socket, d.payload)
+		},
+		OnPlugChanged: func(data interface{}) {
+			d := data.(struct {
+				plug    *integrationv1alpha2.Plug
+				socket  *integrationv1alpha2.Socket
+				payload interface{}
+			})
+			handlers.HandlePlugChanged(d.plug, d.socket, d.payload)
+		},
+		OnSocketCreated: func(data interface{}) {
+			d := data.(struct {
+				socket *integrationv1alpha2.Socket
+			})
+			handlers.HandleSocketCreated(d.socket)
+		},
+		OnSocketChanged: func(data interface{}) {
+			d := data.(struct {
+				plug    *integrationv1alpha2.Plug
+				socket  *integrationv1alpha2.Socket
+				payload interface{}
+			})
+			handlers.HandleSocketChanged(d.plug, d.socket, d.payload)
+		},
+		OnDeparted: func(data interface{}) {
+			handlers.HandleDeparted()
+		},
+		OnBroken: func(data interface{}) {
+			d := data.(struct {
+				plug    *integrationv1alpha2.Plug
+				socket  *integrationv1alpha2.Socket
+				payload interface{}
+			})
+			handlers.HandleBroken(d.plug, d.socket, d.payload)
 		},
 	})
 	return globalCoupler

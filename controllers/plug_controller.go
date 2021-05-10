@@ -53,9 +53,8 @@ type PlugReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	s := services.NewServices()
 	_ = r.Log.WithValues("plug", req.NamespacedName)
-
+	s := services.NewServices()
 	result := ctrl.Result{}
 
 	plug := &integrationv1alpha2.Plug{}
@@ -84,7 +83,7 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	if plug.Generation <= 1 {
 		coupler.GlobalCoupler.CreatedPlug(struct{ plug *integrationv1alpha2.Plug }{plug})
-		coupler.GlobalCoupler.JoinedPlug(struct {
+		coupler.GlobalCoupler.Joined(struct {
 			plug    *integrationv1alpha2.Plug
 			socket  *integrationv1alpha2.Socket
 			payload coupler.Payload
@@ -96,16 +95,17 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			payload coupler.Payload
 		}{plug, socket, []byte("")})
 	}
+
 	return result, nil
 }
 
-func filterPredicate() predicate.Predicate {
+func filterPlugPredicate() predicate.Predicate {
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			coupler.GlobalCoupler.DepartedPlug(struct{}{})
+			coupler.GlobalCoupler.Departed(nil)
 			return !e.DeleteStateUnknown
 		},
 	}
@@ -116,6 +116,6 @@ func (r *PlugReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&integrationv1alpha2.Plug{}).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
-		WithEventFilter(filterPredicate()).
+		WithEventFilter(filterPlugPredicate()).
 		Complete(r)
 }
