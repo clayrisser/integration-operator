@@ -6,7 +6,7 @@ package coupler
 
 import (
 	"context"
-	"fmt"
+	"math"
 	"os"
 	"os/signal"
 	"sync"
@@ -26,6 +26,11 @@ type Coupler struct {
 type Options struct {
 	MaxQueueSize int
 	MaxWorkers   int
+	OnBroken     func(data interface{})
+	OnChanged    func(data interface{})
+	OnCreated    func(data interface{})
+	OnDeparted   func(data interface{})
+	OnJoined     func(data interface{})
 }
 
 func NewCoupler(options Options) *Coupler {
@@ -42,15 +47,26 @@ func NewCoupler(options Options) *Coupler {
 	}
 }
 
+var GlobalCoupler Coupler = *NewCoupler(Options{
+	MaxQueueSize: 99,
+	MaxWorkers:   1,
+})
+
+func (c *Coupler) Configure(options Options) {
+	c.Options = options
+}
+
 func (c *Coupler) Start() {
 	wg := sync.WaitGroup{}
-	for i := 0; i < c.Options.MaxWorkers; i++ {
+	maxWorkers := int(math.Max(float64(c.Options.MaxWorkers), 1))
+	maxQueueSize := int(math.Max(float64(c.Options.MaxQueueSize), 1))
+	for i := 0; i < maxWorkers; i++ {
 		wg.Add(1)
-		brokenCh := make(chan Event, c.Options.MaxQueueSize)
-		changedCh := make(chan Event, c.Options.MaxQueueSize)
-		createdCh := make(chan Event, c.Options.MaxQueueSize)
-		departedCh := make(chan Event, c.Options.MaxQueueSize)
-		joinedCh := make(chan Event, c.Options.MaxQueueSize)
+		brokenCh := make(chan Event, maxQueueSize)
+		changedCh := make(chan Event, maxQueueSize)
+		createdCh := make(chan Event, maxQueueSize)
+		departedCh := make(chan Event, maxQueueSize)
+		joinedCh := make(chan Event, maxQueueSize)
 		c.bus.Sub(BrokenTopic, brokenCh)
 		c.bus.Sub(ChangedTopic, changedCh)
 		c.bus.Sub(CreatedTopic, createdCh)
@@ -70,20 +86,25 @@ func (c *Coupler) Start() {
 					c.Finished = true
 					wg.Done()
 				case event = <-createdCh:
-					fmt.Println(event.Data)
-					fmt.Println(event.Topic)
+					if c.Options.OnCreated != nil {
+						c.Options.OnCreated(event.Data)
+					}
 				case event = <-joinedCh:
-					fmt.Println(event.Data)
-					fmt.Println(event.Topic)
+					if c.Options.OnJoined != nil {
+						c.Options.OnJoined(event.Data)
+					}
 				case event = <-changedCh:
-					fmt.Println(event.Data)
-					fmt.Println(event.Topic)
+					if c.Options.OnChanged != nil {
+						c.Options.OnChanged(event.Data)
+					}
 				case event = <-departedCh:
-					fmt.Println(event.Data)
-					fmt.Println(event.Topic)
+					if c.Options.OnDeparted != nil {
+						c.Options.OnDeparted(event.Data)
+					}
 				case event = <-brokenCh:
-					fmt.Println(event.Data)
-					fmt.Println(event.Topic)
+					if c.Options.OnBroken != nil {
+						c.Options.OnBroken(event.Data)
+					}
 				}
 			}
 		}()

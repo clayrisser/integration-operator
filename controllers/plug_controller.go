@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
+	"github.com/silicon-hills/integration-operator/coupler"
 	integrationServices "github.com/silicon-hills/integration-operator/services"
 )
 
@@ -82,24 +83,29 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	if plug.Generation <= 1 {
-		s.Events.HandlePlugCreated(plug)
-		// do stuff
-		s.Events.HandlePlugJoined(socket, plug, []byte(""))
+		coupler.GlobalCoupler.Created(struct{ plug *integrationv1alpha2.Plug }{plug})
+		coupler.GlobalCoupler.Joined(struct {
+			plug   *integrationv1alpha2.Plug
+			socket *integrationv1alpha2.Socket
+			data   []byte
+		}{plug, socket, []byte("")})
 	} else {
-		// do stuff
-		s.Events.HandlePlugChanged(socket, plug, []byte(""))
+		coupler.GlobalCoupler.Changed(struct {
+			plug   *integrationv1alpha2.Plug
+			socket *integrationv1alpha2.Socket
+			data   []byte
+		}{plug, socket, []byte("")})
 	}
 	return result, nil
 }
 
 func filterPredicate() predicate.Predicate {
-	s := integrationServices.NewServices()
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			s.Events.HandlePlugDeparted()
+			coupler.GlobalCoupler.Departed(struct{}{})
 			return !e.DeleteStateUnknown
 		},
 	}

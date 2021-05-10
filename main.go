@@ -115,16 +115,15 @@ func main() {
 	}
 
 	setupLog.Info("starting coupler")
-	c := coupler.NewCoupler(coupler.Options{
+	coupler.GlobalCoupler.Configure(coupler.Options{
 		MaxQueueSize: 99,
 		MaxWorkers:   1,
 	})
-	c.Start()
+	coupler.GlobalCoupler.Start()
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-
 }
