@@ -7,6 +7,7 @@ package coupler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"math"
 	"os"
 	"os/signal"
@@ -14,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 )
 
@@ -230,4 +232,27 @@ func (c *Coupler) Departed() {
 
 func (c *Coupler) Broken() {
 	c.bus.Pub(BrokenTopic, 0, struct{}{})
+}
+
+func (c *Coupler) GetConfig(endpoint string) (Config, error) {
+	client := resty.New()
+	rCh := make(chan *resty.Response)
+	errCh := make(chan error)
+	go func() {
+		r, err := client.R().EnableTrace().SetQueryParams(map[string]string{
+			"version": "1",
+		}).Get(endpoint)
+		if err != nil {
+			errCh <- err
+		}
+		rCh <- r
+	}()
+	select {
+	case r := <-rCh:
+		return r.Body(), nil
+	case err := <-errCh:
+		return nil, err
+	case <-time.After(3 * time.Second):
+		return nil, errors.New("timeout")
+	}
 }

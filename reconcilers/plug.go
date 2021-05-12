@@ -125,10 +125,18 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 		return nil
 	}
 
-	if plug.Generation <= 1 {
-		coupler.GlobalCoupler.Joined(plug, socket, []byte(""))
+	plugConfig, err := coupler.GlobalCoupler.GetConfig(plug.Spec.ConfigEndpoint)
+	if err != nil {
+		return err
+	}
+	socketConfig, err := coupler.GlobalCoupler.GetConfig(socket.Spec.ConfigEndpoint)
+	if err != nil {
+		return err
+	}
+	if meta.FindStatusCondition(plug.Status.Conditions, "Joined").Status != "True" {
+		coupler.GlobalCoupler.Joined(plug, socket, plugConfig)
 	} else {
-		coupler.GlobalCoupler.ChangedPlug(plug, socket, []byte(""))
+		coupler.GlobalCoupler.ChangedPlug(plug, socket, socketConfig)
 	}
 
 	return nil
