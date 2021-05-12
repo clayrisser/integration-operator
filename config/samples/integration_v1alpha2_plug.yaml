@@ -2,9 +2,11 @@ apiVersion: integration.siliconhills.dev/v1alpha2
 kind: Plug
 metadata:
   name: plug-sample
+  namespace: integration-test
 spec: 
   interface:
-    name: hello
+    name: interface-sample
+    namespace: integration-test
   interfaceVersions: '*'
   meta: |
     hello: world
@@ -14,6 +16,6 @@ spec:
     howdy: meta.hello.world
   namespaceScope: '*'
   socket:
-    name: hello
-    namespace: world
+    name: socket-sample
+    namespace: integration-test
   vars: []

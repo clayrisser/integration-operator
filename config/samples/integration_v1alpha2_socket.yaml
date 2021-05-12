@@ -2,6 +2,5 @@ apiVersion: integration.siliconhills.dev/v1alpha2
 kind: Socket
 metadata:
   name: socket-sample
-spec:
-  # Add fields here
-  foo: bar
+  namespace: integration-test
+spec: {}

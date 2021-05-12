@@ -66,12 +66,6 @@ type PlugStatus struct {
 
 	// integration plug phase (Pending, Succeeded, Failed, Unknown)
 	Phase Phase `json:"phase,omitempty"`
-
-	// // integration connection joined
-	// Joined bool `json:"ready,omitempty"`
-
-	// // integration socket message
-	// Message string `json:"message,omitempty"`
 }
 
 //+kubebuilder:object:root=true

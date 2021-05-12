@@ -2,6 +2,12 @@ package coupler
 
 import (
 	"github.com/tidwall/gjson"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+)
+
+var (
+	couplerLog = ctrl.Log.WithName("coupler")
 )
 
 func CreateGlobalCoupler() Coupler {
@@ -15,7 +21,10 @@ func CreateGlobalCoupler() Coupler {
 			d := data.(struct {
 				plug []byte
 			})
-			handlers.HandlePlugCreated(gjson.Parse(string(d.plug)))
+			err := handlers.HandlePlugCreated(gjson.Parse(string(d.plug)))
+			if err != nil {
+				couplerLog.Error(err, "failed to handle plug created")
+			}
 		},
 		OnJoined: func(data interface{}) {
 			d := data.(struct {
@@ -23,11 +32,14 @@ func CreateGlobalCoupler() Coupler {
 				socket []byte
 				config []byte
 			})
-			handlers.HandleJoined(
+			err := handlers.HandleJoined(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
 			)
+			if err != nil {
+				couplerLog.Error(err, "failed to handle joined")
+			}
 		},
 		OnPlugChanged: func(data interface{}) {
 			d := data.(struct {
@@ -35,17 +47,23 @@ func CreateGlobalCoupler() Coupler {
 				socket []byte
 				config []byte
 			})
-			handlers.HandlePlugChanged(
+			err := handlers.HandlePlugChanged(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
 			)
+			if err != nil {
+				couplerLog.Error(err, "failed to handle plug changed")
+			}
 		},
 		OnSocketCreated: func(data interface{}) {
 			d := data.(struct {
 				socket []byte
 			})
-			handlers.HandleSocketCreated(gjson.Parse(string(d.socket)))
+			err := handlers.HandleSocketCreated(gjson.Parse(string(d.socket)))
+			if err != nil {
+				couplerLog.Error(err, "failed to handle socket created")
+			}
 		},
 		OnSocketChanged: func(data interface{}) {
 			d := data.(struct {
@@ -53,17 +71,26 @@ func CreateGlobalCoupler() Coupler {
 				socket []byte
 				config []byte
 			})
-			handlers.HandleSocketChanged(
+			err := handlers.HandleSocketChanged(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
 			)
+			if err != nil {
+				couplerLog.Error(err, "failed to handle socket changed")
+			}
 		},
 		OnDeparted: func(data interface{}) {
-			handlers.HandleDeparted()
+			err := handlers.HandleDeparted()
+			if err != nil {
+				couplerLog.Error(err, "failed to handle departed")
+			}
 		},
 		OnBroken: func(data interface{}) {
-			handlers.HandleBroken()
+			err := handlers.HandleBroken()
+			if err != nil {
+				couplerLog.Error(err, "failed to handle broken")
+			}
 		},
 	})
 	return globalCoupler

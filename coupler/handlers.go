@@ -6,19 +6,16 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/silicon-hills/integration-operator/services"
 	"github.com/tidwall/gjson"
 	"sigs.k8s.io/yaml"
 )
 
 type Config []byte
 
-type Handlers struct {
-	s *services.Services
-}
+type Handlers struct{}
 
 func NewHandlers() *Handlers {
-	return &Handlers{s: services.NewServices()}
+	return &Handlers{}
 }
 
 func (h *Handlers) HandlePlugCreated(plug gjson.Result) error {
@@ -31,14 +28,14 @@ func (h *Handlers) HandlePlugCreated(plug gjson.Result) error {
 	return nil
 }
 
-func (h *Handlers) HandleGetConfig() (Config, error) {
+func (h *Handlers) HandleGetConfig(endpoint string) (Config, error) {
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
 	go func() {
 		r, err := client.R().EnableTrace().SetQueryParams(map[string]string{
 			"version": "1",
-		}).Get("http://localhost:3000/config")
+		}).Get(endpoint)
 		if err != nil {
 			errCh <- err
 		}
@@ -54,27 +51,33 @@ func (h *Handlers) HandleGetConfig() (Config, error) {
 	}
 }
 
-func (h *Handlers) HandleJoined(plug gjson.Result, socket gjson.Result, config gjson.Result) {
+func (h *Handlers) HandleJoined(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
 	fmt.Println("joined")
+	return nil
 }
 
-func (h *Handlers) HandlePlugChanged(plug gjson.Result, socket gjson.Result, config gjson.Result) {
+func (h *Handlers) HandlePlugChanged(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
 	fmt.Println("plug changed")
+	return nil
 }
 
-func (h *Handlers) HandleSocketCreated(socket gjson.Result) {
+func (h *Handlers) HandleSocketCreated(socket gjson.Result) error {
 	fmt.Println("socket created")
+	return nil
 
 }
 
-func (h *Handlers) HandleSocketChanged(plug gjson.Result, socket gjson.Result, config gjson.Result) {
+func (h *Handlers) HandleSocketChanged(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
 	fmt.Println("socket changed")
+	return nil
 }
 
-func (h *Handlers) HandleDeparted() {
+func (h *Handlers) HandleDeparted() error {
 	fmt.Println("departed")
+	return nil
 }
 
-func (h *Handlers) HandleBroken() {
+func (h *Handlers) HandleBroken() error {
 	fmt.Println("broken")
+	return nil
 }

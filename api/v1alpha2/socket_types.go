@@ -66,6 +66,9 @@ type SocketStatus struct {
 
 	// integration socket phase (Pending, Succeeded, Failed, Unknown)
 	Phase Phase `json:"phase,omitempty"`
+
+	// socket is ready for coupling
+	Ready bool `json:"ready,omitempty"`
 }
 
 //+kubebuilder:object:root=true

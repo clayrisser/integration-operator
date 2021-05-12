@@ -195,6 +195,9 @@ spec:
                 description: integration socket phase (Pending, Succeeded, Failed,
                   Unknown)
                 type: string
+              ready:
+                description: socket is ready for coupling
+                type: boolean
             required:
             - conditions
             type: object

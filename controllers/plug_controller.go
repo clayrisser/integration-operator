@@ -57,45 +57,15 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	_ = r.Log.WithValues("plug", req.NamespacedName)
 	s := services.NewServices()
 	result := ctrl.Result{}
-	operatorNamespace := s.Util.GetOperatorNamespace()
-
 	plug := &integrationv1alpha2.Plug{}
 	err := r.Get(ctx, req.NamespacedName, plug)
 	if err != nil {
 		return result, nil
 	}
-
-	if plug.Generation <= 1 {
-		err = coupler.GlobalCoupler.CreatedPlug(plug)
-		if err != nil {
-			return result, nil
-		}
-	}
-
-	socket := &integrationv1alpha2.Socket{}
-	err = r.Get(ctx, s.Util.EnsureNamespacedName(&plug.Spec.Socket, req.Namespace), socket)
+	err = s.Plug.Reconcile(r.Client, ctx, req, &result, plug)
 	if err != nil {
-		return result, nil
+		return result, err
 	}
-
-	plugInterface := &integrationv1alpha2.Interface{}
-	err = r.Get(ctx, s.Util.EnsureNamespacedName(&plug.Spec.Interface, operatorNamespace), plugInterface)
-	if err != nil {
-		return result, nil
-	}
-
-	socketInterface := &integrationv1alpha2.Interface{}
-	err = r.Get(ctx, s.Util.EnsureNamespacedName(&socket.Spec.Interface, req.Namespace), socketInterface)
-	if err != nil {
-		return result, nil
-	}
-
-	if plug.Generation <= 1 {
-		coupler.GlobalCoupler.Joined(plug, socket, []byte(""))
-	} else {
-		coupler.GlobalCoupler.ChangedPlug(plug, socket, []byte(""))
-	}
-
 	return result, nil
 }
 

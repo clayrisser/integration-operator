@@ -2,6 +2,5 @@ apiVersion: integration.siliconhills.dev/v1alpha2
 kind: Interface
 metadata:
   name: interface-sample
-spec:
-  # Add fields here
-  foo: bar
+  namespace: integration-test
+spec: {}

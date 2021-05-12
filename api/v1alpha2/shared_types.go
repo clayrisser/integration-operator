@@ -4,9 +4,9 @@ type Phase string
 
 const (
 	PendingPhase   Phase = "Pending"
-	SucceededPhase       = "Succeeded"
-	FailedPhase          = "Failed"
-	UnknownPhase         = "Unknown"
+	SucceededPhase Phase = "Succeeded"
+	FailedPhase    Phase = "Failed"
+	UnknownPhase   Phase = "Unknown"
 )
 
 type NamespacedName struct {
