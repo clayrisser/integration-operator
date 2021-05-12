@@ -52,26 +52,20 @@ type SocketSpec struct {
 	// meta
 	Meta string `json:"meta,omitempty"`
 
-	// mapper
-	Mapper string `json:"mapper,omitempty"`
+	// config mapper
+	ConfigMapper string `json:"configMapper,omitempty"`
 
-	// joined mapper
-	JoinedMapper string `json:"joinedMapper,omitempty"`
-
-	// changed mapper
-	ChangedMapper string `json:"changedMapper,omitempty"`
-
-	// departed mapper
-	DepartedMapper string `json:"departedMapper,omitempty"`
-
-	// broken mapper
-	BrokenMapper string `json:"brokenMapper,omitempty"`
+	// config endpoint
+	ConfigEndpoint string `json:"configEndpoint,omitempty"`
 }
 
 // SocketStatus defines the observed state of Socket
 type SocketStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Conditions represent the latest available observations of an object's state
+	Conditions []metav1.Condition `json:"conditions"`
+
+	// integration socket phase (Pending, Succeeded, Failed, Unknown)
+	Phase Phase `json:"phase,omitempty"`
 }
 
 //+kubebuilder:object:root=true

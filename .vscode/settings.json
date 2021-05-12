@@ -3,8 +3,11 @@
         "Readyz",
         "clientgoscheme",
         "finalizers",
+        "ghodss",
+        "gjson",
         "healthz",
         "integrationv",
+        "kube",
         "kubebuilder",
         "kubernetes",
         "kustomize",
@@ -13,6 +16,7 @@
         "rbac",
         "resty",
         "sigs",
-        "siliconhills"
+        "siliconhills",
+        "tidwall"
     ]
 }

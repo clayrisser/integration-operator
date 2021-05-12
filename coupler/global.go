@@ -1,6 +1,8 @@
 package coupler
 
-import integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
+import (
+	"github.com/tidwall/gjson"
+)
 
 func CreateGlobalCoupler() Coupler {
 	handlers := NewHandlers()
@@ -11,49 +13,57 @@ func CreateGlobalCoupler() Coupler {
 	globalCoupler.RegisterEvents(&Events{
 		OnPlugCreated: func(data interface{}) {
 			d := data.(struct {
-				plug *integrationv1alpha2.Plug
+				plug []byte
 			})
-			handlers.HandlePlugCreated(d.plug)
+			handlers.HandlePlugCreated(gjson.Parse(string(d.plug)))
 		},
 		OnJoined: func(data interface{}) {
 			d := data.(struct {
-				plug   *integrationv1alpha2.Plug
-				socket *integrationv1alpha2.Socket
+				plug   []byte
+				socket []byte
 				config []byte
 			})
-			handlers.HandleJoined(d.plug, d.socket, d.config)
+			handlers.HandleJoined(
+				gjson.Parse(string(d.plug)),
+				gjson.Parse(string(d.socket)),
+				gjson.Parse(string(d.config)),
+			)
 		},
 		OnPlugChanged: func(data interface{}) {
 			d := data.(struct {
-				plug   *integrationv1alpha2.Plug
-				socket *integrationv1alpha2.Socket
+				plug   []byte
+				socket []byte
 				config []byte
 			})
-			handlers.HandlePlugChanged(d.plug, d.socket, d.config)
+			handlers.HandlePlugChanged(
+				gjson.Parse(string(d.plug)),
+				gjson.Parse(string(d.socket)),
+				gjson.Parse(string(d.config)),
+			)
 		},
 		OnSocketCreated: func(data interface{}) {
 			d := data.(struct {
-				socket *integrationv1alpha2.Socket
+				socket []byte
 			})
-			handlers.HandleSocketCreated(d.socket)
+			handlers.HandleSocketCreated(gjson.Parse(string(d.socket)))
 		},
 		OnSocketChanged: func(data interface{}) {
 			d := data.(struct {
-				plug   *integrationv1alpha2.Plug
-				socket *integrationv1alpha2.Socket
+				plug   []byte
+				socket []byte
 				config []byte
 			})
-			handlers.HandleSocketChanged(d.plug, d.socket, d.config)
+			handlers.HandleSocketChanged(
+				gjson.Parse(string(d.plug)),
+				gjson.Parse(string(d.socket)),
+				gjson.Parse(string(d.config)),
+			)
 		},
 		OnDeparted: func(data interface{}) {
-			handlers.HandleDeparted(nil, nil, nil)
+			handlers.HandleDeparted()
 		},
 		OnBroken: func(data interface{}) {
-			d := data.(struct {
-				plug   *integrationv1alpha2.Plug
-				socket *integrationv1alpha2.Socket
-			})
-			handlers.HandleBroken(d.plug, d.socket)
+			handlers.HandleBroken()
 		},
 	})
 	return globalCoupler

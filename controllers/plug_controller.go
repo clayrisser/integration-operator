@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
@@ -56,11 +57,19 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	_ = r.Log.WithValues("plug", req.NamespacedName)
 	s := services.NewServices()
 	result := ctrl.Result{}
+	operatorNamespace := s.Util.GetOperatorNamespace()
 
 	plug := &integrationv1alpha2.Plug{}
 	err := r.Get(ctx, req.NamespacedName, plug)
 	if err != nil {
 		return result, nil
+	}
+
+	if plug.Generation <= 1 {
+		err = coupler.GlobalCoupler.CreatedPlug(plug)
+		if err != nil {
+			return result, nil
+		}
 	}
 
 	socket := &integrationv1alpha2.Socket{}
@@ -70,7 +79,7 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	plugInterface := &integrationv1alpha2.Interface{}
-	err = r.Get(ctx, s.Util.EnsureNamespacedName(&plug.Spec.Interface, req.Namespace), plugInterface)
+	err = r.Get(ctx, s.Util.EnsureNamespacedName(&plug.Spec.Interface, operatorNamespace), plugInterface)
 	if err != nil {
 		return result, nil
 	}
@@ -82,18 +91,9 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	if plug.Generation <= 1 {
-		coupler.GlobalCoupler.CreatedPlug(struct{ plug *integrationv1alpha2.Plug }{plug})
-		coupler.GlobalCoupler.Joined(struct {
-			plug   *integrationv1alpha2.Plug
-			socket *integrationv1alpha2.Socket
-			config coupler.Config
-		}{plug, socket, []byte("")})
+		coupler.GlobalCoupler.Joined(plug, socket, []byte(""))
 	} else {
-		coupler.GlobalCoupler.ChangedPlug(struct {
-			plug   *integrationv1alpha2.Plug
-			socket *integrationv1alpha2.Socket
-			config coupler.Config
-		}{plug, socket, []byte("")})
+		coupler.GlobalCoupler.ChangedPlug(plug, socket, []byte(""))
 	}
 
 	return result, nil
@@ -105,7 +105,7 @@ func filterPlugPredicate() predicate.Predicate {
 			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			coupler.GlobalCoupler.Departed(nil)
+			coupler.GlobalCoupler.Departed()
 			return !e.DeleteStateUnknown
 		},
 	}

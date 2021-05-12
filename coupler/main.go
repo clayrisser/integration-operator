@@ -6,12 +6,15 @@ package coupler
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 )
 
 type Coupler struct {
@@ -138,30 +141,93 @@ func (c *Coupler) Wait() {
 	c.Stop()
 }
 
-func (c *Coupler) CreatedPlug(data interface{}) {
-	c.bus.Pub(CreatedTopic, PlugKind, data)
+func (c *Coupler) CreatedPlug(plug *integrationv1alpha2.Plug) error {
+	b, err := json.Marshal(plug)
+	if err != nil {
+		return err
+	}
+	c.bus.Pub(CreatedTopic, PlugKind, struct{ plug []byte }{plug: b})
+	return nil
 }
 
-func (c *Coupler) Joined(data interface{}) {
-	c.bus.Pub(JoinedTopic, 0, data)
+func (c *Coupler) Joined(
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	config Config,
+) error {
+	bPlug, err := json.Marshal(plug)
+	if err != nil {
+		return err
+	}
+	bSocket, err := json.Marshal(socket)
+	if err != nil {
+		return err
+	}
+	c.bus.Pub(JoinedTopic, 0, struct {
+		plug   []byte
+		socket []byte
+		config []byte
+	}{plug: bPlug, socket: bSocket, config: config})
+	return nil
 }
 
-func (c *Coupler) ChangedPlug(data interface{}) {
-	c.bus.Pub(ChangedTopic, PlugKind, data)
+func (c *Coupler) ChangedPlug(
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	config Config,
+) error {
+	bPlug, err := json.Marshal(plug)
+	if err != nil {
+		return err
+	}
+	bSocket, err := json.Marshal(socket)
+	if err != nil {
+		return err
+	}
+	c.bus.Pub(JoinedTopic, 0, struct {
+		plug   []byte
+		socket []byte
+		config []byte
+	}{plug: bPlug, socket: bSocket, config: config})
+	return nil
 }
 
-func (c *Coupler) CreatedSocket(data interface{}) {
-	c.bus.Pub(CreatedTopic, SocketKind, data)
+func (c *Coupler) CreatedSocket(
+	socket *integrationv1alpha2.Socket,
+) error {
+	b, err := json.Marshal(socket)
+	if err != nil {
+		return err
+	}
+	c.bus.Pub(CreatedTopic, PlugKind, struct{ socket []byte }{socket: b})
+	return nil
 }
 
-func (c *Coupler) ChangedSocket(data interface{}) {
-	c.bus.Pub(ChangedTopic, SocketKind, data)
+func (c *Coupler) ChangedSocket(
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	config Config,
+) error {
+	bPlug, err := json.Marshal(plug)
+	if err != nil {
+		return err
+	}
+	bSocket, err := json.Marshal(socket)
+	if err != nil {
+		return err
+	}
+	c.bus.Pub(JoinedTopic, 0, struct {
+		plug   []byte
+		socket []byte
+		config []byte
+	}{plug: bPlug, socket: bSocket, config: config})
+	return nil
 }
 
-func (c *Coupler) Departed(data interface{}) {
-	c.bus.Pub(DepartedTopic, 0, data)
+func (c *Coupler) Departed() {
+	c.bus.Pub(DepartedTopic, 0, struct{}{})
 }
 
-func (c *Coupler) Broken(data interface{}) {
-	c.bus.Pub(BrokenTopic, 0, data)
+func (c *Coupler) Broken() {
+	c.bus.Pub(BrokenTopic, 0, struct{}{})
 }

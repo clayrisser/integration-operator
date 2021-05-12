@@ -8,7 +8,8 @@ spec:
   interfaceVersions: '*'
   meta: |
     hello: world
-  mapper: |
+  configEndpoint: http://localhost:3000/config
+  configMapper: |
     hello: resource.spec.meta.hello.world
     howdy: meta.hello.world
   namespaceScope: '*'

@@ -52,26 +52,26 @@ type PlugSpec struct {
 	// meta
 	Meta string `json:"meta,omitempty"`
 
-	// mapper
-	Mapper string `json:"mapper,omitempty"`
+	// config mapper
+	ConfigMapper string `json:"configMapper,omitempty"`
 
-	// joined mapper
-	JoinedMapper string `json:"joinedMapper,omitempty"`
-
-	// changed mapper
-	ChangedMapper string `json:"changedMapper,omitempty"`
-
-	// departed mapper
-	DepartedMapper string `json:"departedMapper,omitempty"`
-
-	// broken mapper
-	BrokenMapper string `json:"brokenMapper,omitempty"`
+	// config endpoint
+	ConfigEndpoint string `json:"configEndpoint,omitempty"`
 }
 
 // PlugStatus defines the observed state of Plug
 type PlugStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Conditions represent the latest available observations of an object's state
+	Conditions []metav1.Condition `json:"conditions"`
+
+	// integration plug phase (Pending, Succeeded, Failed, Unknown)
+	Phase Phase `json:"phase,omitempty"`
+
+	// // integration connection joined
+	// Joined bool `json:"ready,omitempty"`
+
+	// // integration socket message
+	// Message string `json:"message,omitempty"`
 }
 
 //+kubebuilder:object:root=true

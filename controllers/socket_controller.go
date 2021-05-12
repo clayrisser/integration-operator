@@ -70,13 +70,9 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if socket.Generation <= 1 {
-		coupler.GlobalCoupler.CreatedSocket(struct{ socket *integrationv1alpha2.Socket }{socket})
+		coupler.GlobalCoupler.CreatedSocket(socket)
 	} else {
-		coupler.GlobalCoupler.ChangedSocket(struct {
-			plug   *integrationv1alpha2.Plug
-			socket *integrationv1alpha2.Socket
-			config coupler.Config
-		}{nil, socket, []byte("")})
+		coupler.GlobalCoupler.ChangedSocket(nil, socket, []byte(""))
 	}
 
 	return result, nil
@@ -88,7 +84,7 @@ func filterSocketPredicate() predicate.Predicate {
 			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			coupler.GlobalCoupler.Departed(nil)
+			coupler.GlobalCoupler.Departed()
 			return !e.DeleteStateUnknown
 		},
 	}

@@ -17,5 +17,5 @@ build: operator-framework-build
 generate: operator-framework-generate
 install-crds: generate operator-framework-install
 manifests: generate operator-framework-manifests
-run: operator-framework-run
+start: operator-framework-run
 uninstall-crds: generate operator-framework-uninstall
