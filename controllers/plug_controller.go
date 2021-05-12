@@ -30,7 +30,7 @@ import (
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/coupler"
-	"github.com/silicon-hills/integration-operator/services"
+	"github.com/silicon-hills/integration-operator/reconcilers"
 )
 
 // PlugReconciler reconciles a Plug object
@@ -53,16 +53,16 @@ type PlugReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
-func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("plug", req.NamespacedName)
-	s := services.NewServices()
+func (p *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = p.Log.WithValues("plug", req.NamespacedName)
+	r := reconcilers.NewReconcilers()
 	result := ctrl.Result{}
 	plug := &integrationv1alpha2.Plug{}
-	err := r.Get(ctx, req.NamespacedName, plug)
+	err := p.Get(ctx, req.NamespacedName, plug)
 	if err != nil {
 		return result, nil
 	}
-	err = s.Plug.Reconcile(r.Client, ctx, req, &result, plug)
+	err = r.Plug.Reconcile(p.Client, ctx, req, &result, plug)
 	if err != nil {
 		return result, err
 	}

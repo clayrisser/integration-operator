@@ -1,4 +1,4 @@
-package services
+package reconcilers
 
 import (
 	"context"
@@ -10,19 +10,20 @@ import (
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/coupler"
 
+	"github.com/silicon-hills/integration-operator/services"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type PlugService struct {
-	s *Services
+type PlugReconciler struct {
+	s *services.Services
 }
 
-func NewPlugService(services *Services) *PlugService {
-	return &PlugService{s: services}
+func NewPlugReconciler(s *services.Services) *PlugReconciler {
+	return &PlugReconciler{s: s}
 }
 
-func (p *PlugService) Reconcile(client client.Client, ctx context.Context, req ctrl.Request, result *ctrl.Result, plug *integrationv1alpha2.Plug) error {
+func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, req ctrl.Request, result *ctrl.Result, plug *integrationv1alpha2.Plug) error {
 	operatorNamespace := p.s.Util.GetOperatorNamespace()
 
 	if plug.Generation <= 1 {
