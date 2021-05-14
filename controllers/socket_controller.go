@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
-	"github.com/silicon-hills/integration-operator/services"
+	"github.com/silicon-hills/integration-operator/reconcilers"
 )
 
 // SocketReconciler reconciles a Socket object
@@ -51,55 +51,19 @@ type SocketReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
-func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("socket", req.NamespacedName)
-	s := services.NewServices()
+func (s *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = s.Log.WithValues("socket", req.NamespacedName)
+	r := reconcilers.NewReconcilers()
 	result := ctrl.Result{}
-
 	socket := &integrationv1alpha2.Socket{}
-	err := r.Get(ctx, req.NamespacedName, socket)
+	err := s.Get(ctx, req.NamespacedName, socket)
 	if err != nil {
 		return result, nil
 	}
-
-	if socket.Generation <= 1 {
-		patch := client.MergeFrom(socket.DeepCopy())
-		socket.Status.Phase = integrationv1alpha2.PendingPhase
-		socket.Status.Ready = false
-		err = r.Patch(ctx, socket, patch)
-		if err != nil {
-			return result, err
-		}
-		// err = coupler.GlobalCoupler.CreatedSocket(socket)
-		if err != nil {
-			return result, nil
-		}
+	err = r.Socket.Reconcile(s.Client, ctx, req, &result, socket)
+	if err != nil {
+		return result, err
 	}
-
-	socketInterface := &integrationv1alpha2.Interface{}
-	err = r.Get(ctx, s.Util.EnsureNamespacedName(&socket.Spec.Interface, req.Namespace), socketInterface)
-	// if err != nil {
-	// 	patch := client.MergeFrom(socket.DeepCopy())
-	// 	socket.Status.Phase = integrationv1alpha2.FailedPhase
-	// 	meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
-	// 		Type:    "Broken",
-	// 		Status:  "True",
-	// 		Reason:  err.Error(),
-	// 		Message: "socket broken",
-	// 	})
-	// 	err = r.Patch(ctx, socket, patch)
-	// 	if err != nil {
-	// 		return result, err
-	// 	}
-	// 	return result, nil
-	// }
-
-	if socket.Generation <= 1 {
-		// coupler.GlobalCoupler.CreatedSocket(socket)
-	} else {
-		// coupler.GlobalCoupler.ChangedSocket(nil, socket, []byte(""))
-	}
-
 	return result, nil
 }
 

@@ -186,7 +186,7 @@ func (c *Coupler) ChangedPlug(
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(JoinedTopic, 0, struct {
+	c.bus.Pub(ChangedTopic, PlugKind, struct {
 		plug   []byte
 		socket []byte
 		config []byte
@@ -201,7 +201,7 @@ func (c *Coupler) CreatedSocket(
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(CreatedTopic, PlugKind, struct{ socket []byte }{socket: b})
+	c.bus.Pub(CreatedTopic, SocketKind, struct{ socket []byte }{socket: b})
 	return nil
 }
 
@@ -218,7 +218,7 @@ func (c *Coupler) ChangedSocket(
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(JoinedTopic, 0, struct {
+	c.bus.Pub(ChangedTopic, SocketKind, struct {
 		plug   []byte
 		socket []byte
 		config []byte
