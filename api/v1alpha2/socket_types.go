@@ -69,6 +69,9 @@ type SocketStatus struct {
 
 	// socket is ready for coupling
 	Ready bool `json:"ready,omitempty"`
+
+	// number of plugs coupled to this socket
+	PlugsCoupledCount int `json:"plugCoupledCount,omitempty"`
 }
 
 //+kubebuilder:object:root=true

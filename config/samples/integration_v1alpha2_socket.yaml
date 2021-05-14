@@ -3,4 +3,7 @@ kind: Socket
 metadata:
   name: socket-sample
   namespace: integration-test
-spec: {}
+spec: 
+  interface:
+    name: interface-sample
+    namespace: integration-test

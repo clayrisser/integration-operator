@@ -26,13 +26,13 @@ func CreateGlobalCoupler() Coupler {
 				couplerLog.Error(err, "failed to handle plug created")
 			}
 		},
-		OnJoined: func(data interface{}) {
+		OnPlugJoined: func(data interface{}) {
 			d := data.(struct {
 				plug   []byte
 				socket []byte
 				config []byte
 			})
-			err := handlers.HandleJoined(
+			err := handlers.HandlePlugJoined(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
@@ -63,6 +63,21 @@ func CreateGlobalCoupler() Coupler {
 			err := handlers.HandleSocketCreated(gjson.Parse(string(d.socket)))
 			if err != nil {
 				couplerLog.Error(err, "failed to handle socket created")
+			}
+		},
+		OnSocketJoined: func(data interface{}) {
+			d := data.(struct {
+				plug   []byte
+				socket []byte
+				config []byte
+			})
+			err := handlers.HandleSocketJoined(
+				gjson.Parse(string(d.plug)),
+				gjson.Parse(string(d.socket)),
+				gjson.Parse(string(d.config)),
+			)
+			if err != nil {
+				couplerLog.Error(err, "failed to handle joined")
 			}
 		},
 		OnSocketChanged: func(data interface{}) {

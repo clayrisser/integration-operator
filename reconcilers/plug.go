@@ -26,7 +26,8 @@ func NewPlugReconciler(s *services.Services) *PlugReconciler {
 func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, req ctrl.Request, result *ctrl.Result, plug *integrationv1alpha2.Plug) error {
 	operatorNamespace := p.s.Util.GetOperatorNamespace()
 
-	if plug.Generation <= 1 {
+	joinedCondition := meta.FindStatusCondition(plug.Status.Conditions, "Joined")
+	if plug.Generation <= 1 && joinedCondition == nil {
 		plug.Status.Phase = integrationv1alpha2.PendingPhase
 		meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
 			Message:            "plug created",
@@ -66,21 +67,21 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 	socket := &integrationv1alpha2.Socket{}
 	err = client.Get(ctx, p.s.Util.EnsureNamespacedName(&plug.Spec.Socket, req.Namespace), socket)
 	if err != nil {
-		if strings.Index(err.Error(), "not found") <= -1 {
-			plug.Status.Phase = integrationv1alpha2.FailedPhase
-			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
-				Message:            err.Error(),
-				ObservedGeneration: plug.Generation,
-				Reason:             "Error",
-				Status:             "False",
-				Type:               "Joined",
-			})
-		} else {
+		if strings.Index(err.Error(), "not found") > -1 {
 			plug.Status.Phase = integrationv1alpha2.PendingPhase
 			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
 				Message:            "waiting for socket to be created",
 				ObservedGeneration: plug.Generation,
 				Reason:             "SocketNotCreated",
+				Status:             "False",
+				Type:               "Joined",
+			})
+		} else {
+			plug.Status.Phase = integrationv1alpha2.FailedPhase
+			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
+				Message:            err.Error(),
+				ObservedGeneration: plug.Generation,
+				Reason:             "Error",
 				Status:             "False",
 				Type:               "Joined",
 			})
@@ -125,16 +126,59 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 		return nil
 	}
 
-	plugConfig, err := coupler.GlobalCoupler.GetConfig(plug.Spec.ConfigEndpoint)
-	if err != nil {
-		return err
+	plug.Status.Phase = integrationv1alpha2.PendingPhase
+	meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
+		Message:            "coupling to socket",
+		ObservedGeneration: plug.Generation,
+		Reason:             "CouplingInProcess",
+		Status:             "False",
+		Type:               "Joined",
+	})
+	err = client.Status().Update(ctx, plug)
+
+	var plugConfig []byte
+	if plug.Spec.ConfigEndpoint != "" {
+		plugConfig, err = coupler.GlobalCoupler.GetConfig(plug.Spec.ConfigEndpoint)
+		if err != nil {
+			plug.Status.Phase = integrationv1alpha2.FailedPhase
+			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
+				Message:            err.Error(),
+				ObservedGeneration: plug.Generation,
+				Reason:             "Error",
+				Status:             "False",
+				Type:               "Joined",
+			})
+			err = client.Status().Update(ctx, plug)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
 	}
-	socketConfig, err := coupler.GlobalCoupler.GetConfig(socket.Spec.ConfigEndpoint)
-	if err != nil {
-		return err
+
+	var socketConfig []byte
+	if socket.Spec.ConfigEndpoint != "" {
+		socketConfig, err = coupler.GlobalCoupler.GetConfig(socket.Spec.ConfigEndpoint)
+		if err != nil {
+			plug.Status.Phase = integrationv1alpha2.FailedPhase
+			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
+				Message:            err.Error(),
+				ObservedGeneration: plug.Generation,
+				Reason:             "Error",
+				Status:             "False",
+				Type:               "Joined",
+			})
+			err = client.Status().Update(ctx, plug)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
 	}
+
 	if meta.FindStatusCondition(plug.Status.Conditions, "Joined").Status != "True" {
-		coupler.GlobalCoupler.Joined(plug, socket, plugConfig)
+		coupler.GlobalCoupler.JoinedPlug(plug, socket, socketConfig)
+		coupler.GlobalCoupler.JoinedSocket(plug, socket, plugConfig)
 	} else {
 		coupler.GlobalCoupler.ChangedPlug(plug, socket, socketConfig)
 	}

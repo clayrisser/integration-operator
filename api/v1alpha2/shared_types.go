@@ -3,9 +3,10 @@ package v1alpha2
 type Phase string
 
 const (
-	PendingPhase   Phase = "Pending"
-	SucceededPhase Phase = "Succeeded"
 	FailedPhase    Phase = "Failed"
+	PendingPhase   Phase = "Pending"
+	ReadyPhase     Phase = "Ready"
+	SucceededPhase Phase = "Succeeded"
 	UnknownPhase   Phase = "Unknown"
 )
 

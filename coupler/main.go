@@ -37,11 +37,12 @@ type Options struct {
 type Events struct {
 	OnBroken        func(data interface{})
 	OnDeparted      func(data interface{})
-	OnJoined        func(data interface{})
 	OnPlugChanged   func(data interface{})
 	OnPlugCreated   func(data interface{})
+	OnPlugJoined    func(data interface{})
 	OnSocketChanged func(data interface{})
 	OnSocketCreated func(data interface{})
+	OnSocketJoined  func(data interface{})
 }
 
 func NewCoupler(options Options) *Coupler {
@@ -106,8 +107,14 @@ func (c *Coupler) Start() {
 						}
 					}
 				case event = <-joinedCh:
-					if c.events.OnJoined != nil {
-						c.events.OnJoined(event.Data)
+					if event.Kind == PlugKind {
+						if c.events.OnPlugJoined != nil {
+							c.events.OnPlugJoined(event.Data)
+						}
+					} else if event.Kind == SocketKind {
+						if c.events.OnSocketJoined != nil {
+							c.events.OnSocketJoined(event.Data)
+						}
 					}
 				case event = <-changedCh:
 					if event.Kind == PlugKind {
@@ -152,7 +159,7 @@ func (c *Coupler) CreatedPlug(plug *integrationv1alpha2.Plug) error {
 	return nil
 }
 
-func (c *Coupler) Joined(
+func (c *Coupler) JoinedPlug(
 	plug *integrationv1alpha2.Plug,
 	socket *integrationv1alpha2.Socket,
 	config Config,
@@ -165,7 +172,7 @@ func (c *Coupler) Joined(
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(JoinedTopic, 0, struct {
+	c.bus.Pub(JoinedTopic, PlugKind, struct {
 		plug   []byte
 		socket []byte
 		config []byte
@@ -202,6 +209,27 @@ func (c *Coupler) CreatedSocket(
 		return err
 	}
 	c.bus.Pub(CreatedTopic, SocketKind, struct{ socket []byte }{socket: b})
+	return nil
+}
+
+func (c *Coupler) JoinedSocket(
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	config Config,
+) error {
+	bPlug, err := json.Marshal(plug)
+	if err != nil {
+		return err
+	}
+	bSocket, err := json.Marshal(socket)
+	if err != nil {
+		return err
+	}
+	c.bus.Pub(JoinedTopic, SocketKind, struct {
+		plug   []byte
+		socket []byte
+		config []byte
+	}{plug: bPlug, socket: bSocket, config: config})
 	return nil
 }
 

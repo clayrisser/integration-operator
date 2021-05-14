@@ -195,6 +195,9 @@ spec:
                 description: integration socket phase (Pending, Succeeded, Failed,
                   Unknown)
                 type: string
+              plugCoupledCount:
+                description: number of plugs coupled to this socket
+                type: integer
               ready:
                 description: socket is ready for coupling
                 type: boolean

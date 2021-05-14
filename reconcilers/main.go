@@ -5,14 +5,16 @@ import (
 )
 
 type Reconcilers struct {
-	Plug   *PlugReconciler
-	Socket *SocketReconciler
+	Plug      *PlugReconciler
+	Socket    *SocketReconciler
+	Interface *InterfaceReconciler
 }
 
 func NewReconcilers() *Reconcilers {
 	s := services.NewServices()
 	return &Reconcilers{
-		Plug:   NewPlugReconciler(s),
-		Socket: NewSocketReconciler(s),
+		Interface: NewInterfaceReconciler(s),
+		Plug:      NewPlugReconciler(s),
+		Socket:    NewSocketReconciler(s),
 	}
 }

@@ -25,8 +25,23 @@ func (h *Handlers) HandlePlugCreated(plug gjson.Result) error {
 	return nil
 }
 
-func (h *Handlers) HandleJoined(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
-	fmt.Println("joined")
+func (h *Handlers) HandlePlugJoined(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
+	fmt.Printf("plug joined\n")
+	y, err := yaml.JSONToYAML([]byte(config.String()))
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(y))
+	return nil
+}
+
+func (h *Handlers) HandleSocketJoined(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
+	fmt.Printf("socket joined\n")
+	y, err := yaml.JSONToYAML([]byte(config.String()))
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(y))
 	return nil
 }
 
