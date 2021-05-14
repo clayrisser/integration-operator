@@ -126,6 +126,8 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 		return nil
 	}
 
+	isJoined := meta.FindStatusCondition(plug.Status.Conditions, "Joined").Status != "True"
+
 	plug.Status.Phase = integrationv1alpha2.PendingPhase
 	meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
 		Message:            "coupling to socket",
@@ -176,11 +178,116 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 		}
 	}
 
-	if meta.FindStatusCondition(plug.Status.Conditions, "Joined").Status != "True" {
-		coupler.GlobalCoupler.JoinedPlug(plug, socket, socketConfig)
-		coupler.GlobalCoupler.JoinedSocket(plug, socket, plugConfig)
+	if isJoined {
+		err = coupler.GlobalCoupler.JoinedPlug(plug, socket, socketConfig)
+		if err != nil {
+			plug.Status.Phase = integrationv1alpha2.FailedPhase
+			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
+				Message:            err.Error(),
+				ObservedGeneration: plug.Generation,
+				Reason:             "Error",
+				Status:             "False",
+				Type:               "Joined",
+			})
+			err = client.Status().Update(ctx, plug)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+		err = coupler.GlobalCoupler.JoinedSocket(plug, socket, plugConfig)
+		if err != nil {
+			plug.Status.Phase = integrationv1alpha2.FailedPhase
+			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
+				Message:            err.Error(),
+				ObservedGeneration: plug.Generation,
+				Reason:             "Error",
+				Status:             "False",
+				Type:               "Joined",
+			})
+			err = client.Status().Update(ctx, plug)
+			if err != nil {
+				return err
+			}
+			socket.Status.Phase = integrationv1alpha2.FailedPhase
+			meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
+				Message:            err.Error(),
+				ObservedGeneration: socket.Generation,
+				Reason:             "Error",
+				Status:             "False",
+				Type:               "Joined",
+			})
+			err = client.Status().Update(ctx, socket)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
 	} else {
-		coupler.GlobalCoupler.ChangedPlug(plug, socket, socketConfig)
+		err = coupler.GlobalCoupler.ChangedPlug(plug, socket, socketConfig)
+		if err != nil {
+			plug.Status.Phase = integrationv1alpha2.FailedPhase
+			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
+				Message:            err.Error(),
+				ObservedGeneration: plug.Generation,
+				Reason:             "Error",
+				Status:             "False",
+				Type:               "Joined",
+			})
+			err = client.Status().Update(ctx, plug)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+		err = coupler.GlobalCoupler.ChangedSocket(plug, socket, socketConfig)
+		if err != nil {
+			plug.Status.Phase = integrationv1alpha2.FailedPhase
+			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
+				Message:            err.Error(),
+				ObservedGeneration: plug.Generation,
+				Reason:             "Error",
+				Status:             "False",
+				Type:               "Joined",
+			})
+			err = client.Status().Update(ctx, plug)
+			if err != nil {
+				return err
+			}
+			socket.Status.Phase = integrationv1alpha2.FailedPhase
+			meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
+				Message:            err.Error(),
+				ObservedGeneration: socket.Generation,
+				Reason:             "Error",
+				Status:             "False",
+				Type:               "Joined",
+			})
+			err = client.Status().Update(ctx, socket)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	plug.Status.Phase = integrationv1alpha2.SucceededPhase
+	meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
+		Message:            "coupling succeeded",
+		ObservedGeneration: plug.Generation,
+		Reason:             "CouplingSucceeded",
+		Status:             "True",
+		Type:               "Joined",
+	})
+	err = client.Status().Update(ctx, plug)
+	if err != nil {
+		return err
+	}
+	if isJoined {
+		socket.Status.PlugsCoupledCount = socket.Status.PlugsCoupledCount + 1
+		err = client.Status().Update(ctx, socket)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

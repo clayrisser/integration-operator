@@ -50,6 +50,7 @@ func (p *SocketReconciler) Reconcile(client client.Client, ctx context.Context, 
 	err := client.Get(ctx, p.s.Util.EnsureNamespacedName(&socket.Spec.Interface, operatorNamespace), socketInterface)
 	if err != nil {
 		socket.Status.Phase = integrationv1alpha2.FailedPhase
+		socket.Status.Ready = false
 		meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
 			Message:            err.Error(),
 			ObservedGeneration: socket.Generation,
