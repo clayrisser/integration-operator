@@ -18,6 +18,7 @@ package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -66,6 +67,26 @@ type PlugStatus struct {
 
 	// integration plug phase (Pending, Succeeded, Failed, Unknown)
 	Phase Phase `json:"phase,omitempty"`
+
+	// socket coupled to plug
+	CoupledSocket CoupledSocket `json:"coupledSocket,omitempty"`
+}
+
+type CoupledSocket struct {
+	// API version of the socket
+	APIVersion string `json:"apiVersion"`
+
+	// Kind of the socket
+	Kind string `json:"kind"`
+
+	// Name of the socket
+	Name string `json:"name"`
+
+	// Namespace of the socket
+	Namespace string `json:"namespace"`
+
+	// UID of the socket
+	UID types.UID `json:"uid"`
 }
 
 //+kubebuilder:object:root=true

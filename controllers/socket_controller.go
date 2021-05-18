@@ -122,7 +122,6 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// err = coupler.GlobalCoupler.Couple(s.Client, ctx, req, &result, plug)
-
 	if err != nil {
 		return result, err
 	}

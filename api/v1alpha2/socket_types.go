@@ -18,6 +18,7 @@ package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -70,8 +71,25 @@ type SocketStatus struct {
 	// socket is ready for coupling
 	Ready bool `json:"ready,omitempty"`
 
-	// number of plugs coupled to this socket
-	PlugsCoupledCount int `json:"plugCoupledCount,omitempty"`
+	// plugs coupled to socket
+	CoupledPlugs []CoupledPlug `json:"coupledPlugs,omitempty"`
+}
+
+type CoupledPlug struct {
+	// API version of the plug
+	APIVersion string `json:"apiVersion"`
+
+	// Kind of the plug
+	Kind string `json:"kind"`
+
+	// Name of the plug
+	Name string `json:"name"`
+
+	// Namespace of the plug
+	Namespace string `json:"namespace"`
+
+	// UID of the plug
+	UID types.UID `json:"uid"`
 }
 
 //+kubebuilder:object:root=true

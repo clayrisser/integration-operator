@@ -2,6 +2,7 @@ package coupler
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -15,6 +16,8 @@ import (
 
 func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Request, result *ctrl.Result, plug *integrationv1alpha2.Plug) error {
 	operatorNamespace := c.s.Util.GetOperatorNamespace()
+
+	fmt.Println(operatorNamespace)
 
 	joinedCondition := meta.FindStatusCondition(plug.Status.Conditions, "Joined")
 	if plug.Generation <= 1 && joinedCondition == nil {
@@ -213,6 +216,28 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 			}
 			return nil
 		}
+		plug.Status.CoupledSocket = integrationv1alpha2.CoupledSocket{
+			APIVersion: socket.APIVersion,
+			Kind:       socket.Kind,
+			Name:       socket.Name,
+			Namespace:  socket.Namespace,
+			UID:        socket.UID,
+		}
+		err = client.Status().Update(ctx, plug)
+		if err != nil {
+			return err
+		}
+		socket.Status.CoupledPlugs = append(socket.Status.CoupledPlugs, integrationv1alpha2.CoupledPlug{
+			APIVersion: plug.APIVersion,
+			Kind:       plug.Kind,
+			Name:       plug.Name,
+			Namespace:  plug.Namespace,
+			UID:        plug.UID,
+		})
+		err = client.Status().Update(ctx, socket)
+		if err != nil {
+			return err
+		}
 	} else {
 		err = GlobalCoupler.ChangedPlug(plug, socket, socketConfig)
 		if err != nil {
@@ -271,13 +296,6 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 	err = client.Status().Update(ctx, plug)
 	if err != nil {
 		return err
-	}
-	if isJoined {
-		socket.Status.PlugsCoupledCount = socket.Status.PlugsCoupledCount + 1
-		err = client.Status().Update(ctx, socket)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil

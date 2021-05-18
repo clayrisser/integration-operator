@@ -191,13 +191,37 @@ spec:
                   - type
                   type: object
                 type: array
+              coupledPlugs:
+                description: plugs coupled to socket
+                items:
+                  properties:
+                    apiVersion:
+                      description: API version of the plug
+                      type: string
+                    kind:
+                      description: Kind of the plug
+                      type: string
+                    name:
+                      description: Name of the plug
+                      type: string
+                    namespace:
+                      description: Namespace of the plug
+                      type: string
+                    uid:
+                      description: UID of the plug
+                      type: string
+                  required:
+                  - apiVersion
+                  - kind
+                  - name
+                  - namespace
+                  - uid
+                  type: object
+                type: array
               phase:
                 description: integration socket phase (Pending, Succeeded, Failed,
                   Unknown)
                 type: string
-              plugCoupledCount:
-                description: number of plugs coupled to this socket
-                type: integer
               ready:
                 description: socket is ready for coupling
                 type: boolean
