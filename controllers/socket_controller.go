@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,8 +28,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
-	"github.com/silicon-hills/integration-operator/reconcilers"
+	"github.com/silicon-hills/integration-operator/coupler"
+	"github.com/silicon-hills/integration-operator/services"
 )
 
 // SocketReconciler reconciles a Socket object
@@ -51,16 +55,74 @@ type SocketReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
-func (s *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = s.Log.WithValues("socket", req.NamespacedName)
-	r := reconcilers.NewReconcilers()
+func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = r.Log.WithValues("socket", req.NamespacedName)
+	s := services.NewServices()
 	result := ctrl.Result{}
 	socket := &integrationv1alpha2.Socket{}
-	err := s.Get(ctx, req.NamespacedName, socket)
+	err := r.Get(ctx, req.NamespacedName, socket)
 	if err != nil {
 		return result, nil
 	}
-	err = r.Socket.Reconcile(s.Client, ctx, req, &result, socket)
+
+	operatorNamespace := s.Util.GetOperatorNamespace()
+
+	joinedCondition := meta.FindStatusCondition(socket.Status.Conditions, "Joined")
+	if socket.Generation <= 1 && joinedCondition == nil {
+		socket.Status.Phase = integrationv1alpha2.PendingPhase
+		socket.Status.Ready = false
+		meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
+			Message:            "socket created",
+			ObservedGeneration: socket.Generation,
+			Reason:             "SocketCreated",
+			Status:             "False",
+			Type:               "Joined",
+		})
+		err := r.Status().Update(ctx, socket)
+		if err != nil {
+			return result, err
+		}
+		err = coupler.GlobalCoupler.CreatedSocket(socket)
+		if err != nil {
+			return result, nil
+		}
+	}
+
+	socketInterface := &integrationv1alpha2.Interface{}
+	err = r.Get(ctx, s.Util.EnsureNamespacedName(&socket.Spec.Interface, operatorNamespace), socketInterface)
+	if err != nil {
+		socket.Status.Phase = integrationv1alpha2.FailedPhase
+		socket.Status.Ready = false
+		meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
+			Message:            err.Error(),
+			ObservedGeneration: socket.Generation,
+			Reason:             "Error",
+			Status:             "False",
+			Type:               "Joined",
+		})
+		err = r.Status().Update(ctx, socket)
+		if err != nil {
+			return result, err
+		}
+		return result, nil
+	}
+
+	socket.Status.Phase = integrationv1alpha2.ReadyPhase
+	socket.Status.Ready = true
+	meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
+		Message:            "socket ready",
+		ObservedGeneration: socket.Generation,
+		Reason:             "SocketReady",
+		Status:             "False",
+		Type:               "Joined",
+	})
+	err = r.Status().Update(ctx, socket)
+	if err != nil {
+		return result, err
+	}
+
+	// err = coupler.GlobalCoupler.Couple(s.Client, ctx, req, &result, plug)
+
 	if err != nil {
 		return result, err
 	}

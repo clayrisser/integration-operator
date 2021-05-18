@@ -25,7 +25,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
-	"github.com/silicon-hills/integration-operator/reconcilers"
 )
 
 // InterfaceReconciler reconciles a Interface object
@@ -48,18 +47,13 @@ type InterfaceReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
-func (i *InterfaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = i.Log.WithValues("interface", req.NamespacedName)
-	r := reconcilers.NewReconcilers()
+func (r *InterfaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = r.Log.WithValues("interface", req.NamespacedName)
 	result := ctrl.Result{}
 	intrface := &integrationv1alpha2.Interface{}
-	err := i.Get(ctx, req.NamespacedName, intrface)
+	err := r.Get(ctx, req.NamespacedName, intrface)
 	if err != nil {
 		return result, nil
-	}
-	err = r.Interface.Reconcile(i.Client, ctx, req, &result, intrface)
-	if err != nil {
-		return result, err
 	}
 	return result, nil
 }

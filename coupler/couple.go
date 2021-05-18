@@ -1,30 +1,20 @@
-package reconcilers
+package coupler
 
 import (
 	"context"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
-	"github.com/silicon-hills/integration-operator/coupler"
 
-	"github.com/silicon-hills/integration-operator/services"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type PlugReconciler struct {
-	s *services.Services
-}
-
-func NewPlugReconciler(s *services.Services) *PlugReconciler {
-	return &PlugReconciler{s: s}
-}
-
-func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, req ctrl.Request, result *ctrl.Result, plug *integrationv1alpha2.Plug) error {
-	operatorNamespace := p.s.Util.GetOperatorNamespace()
+func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Request, result *ctrl.Result, plug *integrationv1alpha2.Plug) error {
+	operatorNamespace := c.s.Util.GetOperatorNamespace()
 
 	joinedCondition := meta.FindStatusCondition(plug.Status.Conditions, "Joined")
 	if plug.Generation <= 1 && joinedCondition == nil {
@@ -40,14 +30,14 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 		if err != nil {
 			return err
 		}
-		err = coupler.GlobalCoupler.CreatedPlug(plug)
+		err = GlobalCoupler.CreatedPlug(plug)
 		if err != nil {
 			return nil
 		}
 	}
 
 	plugInterface := &integrationv1alpha2.Interface{}
-	err := client.Get(ctx, p.s.Util.EnsureNamespacedName(&plug.Spec.Interface, operatorNamespace), plugInterface)
+	err := client.Get(ctx, c.s.Util.EnsureNamespacedName(&plug.Spec.Interface, operatorNamespace), plugInterface)
 	if err != nil {
 		plug.Status.Phase = integrationv1alpha2.FailedPhase
 		meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
@@ -65,7 +55,7 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 	}
 
 	socket := &integrationv1alpha2.Socket{}
-	err = client.Get(ctx, p.s.Util.EnsureNamespacedName(&plug.Spec.Socket, req.Namespace), socket)
+	err = client.Get(ctx, c.s.Util.EnsureNamespacedName(&plug.Spec.Socket, req.Namespace), socket)
 	if err != nil {
 		if strings.Index(err.Error(), "not found") > -1 {
 			plug.Status.Phase = integrationv1alpha2.PendingPhase
@@ -109,7 +99,7 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 	}
 
 	socketInterface := &integrationv1alpha2.Interface{}
-	err = client.Get(ctx, p.s.Util.EnsureNamespacedName(&socket.Spec.Interface, req.Namespace), socketInterface)
+	err = client.Get(ctx, c.s.Util.EnsureNamespacedName(&socket.Spec.Interface, req.Namespace), socketInterface)
 	if err != nil {
 		plug.Status.Phase = integrationv1alpha2.FailedPhase
 		meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
@@ -140,7 +130,7 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 
 	var plugConfig []byte
 	if plug.Spec.ConfigEndpoint != "" {
-		plugConfig, err = coupler.GlobalCoupler.GetConfig(plug.Spec.ConfigEndpoint)
+		plugConfig, err = GlobalCoupler.GetConfig(plug.Spec.ConfigEndpoint)
 		if err != nil {
 			plug.Status.Phase = integrationv1alpha2.FailedPhase
 			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
@@ -160,7 +150,7 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 
 	var socketConfig []byte
 	if socket.Spec.ConfigEndpoint != "" {
-		socketConfig, err = coupler.GlobalCoupler.GetConfig(socket.Spec.ConfigEndpoint)
+		socketConfig, err = GlobalCoupler.GetConfig(socket.Spec.ConfigEndpoint)
 		if err != nil {
 			plug.Status.Phase = integrationv1alpha2.FailedPhase
 			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
@@ -179,7 +169,7 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 	}
 
 	if isJoined {
-		err = coupler.GlobalCoupler.JoinedPlug(plug, socket, socketConfig)
+		err = GlobalCoupler.JoinedPlug(plug, socket, socketConfig)
 		if err != nil {
 			plug.Status.Phase = integrationv1alpha2.FailedPhase
 			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
@@ -195,7 +185,7 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 			}
 			return nil
 		}
-		err = coupler.GlobalCoupler.JoinedSocket(plug, socket, plugConfig)
+		err = GlobalCoupler.JoinedSocket(plug, socket, plugConfig)
 		if err != nil {
 			plug.Status.Phase = integrationv1alpha2.FailedPhase
 			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
@@ -224,7 +214,7 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 			return nil
 		}
 	} else {
-		err = coupler.GlobalCoupler.ChangedPlug(plug, socket, socketConfig)
+		err = GlobalCoupler.ChangedPlug(plug, socket, socketConfig)
 		if err != nil {
 			plug.Status.Phase = integrationv1alpha2.FailedPhase
 			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
@@ -240,7 +230,7 @@ func (p *PlugReconciler) Reconcile(client client.Client, ctx context.Context, re
 			}
 			return nil
 		}
-		err = coupler.GlobalCoupler.ChangedSocket(plug, socket, socketConfig)
+		err = GlobalCoupler.ChangedSocket(plug, socket, socketConfig)
 		if err != nil {
 			plug.Status.Phase = integrationv1alpha2.FailedPhase
 			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
