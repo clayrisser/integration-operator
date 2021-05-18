@@ -258,8 +258,23 @@ func (c *Coupler) ChangedSocket(
 	return nil
 }
 
-func (c *Coupler) Departed() {
-	c.bus.Pub(DepartedTopic, 0, struct{}{})
+func (c *Coupler) Departed(
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+) error {
+	bPlug, err := json.Marshal(plug)
+	if err != nil {
+		return err
+	}
+	bSocket, err := json.Marshal(socket)
+	if err != nil {
+		return err
+	}
+	c.bus.Pub(DepartedTopic, 0, struct {
+		plug   []byte
+		socket []byte
+	}{plug: bPlug, socket: bSocket})
+	return nil
 }
 
 func (c *Coupler) Broken() {

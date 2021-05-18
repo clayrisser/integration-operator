@@ -2,8 +2,9 @@ package coupler
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,7 +18,7 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 	operatorNamespace := c.s.Util.GetOperatorNamespace()
 
 	joinedCondition := meta.FindStatusCondition(plug.Status.Conditions, "Joined")
-	if plug.Generation <= 1 && joinedCondition == nil {
+	if joinedCondition == nil {
 		plug.Status.Phase = integrationv1alpha2.PendingPhase
 		meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
 			Message:            "plug created",
@@ -57,7 +58,7 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 	socket := &integrationv1alpha2.Socket{}
 	err = client.Get(ctx, c.s.Util.EnsureNamespacedName(&plug.Spec.Socket, req.Namespace), socket)
 	if err != nil {
-		if strings.Index(err.Error(), "not found") > -1 {
+		if errors.IsNotFound(err) {
 			plug.Status.Phase = integrationv1alpha2.PendingPhase
 			meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
 				Message:            "waiting for socket to be created",
@@ -116,8 +117,10 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 		return nil
 	}
 
-	isJoined := meta.FindStatusCondition(plug.Status.Conditions, "Joined").Status != "True"
+	condition := meta.FindStatusCondition(plug.Status.Conditions, "Joined")
+	isJoined := condition != nil && condition.Status != "True"
 
+	fmt.Println("3")
 	plug.Status.Phase = integrationv1alpha2.PendingPhase
 	meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
 		Message:            "coupling to socket",

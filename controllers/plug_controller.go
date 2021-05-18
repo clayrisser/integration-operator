@@ -20,10 +20,12 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -38,6 +40,8 @@ type PlugReconciler struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
+
+const plugFinalizer = "integration.siliconhills.dev/finalizer"
 
 //+kubebuilder:rbac:groups=integration.siliconhills.dev,resources=plugs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=integration.siliconhills.dev,resources=plugs/status,verbs=get;update;patch
@@ -56,13 +60,34 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	_ = r.Log.WithValues("plug", req.NamespacedName)
 	result := ctrl.Result{}
 	plug := &integrationv1alpha2.Plug{}
-	err := r.Get(ctx, req.NamespacedName, plug)
-	if err != nil {
-		return result, nil
-	}
-	err = coupler.GlobalCoupler.Couple(r.Client, ctx, req, &result, plug)
-	if err != nil {
+	if err := r.Get(ctx, req.NamespacedName, plug); err != nil {
+		if errors.IsNotFound(err) {
+			return result, nil
+		}
 		return result, err
+	}
+	if plug.GetDeletionTimestamp() != nil {
+		if controllerutil.ContainsFinalizer(plug, plugFinalizer) {
+			if err := coupler.GlobalCoupler.Decouple(r.Client, ctx, req, &result, plug); err != nil {
+				return result, err
+			}
+			controllerutil.RemoveFinalizer(plug, plugFinalizer)
+			err := r.Update(ctx, plug)
+			if err != nil {
+				return result, err
+			}
+		}
+	} else {
+		if !controllerutil.ContainsFinalizer(plug, plugFinalizer) {
+			controllerutil.AddFinalizer(plug, plugFinalizer)
+			if err := r.Update(ctx, plug); err != nil {
+				return result, err
+			}
+			return result, nil
+		}
+		if err := coupler.GlobalCoupler.Couple(r.Client, ctx, req, &result, plug); err != nil {
+			return result, err
+		}
 	}
 	return result, nil
 }
@@ -73,7 +98,6 @@ func filterPlugPredicate() predicate.Predicate {
 			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			coupler.GlobalCoupler.Departed()
 			return !e.DeleteStateUnknown
 		},
 	}

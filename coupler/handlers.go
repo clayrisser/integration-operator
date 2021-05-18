@@ -61,7 +61,7 @@ func (h *Handlers) HandleSocketChanged(plug gjson.Result, socket gjson.Result, c
 	return nil
 }
 
-func (h *Handlers) HandleDeparted() error {
+func (h *Handlers) HandleDeparted(plug gjson.Result, socket gjson.Result) error {
 	fmt.Println("departed")
 	return nil
 }

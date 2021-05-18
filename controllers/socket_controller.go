@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -64,13 +65,16 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	socket := &integrationv1alpha2.Socket{}
 	err := r.Get(ctx, req.NamespacedName, socket)
 	if err != nil {
-		return result, nil
+		if errors.IsNotFound(err) {
+			return result, nil
+		}
+		return result, err
 	}
 
 	operatorNamespace := s.Util.GetOperatorNamespace()
 
 	joinedCondition := meta.FindStatusCondition(socket.Status.Conditions, "Joined")
-	if socket.Generation <= 1 && joinedCondition == nil {
+	if joinedCondition == nil {
 		socket.Status.Phase = integrationv1alpha2.PendingPhase
 		socket.Status.Ready = false
 		meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
@@ -163,7 +167,6 @@ func filterSocketPredicate() predicate.Predicate {
 			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			// coupler.GlobalCoupler.Departed()
 			return !e.DeleteStateUnknown
 		},
 	}
