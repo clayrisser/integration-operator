@@ -25,6 +25,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+const PlugFinalizer = "integration.siliconhills.dev/finalizer"
+
 // PlugSpec defines the desired state of Plug
 type PlugSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster

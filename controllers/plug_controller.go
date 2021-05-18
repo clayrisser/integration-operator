@@ -41,8 +41,6 @@ type PlugReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-const plugFinalizer = "integration.siliconhills.dev/finalizer"
-
 //+kubebuilder:rbac:groups=integration.siliconhills.dev,resources=plugs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=integration.siliconhills.dev,resources=plugs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=integration.siliconhills.dev,resources=plugs/finalizers,verbs=update
@@ -67,20 +65,15 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return result, err
 	}
 	if plug.GetDeletionTimestamp() != nil {
-		if controllerutil.ContainsFinalizer(plug, plugFinalizer) {
+		if controllerutil.ContainsFinalizer(plug, integrationv1alpha2.PlugFinalizer) {
 			if err := coupler.GlobalCoupler.Decouple(r.Client, ctx, req, &result, plug); err != nil {
-				return result, err
-			}
-			controllerutil.RemoveFinalizer(plug, plugFinalizer)
-			err := r.Update(ctx, plug)
-			if err != nil {
 				return result, err
 			}
 		}
 		return result, nil
 	}
-	if !controllerutil.ContainsFinalizer(plug, plugFinalizer) {
-		controllerutil.AddFinalizer(plug, plugFinalizer)
+	if !controllerutil.ContainsFinalizer(plug, integrationv1alpha2.PlugFinalizer) {
+		controllerutil.AddFinalizer(plug, integrationv1alpha2.PlugFinalizer)
 		if err := r.Update(ctx, plug); err != nil {
 			return result, err
 		}

@@ -29,6 +29,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -70,6 +71,39 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return result, nil
 		}
 		return result, err
+	}
+
+	if socket.GetDeletionTimestamp() != nil {
+		if controllerutil.ContainsFinalizer(socket, integrationv1alpha2.PlugFinalizer) {
+			for _, connectedPlug := range socket.Status.CoupledPlugs {
+				plug := &integrationv1alpha2.Plug{}
+				err := r.Get(ctx, types.NamespacedName{
+					Name:      connectedPlug.Name,
+					Namespace: connectedPlug.Namespace,
+				}, plug)
+				if err != nil {
+					if errors.IsNotFound(err) {
+						continue
+					}
+					return result, err
+				}
+				if err := r.Delete(ctx, plug); err != nil {
+					return result, err
+				}
+			}
+			controllerutil.RemoveFinalizer(socket, integrationv1alpha2.PlugFinalizer)
+			if err := r.Update(ctx, socket); err != nil {
+				return result, err
+			}
+		}
+		return result, nil
+	}
+	if !controllerutil.ContainsFinalizer(socket, integrationv1alpha2.SocketFinalizer) {
+		controllerutil.AddFinalizer(socket, integrationv1alpha2.SocketFinalizer)
+		if err := r.Update(ctx, socket); err != nil {
+			return result, err
+		}
+		return result, nil
 	}
 
 	operatorNamespace := s.Util.GetOperatorNamespace()

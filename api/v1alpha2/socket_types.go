@@ -25,6 +25,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+const SocketFinalizer = "integration.siliconhills.dev/finalizer"
+
 // SocketSpec defines the desired state of Socket
 type SocketSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
