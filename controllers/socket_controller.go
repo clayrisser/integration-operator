@@ -18,10 +18,12 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -121,10 +123,37 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return result, err
 	}
 
-	// err = coupler.GlobalCoupler.Couple(s.Client, ctx, req, &result, plug)
-	if err != nil {
-		return result, err
+	time.Sleep(time.Second * 5)
+
+	// TODO: maybe ignore if plug not found
+	for _, connectedPlug := range socket.Status.CoupledPlugs {
+		plug := &integrationv1alpha2.Plug{}
+		err := r.Get(ctx, types.NamespacedName{
+			Name:      connectedPlug.Name,
+			Namespace: connectedPlug.Namespace,
+		}, plug)
+		if err != nil {
+			socket.Status.Phase = integrationv1alpha2.FailedPhase
+			socket.Status.Ready = false
+			meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
+				Message:            err.Error(),
+				ObservedGeneration: socket.Generation,
+				Reason:             "Error",
+				Status:             "False",
+				Type:               "Joined",
+			})
+			err = r.Status().Update(ctx, socket)
+			if err != nil {
+				return result, err
+			}
+			return result, nil
+		}
+		err = coupler.GlobalCoupler.Couple(r.Client, ctx, req, &result, plug)
+		if err != nil {
+			return result, err
+		}
 	}
+
 	return result, nil
 }
 
