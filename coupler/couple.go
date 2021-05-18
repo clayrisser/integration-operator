@@ -120,7 +120,6 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 	condition := meta.FindStatusCondition(plug.Status.Conditions, "Joined")
 	isJoined := condition != nil && condition.Status != "True"
 
-	fmt.Println("3")
 	plug.Status.Phase = integrationv1alpha2.PendingPhase
 	meta.SetStatusCondition(&plug.Status.Conditions, metav1.Condition{
 		Message:            "coupling to socket",
@@ -241,6 +240,13 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 				Name:       plug.Name,
 				Namespace:  plug.Namespace,
 				UID:        plug.UID,
+			})
+			meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
+				Message:            "socket ready with " + fmt.Sprint(len(socket.Status.CoupledPlugs)) + " plugs coupled",
+				ObservedGeneration: socket.Generation,
+				Reason:             "SocketReady",
+				Status:             "True",
+				Type:               "Joined",
 			})
 			err = client.Status().Update(ctx, socket)
 			if err != nil {

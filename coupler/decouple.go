@@ -2,8 +2,11 @@ package coupler
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -30,6 +33,17 @@ func (c *Coupler) Decouple(client client.Client, ctx context.Context, req ctrl.R
 		}
 	}
 	socket.Status.CoupledPlugs = coupledPlugs
+	condition := metav1.Condition{
+		Message:            "socket ready with " + fmt.Sprint(len(coupledPlugs)) + " plugs coupled",
+		ObservedGeneration: socket.Generation,
+		Reason:             "SocketReady",
+		Status:             "False",
+		Type:               "Joined",
+	}
+	if len(coupledPlugs) > 0 {
+		condition.Status = "True"
+	}
+	meta.SetStatusCondition(&socket.Status.Conditions, condition)
 	if err = client.Status().Update(ctx, socket); err != nil {
 		return err
 	}

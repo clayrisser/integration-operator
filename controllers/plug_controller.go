@@ -77,17 +77,17 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 				return result, err
 			}
 		}
-	} else {
-		if !controllerutil.ContainsFinalizer(plug, plugFinalizer) {
-			controllerutil.AddFinalizer(plug, plugFinalizer)
-			if err := r.Update(ctx, plug); err != nil {
-				return result, err
-			}
-			return result, nil
-		}
-		if err := coupler.GlobalCoupler.Couple(r.Client, ctx, req, &result, plug); err != nil {
+		return result, nil
+	}
+	if !controllerutil.ContainsFinalizer(plug, plugFinalizer) {
+		controllerutil.AddFinalizer(plug, plugFinalizer)
+		if err := r.Update(ctx, plug); err != nil {
 			return result, err
 		}
+		return result, nil
+	}
+	if err := coupler.GlobalCoupler.Couple(r.Client, ctx, req, &result, plug); err != nil {
+		return result, err
 	}
 	return result, nil
 }

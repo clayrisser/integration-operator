@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -115,18 +116,24 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	socket.Status.Phase = integrationv1alpha2.ReadyPhase
 	socket.Status.Ready = true
-	meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
-		Message:            "socket ready",
+	coupledPlugs := socket.Status.CoupledPlugs
+	condition := metav1.Condition{
+		Message:            "socket ready with " + fmt.Sprint(len(coupledPlugs)) + " plugs coupled",
 		ObservedGeneration: socket.Generation,
 		Reason:             "SocketReady",
 		Status:             "False",
 		Type:               "Joined",
-	})
+	}
+	if len(coupledPlugs) > 0 {
+		condition.Status = "True"
+	}
+	meta.SetStatusCondition(&socket.Status.Conditions, condition)
 	err = r.Status().Update(ctx, socket)
 	if err != nil {
 		return result, err
 	}
 
+	// TODO: protect with mutex
 	time.Sleep(time.Second * 5)
 
 	// TODO: maybe ignore if plug not found
