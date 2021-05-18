@@ -18,6 +18,8 @@
         "resty",
         "sigs",
         "siliconhills",
-        "tidwall"
+        "tdewolff",
+        "tidwall",
+        "tmpl"
     ]
 }
