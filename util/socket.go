@@ -3,12 +3,14 @@ package util
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/go-logr/logr"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,24 +19,31 @@ import (
 type SocketUtil struct {
 	client         *client.Client
 	ctx            *context.Context
+	log            *logr.Logger
+	mutex          *sync.Mutex
 	namespacedName types.NamespacedName
 	req            *ctrl.Request
-	update         *Update
 }
 
 func NewSocketUtil(
 	client *client.Client,
 	ctx *context.Context,
 	req *ctrl.Request,
+	log *logr.Logger,
 	namespacedName *integrationv1alpha2.NamespacedName,
+	mutex *sync.Mutex,
 ) *SocketUtil {
 	operatorNamespace := GetOperatorNamespace()
+	if mutex == nil {
+		mutex = &sync.Mutex{}
+	}
 	return &SocketUtil{
 		client:         client,
 		ctx:            ctx,
+		log:            log,
+		mutex:          mutex,
 		namespacedName: EnsureNamespacedName(namespacedName, operatorNamespace),
 		req:            req,
-		update:         NewUpdate(99),
 	}
 }
 
@@ -48,12 +57,28 @@ func (u *SocketUtil) Get() (*integrationv1alpha2.Socket, error) {
 	return socket.DeepCopy(), nil
 }
 
-func (u *SocketUtil) Update(socket *integrationv1alpha2.Socket) {
-	u.update.ScheduleSocketUpdate(u.client, u.ctx, nil, socket)
+func (u *SocketUtil) Update(socket *integrationv1alpha2.Socket) error {
+	client := *u.client
+	ctx := *u.ctx
+	u.mutex.Lock()
+	if err := client.Update(ctx, socket); err != nil {
+		u.mutex.Unlock()
+		return err
+	}
+	u.mutex.Unlock()
+	return nil
 }
 
-func (u *SocketUtil) UpdateStatus(socket *integrationv1alpha2.Socket) {
-	u.update.ScheduleSocketUpdateStatus(u.client, u.ctx, nil, socket)
+func (u *SocketUtil) UpdateStatus(socket *integrationv1alpha2.Socket) error {
+	client := *u.client
+	ctx := *u.ctx
+	u.mutex.Lock()
+	if err := client.Status().Update(ctx, socket); err != nil {
+		u.mutex.Unlock()
+		return err
+	}
+	u.mutex.Unlock()
+	return nil
 }
 
 func (u *SocketUtil) CommonUpdateStatus(
@@ -116,7 +141,9 @@ func (u *SocketUtil) CommonUpdateStatus(
 	if phase != "" {
 		socket.Status.Phase = phase
 	}
-	u.UpdateStatus(socket)
+	if err := u.UpdateStatus(socket); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -192,3 +219,11 @@ func (u *SocketUtil) GetJoinedCondition() (*metav1.Condition, error) {
 	joinedCondition := meta.FindStatusCondition(socket.Status.Conditions, "Joined")
 	return joinedCondition, nil
 }
+
+func (u *SocketUtil) Error(err error) error {
+	log := *u.log
+	log.Error(err, err.Error())
+	return u.UpdateStatusJoinedConditionError(err)
+}
+
+var GlobalSocketMutex *sync.Mutex = &sync.Mutex{}

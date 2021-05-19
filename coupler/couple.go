@@ -8,18 +8,32 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/go-logr/logr"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/util"
 )
 
-func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Request, result *ctrl.Result, plugNamespacedName *integrationv1alpha2.NamespacedName) error {
-	plugUtil := util.NewPlugUtil(&client, &ctx, &req, plugNamespacedName)
+func (c *Coupler) Couple(
+	client *client.Client,
+	ctx *context.Context,
+	req *ctrl.Request,
+	result *ctrl.Result,
+	log *logr.Logger,
+	plugNamespacedName *integrationv1alpha2.NamespacedName,
+) error {
+	plugUtil := util.NewPlugUtil(client, ctx, req, log, plugNamespacedName, util.GlobalPlugMutex)
 	plug, err := plugUtil.Get()
 	if err != nil {
 		return err
 	}
 
-	joinedCondition, _ := plugUtil.GetJoinedCondition(plug)
+	joinedCondition, err := plugUtil.GetJoinedCondition()
+	if err != nil {
+		if err := plugUtil.Error(err); err != nil {
+			return err
+		}
+		return nil
+	}
 	if joinedCondition == nil {
 		if err := plugUtil.UpdateStatusSimple(
 			integrationv1alpha2.PendingPhase,
@@ -30,24 +44,31 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 		}
 		err = GlobalCoupler.CreatedPlug(plug)
 		if err != nil {
+			if err := plugUtil.Error(err); err != nil {
+				return err
+			}
 			return nil
 		}
 	}
 
-	plugInterfaceUtil := util.NewInterfaceUtil(&client, &ctx, &req, &plug.Spec.Interface)
+	plugInterfaceUtil := util.NewInterfaceUtil(client, ctx, req, log, &plug.Spec.Interface)
 	plugInterface, err := plugInterfaceUtil.Get()
 	if err != nil {
-		plugUtil.UpdateStatusJoinedConditionError(err)
+		if err := plugUtil.Error(err); err != nil {
+			return err
+		}
 		return nil
 	}
 
-	socketUtil := util.NewSocketUtil(&client, &ctx, &req, &plug.Spec.Socket)
+	socketUtil := util.NewSocketUtil(client, ctx, req, log, &plug.Spec.Socket, util.GlobalSocketMutex)
 	socket, err := socketUtil.Get()
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketNotCreatedStatusCondition, nil)
 		} else {
-			plugUtil.UpdateStatusJoinedConditionError(err)
+			if err := plugUtil.Error(err); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
@@ -56,19 +77,23 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 		return nil
 	}
 
-	socketInterfaceUtil := util.NewInterfaceUtil(&client, &ctx, &req, &socket.Spec.Interface)
+	socketInterfaceUtil := util.NewInterfaceUtil(client, ctx, req, log, &socket.Spec.Interface)
 	socketInterface, err := socketInterfaceUtil.Get()
 	if err != nil {
-		plugUtil.UpdateStatusJoinedConditionError(err)
+		if err := plugUtil.Error(err); err != nil {
+			return err
+		}
 		return nil
 	}
 
 	if plugInterface.UID != socketInterface.UID {
-		plugUtil.UpdateStatusJoinedConditionError(errors.New("plug and socket interface do not match"))
+		if err := plugUtil.Error(errors.New("plug and socket interface do not match")); err != nil {
+			return err
+		}
 		return nil
 	}
 
-	joinedCondition, _ = plugUtil.GetJoinedCondition(plug)
+	joinedCondition, _ = plugUtil.GetJoinedCondition()
 	isJoined := joinedCondition != nil && joinedCondition.Status != "True"
 	plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.CouplingInProcessStatusCondition, nil)
 
@@ -76,7 +101,9 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 	if plug.Spec.ConfigEndpoint != "" {
 		plugConfig, err = GlobalCoupler.GetConfig(plug.Spec.ConfigEndpoint)
 		if err != nil {
-			plugUtil.UpdateStatusJoinedConditionError(err)
+			if err := plugUtil.Error(err); err != nil {
+				return err
+			}
 			return nil
 		}
 	}
@@ -84,7 +111,9 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 	if socket.Spec.ConfigEndpoint != "" {
 		socketConfig, err = GlobalCoupler.GetConfig(socket.Spec.ConfigEndpoint)
 		if err != nil {
-			plugUtil.UpdateStatusJoinedConditionError(err)
+			if err := plugUtil.Error(err); err != nil {
+				return err
+			}
 			return nil
 		}
 	}
@@ -92,13 +121,19 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 	if isJoined {
 		err = GlobalCoupler.JoinedPlug(plug, socket, socketConfig)
 		if err != nil {
-			plugUtil.UpdateStatusJoinedConditionError(err)
+			if err := plugUtil.Error(err); err != nil {
+				return err
+			}
 			return nil
 		}
 		err = GlobalCoupler.JoinedSocket(plug, socket, plugConfig)
 		if err != nil {
-			plugUtil.UpdateStatusJoinedConditionError(err)
-			socketUtil.UpdateStatusJoinedConditionError(err)
+			if err := plugUtil.Error(err); err != nil {
+				return err
+			}
+			if err := socketUtil.UpdateStatusJoinedConditionError(err); err != nil {
+				return err
+			}
 			return nil
 		}
 		plugUtil.UpdateStatusSocket(socket)
@@ -106,13 +141,19 @@ func (c *Coupler) Couple(client client.Client, ctx context.Context, req ctrl.Req
 	} else {
 		err = GlobalCoupler.ChangedPlug(plug, socket, socketConfig)
 		if err != nil {
-			plugUtil.UpdateStatusJoinedConditionError(err)
+			if err := plugUtil.Error(err); err != nil {
+				return err
+			}
 			return nil
 		}
 		err = GlobalCoupler.ChangedSocket(plug, socket, socketConfig)
 		if err != nil {
-			plugUtil.UpdateStatusJoinedConditionError(err)
-			socketUtil.UpdateStatusJoinedConditionError(err)
+			if err := plugUtil.Error(err); err != nil {
+				return err
+			}
+			if err := socketUtil.UpdateStatusJoinedConditionError(err); err != nil {
+				return err
+			}
 			return nil
 		}
 	}

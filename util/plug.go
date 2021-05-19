@@ -2,11 +2,13 @@ package util
 
 import (
 	"context"
+	"sync"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/go-logr/logr"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,24 +18,31 @@ import (
 type PlugUtil struct {
 	client         *client.Client
 	ctx            *context.Context
+	log            *logr.Logger
+	mutex          *sync.Mutex
 	namespacedName types.NamespacedName
 	req            *ctrl.Request
-	update         *Update
 }
 
 func NewPlugUtil(
 	client *client.Client,
 	ctx *context.Context,
 	req *ctrl.Request,
+	log *logr.Logger,
 	namespacedName *integrationv1alpha2.NamespacedName,
+	mutex *sync.Mutex,
 ) *PlugUtil {
 	operatorNamespace := GetOperatorNamespace()
+	if mutex == nil {
+		mutex = &sync.Mutex{}
+	}
 	return &PlugUtil{
 		client:         client,
 		ctx:            ctx,
+		log:            log,
+		mutex:          mutex,
 		namespacedName: EnsureNamespacedName(namespacedName, operatorNamespace),
 		req:            req,
-		update:         NewUpdate(99),
 	}
 }
 
@@ -47,12 +56,28 @@ func (u *PlugUtil) Get() (*integrationv1alpha2.Plug, error) {
 	return plug.DeepCopy(), nil
 }
 
-func (u *PlugUtil) Update(plug *integrationv1alpha2.Plug) {
-	u.update.SchedulePlugUpdate(u.client, u.ctx, nil, plug)
+func (u *PlugUtil) Update(plug *integrationv1alpha2.Plug) error {
+	client := *u.client
+	ctx := *u.ctx
+	u.mutex.Lock()
+	if err := client.Update(ctx, plug); err != nil {
+		u.mutex.Unlock()
+		return err
+	}
+	u.mutex.Unlock()
+	return nil
 }
 
-func (u *PlugUtil) UpdateStatus(plug *integrationv1alpha2.Plug) {
-	u.update.SchedulePlugUpdateStatus(u.client, u.ctx, nil, plug)
+func (u *PlugUtil) UpdateStatus(plug *integrationv1alpha2.Plug) error {
+	client := *u.client
+	ctx := *u.ctx
+	u.mutex.Lock()
+	if err := client.Status().Update(ctx, plug); err != nil {
+		u.mutex.Unlock()
+		return err
+	}
+	u.mutex.Unlock()
+	return nil
 }
 
 func (u *PlugUtil) CommonUpdateStatus(
@@ -114,7 +139,9 @@ func (u *PlugUtil) CommonUpdateStatus(
 	if phase != "" {
 		plug.Status.Phase = phase
 	}
-	u.UpdateStatus(plug)
+	if err := u.UpdateStatus(plug); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -151,14 +178,19 @@ func (u *PlugUtil) UpdateStatusJoinedConditionError(
 	return u.CommonUpdateStatus(integrationv1alpha2.FailedPhase, ErrorStatusCondition, nil, err.Error(), false)
 }
 
-func (u *PlugUtil) GetJoinedCondition(plug *integrationv1alpha2.Plug) (*metav1.Condition, error) {
-	if plug == nil {
-		var err error
-		plug, err = u.Get()
-		if err != nil {
-			return nil, err
-		}
+func (u *PlugUtil) GetJoinedCondition() (*metav1.Condition, error) {
+	plug, err := u.Get()
+	if err != nil {
+		return nil, err
 	}
 	joinedCondition := meta.FindStatusCondition(plug.Status.Conditions, "Joined")
 	return joinedCondition, nil
 }
+
+func (u *PlugUtil) Error(err error) error {
+	log := *u.log
+	log.Error(err, err.Error())
+	return u.UpdateStatusJoinedConditionError(err)
+}
+
+var GlobalPlugMutex *sync.Mutex = &sync.Mutex{}

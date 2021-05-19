@@ -61,7 +61,7 @@ type SocketReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("socket", req.NamespacedName)
+	log := r.Log.WithValues("socket", req.NamespacedName)
 	result := ctrl.Result{}
 	socket := &integrationv1alpha2.Socket{}
 	err := r.Get(ctx, req.NamespacedName, socket)
@@ -192,7 +192,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 			return result, nil
 		}
-		err = coupler.GlobalCoupler.Couple(r.Client, ctx, req, &result, &integrationv1alpha2.NamespacedName{
+		err = coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &result, &log, &integrationv1alpha2.NamespacedName{
 			Name:      plug.Name,
 			Namespace: plug.Namespace,
 		})

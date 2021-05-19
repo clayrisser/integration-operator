@@ -9,6 +9,7 @@ require (
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.2
+	github.com/prometheus/common v0.10.0
 	github.com/tdewolff/minify v2.3.6+incompatible
 	github.com/tdewolff/minify/v2 v2.9.16
 	github.com/tdewolff/parse v2.3.4+incompatible // indirect

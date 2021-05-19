@@ -55,7 +55,7 @@ type PlugReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("plug", req.NamespacedName)
+	log := r.Log.WithValues("plug", req.NamespacedName)
 	result := ctrl.Result{}
 	plug := &integrationv1alpha2.Plug{}
 	if err := r.Get(ctx, req.NamespacedName, plug); err != nil {
@@ -79,7 +79,7 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 		return result, nil
 	}
-	if err := coupler.GlobalCoupler.Couple(r.Client, ctx, req, &result, &integrationv1alpha2.NamespacedName{
+	if err := coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &result, &log, &integrationv1alpha2.NamespacedName{
 		Name:      plug.Name,
 		Namespace: plug.Namespace,
 	}); err != nil {
