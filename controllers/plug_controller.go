@@ -32,6 +32,7 @@ import (
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/coupler"
+	"github.com/silicon-hills/integration-operator/util"
 )
 
 // PlugReconciler reconciles a Plug object
@@ -57,13 +58,18 @@ type PlugReconciler struct {
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("plug", req.NamespacedName)
 	result := ctrl.Result{}
-	plug := &integrationv1alpha2.Plug{}
-	if err := r.Get(ctx, req.NamespacedName, plug); err != nil {
+	plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
+		Name:      req.NamespacedName.Name,
+		Namespace: req.NamespacedName.Namespace,
+	}, util.GlobalPlugMutex)
+	plug, err := plugUtil.Get()
+	if err != nil {
 		if errors.IsNotFound(err) {
 			return result, nil
 		}
 		return result, err
 	}
+
 	if plug.GetDeletionTimestamp() != nil {
 		if controllerutil.ContainsFinalizer(plug, integrationv1alpha2.PlugFinalizer) {
 			if err := coupler.GlobalCoupler.Decouple(r.Client, ctx, req, &result, plug); err != nil {
@@ -74,8 +80,10 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 	if !controllerutil.ContainsFinalizer(plug, integrationv1alpha2.PlugFinalizer) {
 		controllerutil.AddFinalizer(plug, integrationv1alpha2.PlugFinalizer)
-		if err := r.Update(ctx, plug); err != nil {
-			return result, err
+		if err := plugUtil.Update(plug); err != nil {
+			if err := plugUtil.Error(err); err != nil {
+				return result, err
+			}
 		}
 		return result, nil
 	}
@@ -83,7 +91,9 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		Name:      plug.Name,
 		Namespace: plug.Namespace,
 	}); err != nil {
-		return result, err
+		if err := plugUtil.Error(err); err != nil {
+			return result, err
+		}
 	}
 	return result, nil
 }

@@ -63,8 +63,11 @@ type SocketReconciler struct {
 func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("socket", req.NamespacedName)
 	result := ctrl.Result{}
-	socket := &integrationv1alpha2.Socket{}
-	err := r.Get(ctx, req.NamespacedName, socket)
+	socketUtil := util.NewSocketUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
+		Name:      req.NamespacedName.Name,
+		Namespace: req.NamespacedName.Namespace,
+	}, util.GlobalSocketMutex)
+	socket, err := socketUtil.Get()
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return result, nil
@@ -84,15 +87,24 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					if errors.IsNotFound(err) {
 						continue
 					}
-					return result, err
+					if err := socketUtil.Error(err); err != nil {
+						return result, err
+					}
+					return result, nil
 				}
 				if err := r.Delete(ctx, plug); err != nil {
-					return result, err
+					if err := socketUtil.Error(err); err != nil {
+						return result, err
+					}
+					return result, nil
 				}
 			}
 			controllerutil.RemoveFinalizer(socket, integrationv1alpha2.PlugFinalizer)
 			if err := r.Update(ctx, socket); err != nil {
-				return result, err
+				if err := socketUtil.Error(err); err != nil {
+					return result, err
+				}
+				return result, nil
 			}
 		}
 		return result, nil
@@ -100,7 +112,9 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if !controllerutil.ContainsFinalizer(socket, integrationv1alpha2.SocketFinalizer) {
 		controllerutil.AddFinalizer(socket, integrationv1alpha2.SocketFinalizer)
 		if err := r.Update(ctx, socket); err != nil {
-			return result, err
+			if err := socketUtil.Error(err); err != nil {
+				return result, err
+			}
 		}
 		return result, nil
 	}

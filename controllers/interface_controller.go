@@ -50,11 +50,6 @@ type InterfaceReconciler struct {
 func (r *InterfaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("interface", req.NamespacedName)
 	result := ctrl.Result{}
-	intrface := &integrationv1alpha2.Interface{}
-	err := r.Get(ctx, req.NamespacedName, intrface)
-	if err != nil {
-		return result, nil
-	}
 	return result, nil
 }
 
