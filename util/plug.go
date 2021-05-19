@@ -13,58 +13,56 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-type PlugService struct {
-	client *client.Client
-	ctx    *context.Context
-	plug   *integrationv1alpha2.Plug
-	req    *ctrl.Request
-	update *Update
+type PlugUtil struct {
+	client         *client.Client
+	ctx            *context.Context
+	namespacedName types.NamespacedName
+	req            *ctrl.Request
+	update         *Update
 }
 
 func NewPlugUtil(
 	client *client.Client,
 	ctx *context.Context,
 	req *ctrl.Request,
-	plug *integrationv1alpha2.Plug,
-) *PlugService {
-	return &PlugService{
-		client: client,
-		ctx:    ctx,
-		plug:   plug,
-		req:    req,
-		update: NewUpdate(99),
+	namespacedName *integrationv1alpha2.NamespacedName,
+) *PlugUtil {
+	operatorNamespace := GetOperatorNamespace()
+	return &PlugUtil{
+		client:         client,
+		ctx:            ctx,
+		namespacedName: EnsureNamespacedName(namespacedName, operatorNamespace),
+		req:            req,
+		update:         NewUpdate(99),
 	}
 }
 
-func (s *PlugService) Get() (*integrationv1alpha2.Plug, error) {
-	client := *s.client
-	ctx := *s.ctx
+func (u *PlugUtil) Get() (*integrationv1alpha2.Plug, error) {
+	client := *u.client
+	ctx := *u.ctx
 	plug := &integrationv1alpha2.Plug{}
-	if err := client.Get(ctx, types.NamespacedName{
-		Name:      s.plug.Name,
-		Namespace: s.plug.Namespace,
-	}, plug); err != nil {
+	if err := client.Get(ctx, u.namespacedName, plug); err != nil {
 		return nil, err
 	}
 	return plug.DeepCopy(), nil
 }
 
-func (s *PlugService) Update(plug *integrationv1alpha2.Plug) {
-	s.update.SchedulePlugUpdate(s.client, s.ctx, nil, plug)
+func (u *PlugUtil) Update(plug *integrationv1alpha2.Plug) {
+	u.update.SchedulePlugUpdate(u.client, u.ctx, nil, plug)
 }
 
-func (s *PlugService) UpdateStatus(plug *integrationv1alpha2.Plug) {
-	s.update.SchedulePlugUpdateStatus(s.client, s.ctx, nil, plug)
+func (u *PlugUtil) UpdateStatus(plug *integrationv1alpha2.Plug) {
+	u.update.SchedulePlugUpdateStatus(u.client, u.ctx, nil, plug)
 }
 
-func (s *PlugService) CommonUpdateStatus(
+func (u *PlugUtil) CommonUpdateStatus(
 	phase integrationv1alpha2.Phase,
 	joinedStatusCondition StatusCondition,
 	socket *integrationv1alpha2.Socket,
 	message string,
 	reset bool,
 ) error {
-	plug, err := s.Get()
+	plug, err := u.Get()
 	if err != nil {
 		return err
 	}
@@ -116,39 +114,51 @@ func (s *PlugService) CommonUpdateStatus(
 	if phase != "" {
 		plug.Status.Phase = phase
 	}
-	s.UpdateStatus(plug)
+	u.UpdateStatus(plug)
 	return nil
 }
 
-func (s *PlugService) UpdateStatusSimple(
+func (u *PlugUtil) UpdateStatusSimple(
 	phase integrationv1alpha2.Phase,
 	joinedStatusCondition StatusCondition,
 	socket *integrationv1alpha2.Socket,
 ) error {
-	return s.CommonUpdateStatus(phase, joinedStatusCondition, socket, "", false)
+	return u.CommonUpdateStatus(phase, joinedStatusCondition, socket, "", false)
 }
 
-func (s *PlugService) UpdateStatusSocket(
+func (u *PlugUtil) UpdateStatusSocket(
 	socket *integrationv1alpha2.Socket,
 ) error {
-	return s.CommonUpdateStatus("", "", socket, "", false)
+	return u.CommonUpdateStatus("", "", socket, "", false)
 }
 
-func (s *PlugService) UpdateStatusPhase(
+func (u *PlugUtil) UpdateStatusPhase(
 	phase integrationv1alpha2.Phase,
 ) error {
-	return s.CommonUpdateStatus(phase, "", nil, "", false)
+	return u.CommonUpdateStatus(phase, "", nil, "", false)
 }
 
-func (s *PlugService) UpdateStatusJoinedCondition(
+func (u *PlugUtil) UpdateStatusJoinedCondition(
 	joinedStatusCondition StatusCondition,
 	message string,
 ) error {
-	return s.CommonUpdateStatus("", joinedStatusCondition, nil, message, false)
+	return u.CommonUpdateStatus("", joinedStatusCondition, nil, message, false)
 }
 
-func (s *PlugService) UpdateStatusJoinedConditionError(
+func (u *PlugUtil) UpdateStatusJoinedConditionError(
 	err error,
 ) error {
-	return s.CommonUpdateStatus("", ErrorStatusCondition, nil, err.Error(), false)
+	return u.CommonUpdateStatus(integrationv1alpha2.FailedPhase, ErrorStatusCondition, nil, err.Error(), false)
+}
+
+func (u *PlugUtil) GetJoinedCondition(plug *integrationv1alpha2.Plug) (*metav1.Condition, error) {
+	if plug == nil {
+		var err error
+		plug, err = u.Get()
+		if err != nil {
+			return nil, err
+		}
+	}
+	joinedCondition := meta.FindStatusCondition(plug.Status.Conditions, "Joined")
+	return joinedCondition, nil
 }

@@ -12,12 +12,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
+	"github.com/silicon-hills/integration-operator/util"
 )
 
 func (c *Coupler) Decouple(client client.Client, ctx context.Context, req ctrl.Request, result *ctrl.Result, plug *integrationv1alpha2.Plug) error {
 
 	socket := &integrationv1alpha2.Socket{}
-	err := client.Get(ctx, c.s.Util.EnsureNamespacedName(&plug.Spec.Socket, req.Namespace), socket)
+	err := client.Get(ctx, util.EnsureNamespacedName(&plug.Spec.Socket, req.Namespace), socket)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return err

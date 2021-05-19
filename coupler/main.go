@@ -15,8 +15,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/silicon-hills/integration-operator/services"
-
 	"github.com/go-resty/resty/v2"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 )
@@ -29,7 +27,6 @@ type Coupler struct {
 	closeCh  chan os.Signal
 	ctx      context.Context
 	events   *Events
-	s        *services.Services
 }
 
 type Options struct {
@@ -59,7 +56,6 @@ func NewCoupler(options Options) *Coupler {
 		cancel:   cancel,
 		closeCh:  closeCh,
 		ctx:      ctx,
-		s:        services.NewServices(),
 	}
 }
 

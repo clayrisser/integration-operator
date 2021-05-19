@@ -37,7 +37,7 @@ import (
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/coupler"
-	"github.com/silicon-hills/integration-operator/services"
+	"github.com/silicon-hills/integration-operator/util"
 )
 
 // SocketReconciler reconciles a Socket object
@@ -62,7 +62,6 @@ type SocketReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("socket", req.NamespacedName)
-	s := services.NewServices()
 	result := ctrl.Result{}
 	socket := &integrationv1alpha2.Socket{}
 	err := r.Get(ctx, req.NamespacedName, socket)
@@ -106,7 +105,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return result, nil
 	}
 
-	operatorNamespace := s.Util.GetOperatorNamespace()
+	operatorNamespace := util.GetOperatorNamespace()
 
 	joinedCondition := meta.FindStatusCondition(socket.Status.Conditions, "Joined")
 	if joinedCondition == nil {
@@ -130,7 +129,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	socketInterface := &integrationv1alpha2.Interface{}
-	err = r.Get(ctx, s.Util.EnsureNamespacedName(&socket.Spec.Interface, operatorNamespace), socketInterface)
+	err = r.Get(ctx, util.EnsureNamespacedName(&socket.Spec.Interface, operatorNamespace), socketInterface)
 	if err != nil {
 		socket.Status.Phase = integrationv1alpha2.FailedPhase
 		socket.Status.Ready = false
@@ -193,7 +192,10 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 			return result, nil
 		}
-		err = coupler.GlobalCoupler.Couple(r.Client, ctx, req, &result, plug)
+		err = coupler.GlobalCoupler.Couple(r.Client, ctx, req, &result, &integrationv1alpha2.NamespacedName{
+			Name:      plug.Name,
+			Namespace: plug.Namespace,
+		})
 		if err != nil {
 			return result, err
 		}

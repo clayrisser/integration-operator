@@ -79,7 +79,10 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 		return result, nil
 	}
-	if err := coupler.GlobalCoupler.Couple(r.Client, ctx, req, &result, plug); err != nil {
+	if err := coupler.GlobalCoupler.Couple(r.Client, ctx, req, &result, &integrationv1alpha2.NamespacedName{
+		Name:      plug.Name,
+		Namespace: plug.Namespace,
+	}); err != nil {
 		return result, err
 	}
 	return result, nil

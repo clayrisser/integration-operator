@@ -17,6 +17,7 @@
         "metav",
         "rbac",
         "resty",
+        "serrors",
         "sigs",
         "siliconhills",
         "tdewolff",

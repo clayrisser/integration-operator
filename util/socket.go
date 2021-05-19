@@ -14,58 +14,56 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-type SocketService struct {
-	client *client.Client
-	ctx    *context.Context
-	socket *integrationv1alpha2.Socket
-	req    *ctrl.Request
-	update *Update
+type SocketUtil struct {
+	client         *client.Client
+	ctx            *context.Context
+	namespacedName types.NamespacedName
+	req            *ctrl.Request
+	update         *Update
 }
 
 func NewSocketUtil(
 	client *client.Client,
 	ctx *context.Context,
 	req *ctrl.Request,
-	socket *integrationv1alpha2.Socket,
-) *SocketService {
-	return &SocketService{
-		client: client,
-		ctx:    ctx,
-		socket: socket,
-		req:    req,
-		update: NewUpdate(99),
+	namespacedName *integrationv1alpha2.NamespacedName,
+) *SocketUtil {
+	operatorNamespace := GetOperatorNamespace()
+	return &SocketUtil{
+		client:         client,
+		ctx:            ctx,
+		namespacedName: EnsureNamespacedName(namespacedName, operatorNamespace),
+		req:            req,
+		update:         NewUpdate(99),
 	}
 }
 
-func (s *SocketService) Get() (*integrationv1alpha2.Socket, error) {
-	client := *s.client
-	ctx := *s.ctx
+func (u *SocketUtil) Get() (*integrationv1alpha2.Socket, error) {
+	client := *u.client
+	ctx := *u.ctx
 	socket := &integrationv1alpha2.Socket{}
-	if err := client.Get(ctx, types.NamespacedName{
-		Name:      s.socket.Name,
-		Namespace: s.socket.Namespace,
-	}, socket); err != nil {
+	if err := client.Get(ctx, u.namespacedName, socket); err != nil {
 		return nil, err
 	}
 	return socket.DeepCopy(), nil
 }
 
-func (s *SocketService) Update(socket *integrationv1alpha2.Socket) {
-	s.update.ScheduleSocketUpdate(s.client, s.ctx, nil, socket)
+func (u *SocketUtil) Update(socket *integrationv1alpha2.Socket) {
+	u.update.ScheduleSocketUpdate(u.client, u.ctx, nil, socket)
 }
 
-func (s *SocketService) UpdateStatus(socket *integrationv1alpha2.Socket) {
-	s.update.ScheduleSocketUpdateStatus(s.client, s.ctx, nil, socket)
+func (u *SocketUtil) UpdateStatus(socket *integrationv1alpha2.Socket) {
+	u.update.ScheduleSocketUpdateStatus(u.client, u.ctx, nil, socket)
 }
 
-func (s *SocketService) CommonUpdateStatus(
+func (u *SocketUtil) CommonUpdateStatus(
 	phase integrationv1alpha2.Phase,
 	joinedStatusCondition StatusCondition,
 	appendPlug *integrationv1alpha2.Plug,
 	message string,
 	reset bool,
 ) error {
-	socket, err := s.Get()
+	socket, err := u.Get()
 	if err != nil {
 		return err
 	}
@@ -80,7 +78,7 @@ func (s *SocketService) CommonUpdateStatus(
 			Namespace:  appendPlug.Namespace,
 			UID:        appendPlug.UID,
 		})
-		joinedCondition, err := s.GetJoinedCondition()
+		joinedCondition, err := u.GetJoinedCondition()
 		if err != nil {
 			return err
 		}
@@ -118,47 +116,47 @@ func (s *SocketService) CommonUpdateStatus(
 	if phase != "" {
 		socket.Status.Phase = phase
 	}
-	s.UpdateStatus(socket)
+	u.UpdateStatus(socket)
 	return nil
 }
 
-func (s *SocketService) UpdateStatusSimple(
+func (u *SocketUtil) UpdateStatusSimple(
 	phase integrationv1alpha2.Phase,
 	joinedStatusCondition StatusCondition,
 	appendPlug *integrationv1alpha2.Plug,
 ) error {
-	return s.CommonUpdateStatus(phase, joinedStatusCondition, appendPlug, "", false)
+	return u.CommonUpdateStatus(phase, joinedStatusCondition, appendPlug, "", false)
 }
 
-func (s *SocketService) UpdateStatusAppendPlug(
+func (u *SocketUtil) UpdateStatusAppendPlug(
 	appendPlug *integrationv1alpha2.Plug,
 ) error {
-	return s.CommonUpdateStatus("", "", appendPlug, "", false)
+	return u.CommonUpdateStatus("", "", appendPlug, "", false)
 }
 
-func (s *SocketService) UpdateStatusPhase(
+func (u *SocketUtil) UpdateStatusPhase(
 	phase integrationv1alpha2.Phase,
 ) error {
-	return s.CommonUpdateStatus(phase, "", nil, "", false)
+	return u.CommonUpdateStatus(phase, "", nil, "", false)
 }
 
-func (s *SocketService) UpdateStatusJoinedCondition(
+func (u *SocketUtil) UpdateStatusJoinedCondition(
 	joinedStatusCondition StatusCondition,
 	message string,
 ) error {
-	return s.CommonUpdateStatus("", joinedStatusCondition, nil, message, false)
+	return u.CommonUpdateStatus("", joinedStatusCondition, nil, message, false)
 }
 
-func (s *SocketService) UpdateStatusJoinedConditionError(
+func (u *SocketUtil) UpdateStatusJoinedConditionError(
 	err error,
 ) error {
-	return s.CommonUpdateStatus("", ErrorStatusCondition, nil, err.Error(), false)
+	return u.CommonUpdateStatus(integrationv1alpha2.FailedPhase, ErrorStatusCondition, nil, err.Error(), false)
 }
 
-func (s *SocketService) UpdateStatusRemovePlug(
+func (u *SocketUtil) UpdateStatusRemovePlug(
 	plug *integrationv1alpha2.Plug,
 ) error {
-	socket, err := s.Get()
+	socket, err := u.Get()
 	if err != nil {
 		return err
 	}
@@ -169,7 +167,7 @@ func (s *SocketService) UpdateStatusRemovePlug(
 		}
 	}
 	socket.Status.CoupledPlugs = coupledPlugs
-	joinedCondition, err := s.GetJoinedCondition()
+	joinedCondition, err := u.GetJoinedCondition()
 	if (*joinedCondition).Reason == string(SocketReadyStatusCondition) {
 		condition := metav1.Condition{
 			Message:            "socket ready with " + fmt.Sprint(len(coupledPlugs)) + " plugs coupled",
@@ -182,12 +180,12 @@ func (s *SocketService) UpdateStatusRemovePlug(
 			condition.Status = "True"
 		}
 	}
-	s.UpdateStatus(socket)
+	u.UpdateStatus(socket)
 	return nil
 }
 
-func (s *SocketService) GetJoinedCondition() (*metav1.Condition, error) {
-	socket, err := s.Get()
+func (u *SocketUtil) GetJoinedCondition() (*metav1.Condition, error) {
+	socket, err := u.Get()
 	if err != nil {
 		return nil, err
 	}
