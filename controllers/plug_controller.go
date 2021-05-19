@@ -73,7 +73,10 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	if plug.GetDeletionTimestamp() != nil {
 		if controllerutil.ContainsFinalizer(plug, integrationv1alpha2.PlugFinalizer) {
-			if err := coupler.GlobalCoupler.Decouple(r.Client, ctx, req, &result, plug); err != nil {
+			if err := coupler.GlobalCoupler.Decouple(&r.Client, &ctx, &req, &result, &log, &integrationv1alpha2.NamespacedName{
+				Name:      plug.Name,
+				Namespace: plug.Namespace,
+			}); err != nil {
 				return result, err
 			}
 		}
@@ -103,6 +106,7 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 func filterPlugPredicate() predicate.Predicate {
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
+			// return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 			return true
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {

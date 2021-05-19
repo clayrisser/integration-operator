@@ -155,10 +155,6 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return result, nil
 	}
 
-	// TODO: protect with mutex
-	// time.Sleep(time.Second * 5)
-
-	// TODO: maybe ignore if plug not found
 	for _, connectedPlug := range socket.Status.CoupledPlugs {
 		plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 			Name:      connectedPlug.Name,

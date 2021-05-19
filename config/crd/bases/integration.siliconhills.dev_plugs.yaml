@@ -217,12 +217,6 @@ spec:
                   uid:
                     description: UID of the socket
                     type: string
-                required:
-                - apiVersion
-                - kind
-                - name
-                - namespace
-                - uid
                 type: object
               phase:
                 description: integration plug phase (Pending, Succeeded, Failed, Unknown)

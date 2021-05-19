@@ -76,19 +76,19 @@ type PlugStatus struct {
 
 type CoupledSocket struct {
 	// API version of the socket
-	APIVersion string `json:"apiVersion"`
+	APIVersion string `json:"apiVersion,omitempty"`
 
 	// Kind of the socket
-	Kind string `json:"kind"`
+	Kind string `json:"kind,omitempty"`
 
 	// Name of the socket
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 
 	// Namespace of the socket
-	Namespace string `json:"namespace"`
+	Namespace string `json:"namespace,omitempty"`
 
 	// UID of the socket
-	UID types.UID `json:"uid"`
+	UID types.UID `json:"uid,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -81,6 +81,16 @@ func (u *SocketUtil) UpdateStatus(socket *integrationv1alpha2.Socket) error {
 	return nil
 }
 
+func (u *SocketUtil) CoupledPlugExits(coupledPlugs *[]integrationv1alpha2.CoupledPlug, plug *integrationv1alpha2.Plug) bool {
+	coupledPlugExits := false
+	for _, coupledPlug := range *coupledPlugs {
+		if coupledPlug.UID == plug.UID {
+			coupledPlugExits = true
+		}
+	}
+	return coupledPlugExits
+}
+
 func (u *SocketUtil) CommonUpdateStatus(
 	phase integrationv1alpha2.Phase,
 	joinedStatusCondition StatusCondition,
@@ -96,13 +106,15 @@ func (u *SocketUtil) CommonUpdateStatus(
 		socket.Status = integrationv1alpha2.SocketStatus{}
 	}
 	if appendPlug != nil {
-		socket.Status.CoupledPlugs = append(socket.Status.CoupledPlugs, integrationv1alpha2.CoupledPlug{
-			APIVersion: appendPlug.APIVersion,
-			Kind:       appendPlug.Kind,
-			Name:       appendPlug.Name,
-			Namespace:  appendPlug.Namespace,
-			UID:        appendPlug.UID,
-		})
+		if !u.CoupledPlugExits(&socket.Status.CoupledPlugs, appendPlug) {
+			socket.Status.CoupledPlugs = append(socket.Status.CoupledPlugs, integrationv1alpha2.CoupledPlug{
+				APIVersion: appendPlug.APIVersion,
+				Kind:       appendPlug.Kind,
+				Name:       appendPlug.Name,
+				Namespace:  appendPlug.Namespace,
+				UID:        appendPlug.UID,
+			})
+		}
 		joinedCondition, err := u.GetJoinedCondition()
 		if err != nil {
 			return err
@@ -112,6 +124,7 @@ func (u *SocketUtil) CommonUpdateStatus(
 		}
 	}
 	if joinedStatusCondition != "" {
+		socket.Status.Ready = false
 		joinedStatus := false
 		coupledPlugsCount := len(socket.Status.CoupledPlugs)
 		if message == "" {
@@ -137,6 +150,9 @@ func (u *SocketUtil) CommonUpdateStatus(
 			c.Status = "True"
 		}
 		meta.SetStatusCondition(&socket.Status.Conditions, c)
+		if joinedStatusCondition == SocketReadyStatusCondition {
+			socket.Status.Ready = true
+		}
 	}
 	if phase != "" {
 		socket.Status.Phase = phase
