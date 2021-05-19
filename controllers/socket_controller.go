@@ -18,12 +18,9 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -32,8 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/coupler"
@@ -62,6 +57,7 @@ type SocketReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("socket", req.NamespacedName)
+	log.Info("RECONCILING SOCKET")
 	result := ctrl.Result{}
 	socketUtil := util.NewSocketUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 		Name:      req.NamespacedName.Name,
@@ -119,109 +115,79 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return result, nil
 	}
 
-	operatorNamespace := util.GetOperatorNamespace()
-
-	joinedCondition := meta.FindStatusCondition(socket.Status.Conditions, "Joined")
-	if joinedCondition == nil {
-		socket.Status.Phase = integrationv1alpha2.PendingPhase
-		socket.Status.Ready = false
-		meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
-			Message:            "socket created",
-			ObservedGeneration: socket.Generation,
-			Reason:             "SocketCreated",
-			Status:             "False",
-			Type:               "Joined",
-		})
-		err := r.Status().Update(ctx, socket)
-		if err != nil {
-			return result, err
-		}
-		err = coupler.GlobalCoupler.CreatedSocket(socket)
-		if err != nil {
-			return result, nil
-		}
-	}
-
-	socketInterface := &integrationv1alpha2.Interface{}
-	err = r.Get(ctx, util.EnsureNamespacedName(&socket.Spec.Interface, operatorNamespace), socketInterface)
+	joinedCondition, err := socketUtil.GetJoinedCondition()
 	if err != nil {
-		socket.Status.Phase = integrationv1alpha2.FailedPhase
-		socket.Status.Ready = false
-		meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
-			Message:            err.Error(),
-			ObservedGeneration: socket.Generation,
-			Reason:             "Error",
-			Status:             "False",
-			Type:               "Joined",
-		})
-		err = r.Status().Update(ctx, socket)
-		if err != nil {
+		if err := socketUtil.Error(err); err != nil {
 			return result, err
 		}
 		return result, nil
 	}
 
-	socket.Status.Phase = integrationv1alpha2.ReadyPhase
-	socket.Status.Ready = true
-	coupledPlugs := socket.Status.CoupledPlugs
-	condition := metav1.Condition{
-		Message:            "socket ready with " + fmt.Sprint(len(coupledPlugs)) + " plugs coupled",
-		ObservedGeneration: socket.Generation,
-		Reason:             "SocketReady",
-		Status:             "False",
-		Type:               "Joined",
-	}
-	if len(coupledPlugs) > 0 {
-		condition.Status = "True"
-	}
-	meta.SetStatusCondition(&socket.Status.Conditions, condition)
-	err = r.Status().Update(ctx, socket)
-	if err != nil {
-		return result, err
-	}
-
-	// TODO: protect with mutex
-	time.Sleep(time.Second * 5)
-
-	// TODO: maybe ignore if plug not found
-	for _, connectedPlug := range socket.Status.CoupledPlugs {
-		plug := &integrationv1alpha2.Plug{}
-		err := r.Get(ctx, types.NamespacedName{
-			Name:      connectedPlug.Name,
-			Namespace: connectedPlug.Namespace,
-		}, plug)
-		if err != nil {
-			socket.Status.Phase = integrationv1alpha2.FailedPhase
-			socket.Status.Ready = false
-			meta.SetStatusCondition(&socket.Status.Conditions, metav1.Condition{
-				Message:            err.Error(),
-				ObservedGeneration: socket.Generation,
-				Reason:             "Error",
-				Status:             "False",
-				Type:               "Joined",
-			})
-			err = r.Status().Update(ctx, socket)
-			if err != nil {
+	if joinedCondition == nil {
+		if err := socketUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketCreatedStatusCondition, nil); err != nil {
+			if err := socketUtil.Error(err); err != nil {
 				return result, err
 			}
 			return result, nil
 		}
-		err = coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &result, &log, &integrationv1alpha2.NamespacedName{
-			Name:      plug.Name,
-			Namespace: plug.Namespace,
-		})
-		if err != nil {
-			return result, err
+		if err = coupler.GlobalCoupler.CreatedSocket(socket); err != nil {
+			if err := socketUtil.Error(err); err != nil {
+				return result, err
+			}
+			return result, nil
 		}
+		return result, nil
 	}
 
+	socketInterfaceUtil := util.NewInterfaceUtil(&r.Client, &ctx, &req, &log, &socket.Spec.Interface)
+	_, err = socketInterfaceUtil.Get()
+	if err != nil {
+		if err := socketUtil.Error(err); err != nil {
+			return result, err
+		}
+		return result, nil
+	}
+
+	if err := socketUtil.UpdateStatusSimple(integrationv1alpha2.ReadyPhase, util.SocketReadyStatusCondition, nil); err != nil {
+		if err := socketUtil.Error(err); err != nil {
+			return result, err
+		}
+		return result, nil
+	}
+
+	// TODO: protect with mutex
+	// time.Sleep(time.Second * 5)
+
+	// TODO: maybe ignore if plug not found
+	for _, connectedPlug := range socket.Status.CoupledPlugs {
+		plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
+			Name:      connectedPlug.Name,
+			Namespace: connectedPlug.Namespace,
+		}, util.GlobalPlugMutex)
+		plug, err := plugUtil.Get()
+		if err != nil {
+			if err := socketUtil.Error(err); err != nil {
+				return result, err
+			}
+			return result, nil
+		}
+		if err := coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &result, &log, &integrationv1alpha2.NamespacedName{
+			Name:      plug.Name,
+			Namespace: plug.Namespace,
+		}); err != nil {
+			if err := socketUtil.Error(err); err != nil {
+				return result, err
+			}
+			return result, nil
+		}
+	}
 	return result, nil
 }
 
 func filterSocketPredicate() predicate.Predicate {
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+			return true
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			return !e.DeleteStateUnknown

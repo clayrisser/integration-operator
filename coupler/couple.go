@@ -42,13 +42,12 @@ func (c *Coupler) Couple(
 		); err != nil {
 			return err
 		}
-		err = GlobalCoupler.CreatedPlug(plug)
-		if err != nil {
+		if err := GlobalCoupler.CreatedPlug(plug); err != nil {
 			if err := plugUtil.Error(err); err != nil {
 				return err
 			}
-			return nil
 		}
+		return nil
 	}
 
 	plugInterfaceUtil := util.NewInterfaceUtil(client, ctx, req, log, &plug.Spec.Interface)
@@ -95,7 +94,10 @@ func (c *Coupler) Couple(
 
 	joinedCondition, _ = plugUtil.GetJoinedCondition()
 	isJoined := joinedCondition != nil && joinedCondition.Status != "True"
-	plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.CouplingInProcessStatusCondition, nil)
+	if joinedCondition.Reason != string(util.CouplingInProcessStatusCondition) {
+		plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.CouplingInProcessStatusCondition, nil)
+		return nil
+	}
 
 	var plugConfig []byte
 	if plug.Spec.ConfigEndpoint != "" {
@@ -136,8 +138,6 @@ func (c *Coupler) Couple(
 			}
 			return nil
 		}
-		plugUtil.UpdateStatusSocket(socket)
-		socketUtil.UpdateStatusAppendPlug(plug)
 	} else {
 		err = GlobalCoupler.ChangedPlug(plug, socket, socketConfig)
 		if err != nil {
@@ -157,6 +157,14 @@ func (c *Coupler) Couple(
 			return nil
 		}
 	}
-	plugUtil.UpdateStatusSimple(integrationv1alpha2.SucceededPhase, util.CouplingSucceededStatusCondition, nil)
+
+	if err := socketUtil.UpdateStatusAppendPlug(plug); err != nil {
+		return err
+	}
+	if err := plugUtil.UpdateStatusSimple(integrationv1alpha2.SucceededPhase, util.CouplingSucceededStatusCondition, socket); err != nil {
+		if err := plugUtil.Error(err); err != nil {
+			return err
+		}
+	}
 	return nil
 }
