@@ -57,29 +57,98 @@ func (s *PlugService) UpdateStatus(plug *integrationv1alpha2.Plug) {
 	s.update.SchedulePlugUpdateStatus(s.client, s.ctx, nil, plug)
 }
 
-func (s *PlugService) SimpleUpdateStatus(
-	message string,
+func (s *PlugService) CommonUpdateStatus(
 	phase integrationv1alpha2.Phase,
-	reason string,
-	status bool,
-	t string,
+	joinedStatusCondition StatusCondition,
+	socket *integrationv1alpha2.Socket,
+	message string,
+	reset bool,
 ) error {
 	plug, err := s.Get()
 	if err != nil {
 		return err
 	}
-	plug.Status.Phase = phase
-	condition := metav1.Condition{
-		Message:            message,
-		ObservedGeneration: plug.Generation,
-		Reason:             reason,
-		Status:             "False",
-		Type:               t,
+	if reset {
+		plug.Status = integrationv1alpha2.PlugStatus{}
 	}
-	if status {
-		condition.Status = "True"
+	if joinedStatusCondition != "" {
+		joinedStatus := false
+		if message == "" {
+			if joinedStatusCondition == PlugCreatedStatusCondition {
+				message = "plug created"
+			} else if joinedStatusCondition == SocketNotCreatedStatusCondition {
+				message = "waiting for socket to be created"
+			} else if joinedStatusCondition == SocketNotReadyStatusCondition {
+				message = "waiting for socket to be ready"
+			} else if joinedStatusCondition == CouplingInProcessStatusCondition {
+				message = "coupling to socket"
+			} else if joinedStatusCondition == CouplingSucceededStatusCondition {
+				message = "coupling succeeded"
+			} else if joinedStatusCondition == ErrorStatusCondition {
+				message = "unknown error"
+			}
+		}
+		if joinedStatusCondition == CouplingSucceededStatusCondition {
+			joinedStatus = true
+		}
+		c := metav1.Condition{
+			Message:            message,
+			ObservedGeneration: plug.Generation,
+			Reason:             string(joinedStatusCondition),
+			Status:             "False",
+			Type:               "Joined",
+		}
+		if joinedStatus {
+			c.Status = "True"
+		}
+		meta.SetStatusCondition(&plug.Status.Conditions, c)
 	}
-	meta.SetStatusCondition(&plug.Status.Conditions, condition)
+	if socket != nil {
+		coupledSocket := integrationv1alpha2.CoupledSocket{
+			APIVersion: socket.APIVersion,
+			Kind:       socket.Kind,
+			Name:       socket.Name,
+			Namespace:  socket.Namespace,
+			UID:        socket.UID,
+		}
+		plug.Status.CoupledSocket = coupledSocket
+	}
+	if phase != "" {
+		plug.Status.Phase = phase
+	}
 	s.UpdateStatus(plug)
 	return nil
+}
+
+func (s *PlugService) UpdateStatusSimple(
+	phase integrationv1alpha2.Phase,
+	joinedStatusCondition StatusCondition,
+	socket *integrationv1alpha2.Socket,
+) error {
+	return s.CommonUpdateStatus(phase, joinedStatusCondition, socket, "", false)
+}
+
+func (s *PlugService) UpdateStatusSocket(
+	socket *integrationv1alpha2.Socket,
+) error {
+	return s.CommonUpdateStatus("", "", socket, "", false)
+}
+
+func (s *PlugService) UpdateStatusPhase(
+	phase integrationv1alpha2.Phase,
+) error {
+	return s.CommonUpdateStatus(phase, "", nil, "", false)
+}
+
+func (s *PlugService) UpdateStatusJoinedCondition(
+	joinedStatusCondition StatusCondition,
+	message string,
+) error {
+	return s.CommonUpdateStatus("", joinedStatusCondition, nil, message, false)
+}
+
+func (s *PlugService) UpdateStatusJoinedConditionError(
+	err error,
+) error {
+	return s.CommonUpdateStatus("", ErrorStatusCondition, nil, err.Error(), false)
 }
