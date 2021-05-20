@@ -17,14 +17,13 @@ func (c *Coupler) Decouple(
 	client *client.Client,
 	ctx *context.Context,
 	req *ctrl.Request,
-	result *ctrl.Result,
 	log *logr.Logger,
 	plugNamespacedName *integrationv1alpha2.NamespacedName,
-) error {
+) (ctrl.Result, error) {
 	plugUtil := util.NewPlugUtil(client, ctx, req, log, plugNamespacedName, util.GlobalPlugMutex)
 	plug, err := plugUtil.Get()
 	if err != nil {
-		return err
+		return ctrl.Result{}, err
 	}
 
 	socketUtil := util.NewSocketUtil(client, ctx, req, log, &plug.Spec.Socket, util.GlobalSocketMutex)
@@ -32,31 +31,31 @@ func (c *Coupler) Decouple(
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			if err := plugUtil.Error(err); err != nil {
-				return err
+				return ctrl.Result{}, err
 			}
-			return nil
+			return ctrl.Result{Requeue: true}, nil
 		}
 	}
 
 	if err := GlobalCoupler.Decoupled(plug, socket); err != nil {
 		if err := plugUtil.Error(err); err != nil {
-			return err
+			return ctrl.Result{}, err
 		}
-		return nil
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	if socket != nil {
 		if err := socketUtil.UpdateStatusRemovePlug(plug); err != nil {
 			if err := plugUtil.Error(err); err != nil {
-				return err
+				return ctrl.Result{}, err
 			}
-			return nil
+			return ctrl.Result{Requeue: true}, nil
 		}
 	}
 
 	controllerutil.RemoveFinalizer(plug, integrationv1alpha2.PlugFinalizer)
 	if err := plugUtil.Update(plug); err != nil {
-		return err
+		return ctrl.Result{}, err
 	}
-	return nil
+	return ctrl.Result{}, nil
 }

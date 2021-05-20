@@ -58,7 +58,6 @@ type PlugReconciler struct {
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("plug", req.NamespacedName)
 	log.Info("RECONCILING PLUG")
-	result := ctrl.Result{}
 	plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 		Name:      req.NamespacedName.Name,
 		Namespace: req.NamespacedName.Namespace,
@@ -66,47 +65,38 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	plug, err := plugUtil.Get()
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return result, nil
+			return ctrl.Result{}, nil
 		}
-		return result, err
+		return ctrl.Result{}, err
 	}
 
 	if plug.GetDeletionTimestamp() != nil {
 		if controllerutil.ContainsFinalizer(plug, integrationv1alpha2.PlugFinalizer) {
-			if err := coupler.GlobalCoupler.Decouple(&r.Client, &ctx, &req, &result, &log, &integrationv1alpha2.NamespacedName{
+			return coupler.GlobalCoupler.Decouple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 				Name:      plug.Name,
 				Namespace: plug.Namespace,
-			}); err != nil {
-				return result, err
-			}
+			})
 		}
-		return result, nil
+		return ctrl.Result{}, nil
 	}
 	if !controllerutil.ContainsFinalizer(plug, integrationv1alpha2.PlugFinalizer) {
 		controllerutil.AddFinalizer(plug, integrationv1alpha2.PlugFinalizer)
 		if err := plugUtil.Update(plug); err != nil {
 			if err := plugUtil.Error(err); err != nil {
-				return result, err
+				return ctrl.Result{}, err
 			}
 		}
-		return result, nil
+		return ctrl.Result{}, nil
 	}
-	if err := coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &result, &log, &integrationv1alpha2.NamespacedName{
+	return coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 		Name:      plug.Name,
 		Namespace: plug.Namespace,
-	}); err != nil {
-		if err := plugUtil.Error(err); err != nil {
-			return result, err
-		}
-	}
-
-	return result, nil
+	})
 }
 
 func filterPlugPredicate() predicate.Predicate {
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			// return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 			return true
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {

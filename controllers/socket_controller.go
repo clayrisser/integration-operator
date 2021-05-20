@@ -58,7 +58,6 @@ type SocketReconciler struct {
 func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("socket", req.NamespacedName)
 	log.Info("RECONCILING SOCKET")
-	result := ctrl.Result{}
 	socketUtil := util.NewSocketUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 		Name:      req.NamespacedName.Name,
 		Namespace: req.NamespacedName.Namespace,
@@ -66,9 +65,9 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	socket, err := socketUtil.Get()
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return result, nil
+			return ctrl.Result{}, nil
 		}
-		return result, err
+		return ctrl.Result{}, err
 	}
 
 	if socket.GetDeletionTimestamp() != nil {
@@ -84,75 +83,75 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 						continue
 					}
 					if err := socketUtil.Error(err); err != nil {
-						return result, err
+						return ctrl.Result{}, err
 					}
-					return result, nil
+					return ctrl.Result{}, nil
 				}
 				if err := r.Delete(ctx, plug); err != nil {
 					if err := socketUtil.Error(err); err != nil {
-						return result, err
+						return ctrl.Result{}, err
 					}
-					return result, nil
+					return ctrl.Result{}, nil
 				}
 			}
 			controllerutil.RemoveFinalizer(socket, integrationv1alpha2.PlugFinalizer)
 			if err := r.Update(ctx, socket); err != nil {
 				if err := socketUtil.Error(err); err != nil {
-					return result, err
+					return ctrl.Result{}, err
 				}
-				return result, nil
+				return ctrl.Result{}, nil
 			}
 		}
-		return result, nil
+		return ctrl.Result{}, nil
 	}
 	if !controllerutil.ContainsFinalizer(socket, integrationv1alpha2.SocketFinalizer) {
 		controllerutil.AddFinalizer(socket, integrationv1alpha2.SocketFinalizer)
 		if err := r.Update(ctx, socket); err != nil {
 			if err := socketUtil.Error(err); err != nil {
-				return result, err
+				return ctrl.Result{}, err
 			}
 		}
-		return result, nil
+		return ctrl.Result{}, nil
 	}
 
 	coupledCondition, err := socketUtil.GetCoupledCondition()
 	if err != nil {
 		if err := socketUtil.Error(err); err != nil {
-			return result, err
+			return ctrl.Result{}, err
 		}
-		return result, nil
+		return ctrl.Result{}, nil
 	}
 
 	if coupledCondition == nil {
 		if err := socketUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketCreatedStatusCondition, nil); err != nil {
 			if err := socketUtil.Error(err); err != nil {
-				return result, err
+				return ctrl.Result{}, err
 			}
-			return result, nil
+			return ctrl.Result{}, nil
 		}
 		if err = coupler.GlobalCoupler.CreatedSocket(socket); err != nil {
 			if err := socketUtil.Error(err); err != nil {
-				return result, err
+				return ctrl.Result{}, err
 			}
-			return result, nil
+			return ctrl.Result{}, nil
 		}
-		return result, nil
+		return ctrl.Result{}, nil
 	}
 
 	socketInterfaceUtil := util.NewInterfaceUtil(&r.Client, &ctx, &req, &log, &socket.Spec.Interface)
 	_, err = socketInterfaceUtil.Get()
 	if err != nil {
 		if err := socketUtil.Error(err); err != nil {
-			return result, err
+			return ctrl.Result{}, err
 		}
-		return result, nil
+		return ctrl.Result{}, nil
 	}
 
 	if err := socketUtil.UpdateStatusSimple(integrationv1alpha2.ReadyPhase, util.SocketCoupledStatusCondition, nil); err != nil {
 		if err := socketUtil.Error(err); err != nil {
-			return result, err
+			return ctrl.Result{}, err
 		}
-		return result, nil
+		return ctrl.Result{}, nil
 	}
 
 	for _, connectedPlug := range socket.Status.CoupledPlugs {
@@ -163,21 +162,21 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		plug, err := plugUtil.Get()
 		if err != nil {
 			if err := socketUtil.Error(err); err != nil {
-				return result, err
+				return ctrl.Result{}, err
 			}
-			return result, nil
+			return ctrl.Result{}, nil
 		}
-		if err := coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &result, &log, &integrationv1alpha2.NamespacedName{
+		if _, err := coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 			Name:      plug.Name,
 			Namespace: plug.Namespace,
 		}); err != nil {
 			if err := socketUtil.Error(err); err != nil {
-				return result, err
+				return ctrl.Result{}, err
 			}
-			return result, nil
+			return ctrl.Result{}, nil
 		}
 	}
-	return result, nil
+	return ctrl.Result{}, nil
 }
 
 func filterSocketPredicate() predicate.Predicate {
