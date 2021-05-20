@@ -39,7 +39,7 @@ func (c *Coupler) Decouple(
 	}
 
 	if socket != nil {
-		if err := socketUtil.UpdateStatusRemovePlug(plug); err != nil {
+		if _, err := socketUtil.UpdateStatusRemovePlug(plug); err != nil {
 			return plugUtil.Error(err)
 		}
 	}

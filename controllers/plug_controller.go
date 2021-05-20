@@ -82,10 +82,7 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if !controllerutil.ContainsFinalizer(plug, integrationv1alpha2.PlugFinalizer) {
 		controllerutil.AddFinalizer(plug, integrationv1alpha2.PlugFinalizer)
 		if err := plugUtil.Update(plug); err != nil {
-			if _, err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
-			return ctrl.Result{Requeue: true}, nil
+			return plugUtil.Error(err)
 		}
 		return ctrl.Result{}, nil
 	}

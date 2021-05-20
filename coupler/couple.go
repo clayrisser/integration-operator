@@ -103,8 +103,8 @@ func (c *Coupler) Couple(
 		err = GlobalCoupler.CoupledSocket(plug, socket, plugConfig)
 		if err != nil {
 			result, err := plugUtil.Error(err)
-			if err := socketUtil.UpdateStatusCoupledConditionError(err); err != nil {
-				return ctrl.Result{}, err
+			if _, err := socketUtil.UpdateErrorStatus(err); err != nil {
+				return plugUtil.Error(err)
 			}
 			return result, err
 		}
@@ -116,7 +116,7 @@ func (c *Coupler) Couple(
 		err = GlobalCoupler.UpdatedSocket(plug, socket, socketConfig)
 		if err != nil {
 			result, err := plugUtil.Error(err)
-			if err := socketUtil.UpdateStatusCoupledConditionError(err); err != nil {
+			if _, err := socketUtil.UpdateErrorStatus(err); err != nil {
 				return ctrl.Result{}, err
 			}
 			return result, err
@@ -128,8 +128,8 @@ func (c *Coupler) Couple(
 		return plugUtil.Error(err)
 	}
 	if !socketUtil.CoupledPlugExits(&socket.Status.CoupledPlugs, plug) {
-		if err := socketUtil.UpdateStatusAppendPlug(plug); err != nil {
-			return ctrl.Result{}, err
+		if _, err := socketUtil.UpdateStatusAppendPlug(plug); err != nil {
+			return plugUtil.Error(err)
 		}
 	}
 	if plug.Status.Phase != integrationv1alpha2.SucceededPhase || coupledCondition.Reason != string(util.CouplingSucceededStatusCondition) {
