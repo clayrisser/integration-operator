@@ -73,6 +73,7 @@ func (u *PlugUtil) Update(plug *integrationv1alpha2.Plug) error {
 func (u *PlugUtil) UpdateStatus(plug *integrationv1alpha2.Plug) error {
 	client := *u.client
 	ctx := *u.ctx
+	plug.Status.LastUpdate = metav1.Now()
 	u.mutex.Lock()
 	if err := client.Status().Update(ctx, plug); err != nil {
 		u.mutex.Unlock()
@@ -80,105 +81,6 @@ func (u *PlugUtil) UpdateStatus(plug *integrationv1alpha2.Plug) error {
 	}
 	u.mutex.Unlock()
 	return nil
-}
-
-func (u *PlugUtil) CommonUpdateStatus(
-	phase integrationv1alpha2.Phase,
-	coupledStatusCondition StatusCondition,
-	socket *integrationv1alpha2.Socket,
-	message string,
-	reset bool,
-) error {
-	plug, err := u.Get()
-	if err != nil {
-		return err
-	}
-	if reset {
-		plug.Status = integrationv1alpha2.PlugStatus{}
-	}
-	if coupledStatusCondition != "" {
-		coupledStatus := false
-		if message == "" {
-			if coupledStatusCondition == PlugCreatedStatusCondition {
-				message = "plug created"
-			} else if coupledStatusCondition == SocketNotCreatedStatusCondition {
-				message = "waiting for socket to be created"
-			} else if coupledStatusCondition == SocketNotReadyStatusCondition {
-				message = "waiting for socket to be ready"
-			} else if coupledStatusCondition == CouplingInProcessStatusCondition {
-				message = "coupling to socket"
-			} else if coupledStatusCondition == CouplingSucceededStatusCondition {
-				message = "coupling succeeded"
-			} else if coupledStatusCondition == ErrorStatusCondition {
-				message = "unknown error"
-			}
-		}
-		if coupledStatusCondition == CouplingSucceededStatusCondition {
-			coupledStatus = true
-		}
-		c := metav1.Condition{
-			Message:            message,
-			ObservedGeneration: plug.Generation,
-			Reason:             string(coupledStatusCondition),
-			Status:             "False",
-			Type:               "coupled",
-		}
-		if coupledStatus {
-			c.Status = "True"
-		}
-		meta.SetStatusCondition(&plug.Status.Conditions, c)
-	}
-	if socket != nil {
-		coupledSocket := integrationv1alpha2.CoupledSocket{
-			APIVersion: socket.APIVersion,
-			Kind:       socket.Kind,
-			Name:       socket.Name,
-			Namespace:  socket.Namespace,
-			UID:        socket.UID,
-		}
-		plug.Status.CoupledSocket = coupledSocket
-	}
-	if phase != "" {
-		plug.Status.Phase = phase
-	}
-	plug.Status.LastUpdate = metav1.Now()
-	if err := u.UpdateStatus(plug); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (u *PlugUtil) UpdateStatusSimple(
-	phase integrationv1alpha2.Phase,
-	coupledStatusCondition StatusCondition,
-	socket *integrationv1alpha2.Socket,
-) error {
-	return u.CommonUpdateStatus(phase, coupledStatusCondition, socket, "", false)
-}
-
-func (u *PlugUtil) UpdateStatusSocket(
-	socket *integrationv1alpha2.Socket,
-) error {
-	return u.CommonUpdateStatus("", "", socket, "", false)
-}
-
-func (u *PlugUtil) UpdateStatusPhase(
-	phase integrationv1alpha2.Phase,
-) error {
-	return u.CommonUpdateStatus(phase, "", nil, "", false)
-}
-
-func (u *PlugUtil) UpdateStatuscoupledCondition(
-	coupledStatusCondition StatusCondition,
-	message string,
-) error {
-	return u.CommonUpdateStatus("", coupledStatusCondition, nil, message, false)
-}
-
-func (u *PlugUtil) UpdateStatuscoupledConditionError(
-	err error,
-) error {
-	return u.CommonUpdateStatus(integrationv1alpha2.FailedPhase, ErrorStatusCondition, nil, err.Error(), false)
 }
 
 func (u *PlugUtil) GetCoupledCondition() (*metav1.Condition, error) {
@@ -206,7 +108,7 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 		metav1.Now(),
 		2,
 	)
-	if err := u.UpdateStatuscoupledConditionError(err); err != nil {
+	if _, err := u.UpdateErrorStatus(err); err != nil {
 		return ctrl.Result{
 			Requeue:      true,
 			RequeueAfter: requeueAfter,
@@ -216,6 +118,107 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 		Requeue:      true,
 		RequeueAfter: requeueAfter,
 	}, nil
+}
+
+func (u *PlugUtil) UpdateErrorStatus(err error) (ctrl.Result, error) {
+	plug, err := u.Get()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	u.setErrorStatus(plug, err)
+	if err := u.UpdateStatus(plug); err != nil {
+		return ctrl.Result{}, err
+	}
+	return ctrl.Result{}, nil
+}
+
+func (u *PlugUtil) UpdateStatusSimple(
+	phase integrationv1alpha2.Phase,
+	coupledStatusCondition StatusCondition,
+	socket *integrationv1alpha2.Socket,
+) (ctrl.Result, error) {
+	plug, err := u.Get()
+	if err != nil {
+		return u.Error(err)
+	}
+	if coupledStatusCondition != "" {
+		u.setCoupledStatusCondition(plug, coupledStatusCondition, "")
+	}
+	if socket != nil {
+		u.setCoupledSocketStatus(plug, socket)
+	}
+	if phase != "" {
+		u.setPhaseStatus(plug, phase)
+	}
+	if err := u.UpdateStatus(plug); err != nil {
+		return u.Error(err)
+	}
+	return ctrl.Result{}, nil
+}
+
+func (u *PlugUtil) setPhaseStatus(
+	plug *integrationv1alpha2.Plug,
+	phase integrationv1alpha2.Phase,
+
+) {
+	plug.Status.Phase = phase
+}
+
+func (u *PlugUtil) setCoupledStatusCondition(
+	plug *integrationv1alpha2.Plug,
+	coupledStatusCondition StatusCondition,
+	message string,
+) {
+	coupledStatus := false
+	if message == "" {
+		if coupledStatusCondition == PlugCreatedStatusCondition {
+			message = "plug created"
+		} else if coupledStatusCondition == SocketNotCreatedStatusCondition {
+			message = "waiting for socket to be created"
+		} else if coupledStatusCondition == SocketNotReadyStatusCondition {
+			message = "waiting for socket to be ready"
+		} else if coupledStatusCondition == CouplingInProcessStatusCondition {
+			message = "coupling to socket"
+		} else if coupledStatusCondition == CouplingSucceededStatusCondition {
+			message = "coupling succeeded"
+		} else if coupledStatusCondition == ErrorStatusCondition {
+			message = "unknown error"
+		}
+	}
+	if coupledStatusCondition == CouplingSucceededStatusCondition {
+		coupledStatus = true
+	}
+	condition := metav1.Condition{
+		Message:            message,
+		ObservedGeneration: plug.Generation,
+		Reason:             string(coupledStatusCondition),
+		Status:             "False",
+		Type:               "coupled",
+	}
+	if coupledStatus {
+		condition.Status = "True"
+	}
+	meta.SetStatusCondition(&plug.Status.Conditions, condition)
+}
+
+func (u *PlugUtil) setErrorStatus(plug *integrationv1alpha2.Plug, err error) {
+	message := err.Error()
+	u.setCoupledStatusCondition(plug, ErrorStatusCondition, message)
+	plug.Status.Phase = integrationv1alpha2.FailedPhase
+	plug.Status.Message = message
+}
+
+func (u *PlugUtil) setCoupledSocketStatus(
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+) {
+	plug.Status.CoupledSocket = integrationv1alpha2.CoupledSocket{
+		APIVersion: socket.APIVersion,
+		Kind:       socket.Kind,
+		Name:       socket.Name,
+		Namespace:  socket.Namespace,
+		UID:        socket.UID,
+	}
 }
 
 var GlobalPlugMutex *sync.Mutex = &sync.Mutex{}

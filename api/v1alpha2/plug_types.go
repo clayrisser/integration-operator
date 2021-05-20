@@ -73,6 +73,9 @@ type PlugStatus struct {
 	// last update time
 	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
 
+	// status message
+	Message string `json:"message,omitempty"`
+
 	// socket coupled to plug
 	CoupledSocket CoupledSocket `json:"coupledSocket,omitempty"`
 }

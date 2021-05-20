@@ -222,6 +222,9 @@ spec:
                 description: last update time
                 format: date-time
                 type: string
+              message:
+                description: status message
+                type: string
               phase:
                 description: integration plug phase (Pending, Succeeded, Failed, Unknown)
                 type: string

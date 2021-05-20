@@ -31,17 +31,15 @@ func (c *Coupler) Couple(
 		return plugUtil.Error(err)
 	}
 	if coupledCondition == nil {
-		if err := plugUtil.UpdateStatusSimple(
+		result, err := plugUtil.UpdateStatusSimple(
 			integrationv1alpha2.PendingPhase,
 			util.PlugCreatedStatusCondition,
 			nil,
-		); err != nil {
-			return ctrl.Result{}, err
-		}
+		)
 		if err := GlobalCoupler.CreatedPlug(plug); err != nil {
 			return plugUtil.Error(err)
 		}
-		return ctrl.Result{Requeue: true}, nil
+		return result, err
 	}
 
 	plugInterfaceUtil := util.NewInterfaceUtil(client, ctx, req, log, &plug.Spec.Interface)
@@ -135,9 +133,7 @@ func (c *Coupler) Couple(
 		}
 	}
 	if plug.Status.Phase != integrationv1alpha2.SucceededPhase || coupledCondition.Reason != string(util.CouplingSucceededStatusCondition) {
-		if err := plugUtil.UpdateStatusSimple(integrationv1alpha2.SucceededPhase, util.CouplingSucceededStatusCondition, socket); err != nil {
-			return plugUtil.Error(err)
-		}
+		return plugUtil.UpdateStatusSimple(integrationv1alpha2.SucceededPhase, util.CouplingSucceededStatusCondition, socket)
 	}
 	return ctrl.Result{}, nil
 }
