@@ -35,14 +35,14 @@ type Options struct {
 }
 
 type Events struct {
-	OnBroken        func(data interface{})
-	OnDecoupled     func(data interface{})
-	OnPlugCoupled   func(data interface{})
-	OnPlugCreated   func(data interface{})
-	OnPlugUpdated   func(data interface{})
-	OnSocketCoupled func(data interface{})
-	OnSocketCreated func(data interface{})
-	OnSocketUpdated func(data interface{})
+	OnBroken        func(data interface{}) error
+	OnDecoupled     func(data interface{}) error
+	OnPlugCoupled   func(data interface{}) error
+	OnPlugCreated   func(data interface{}) error
+	OnPlugUpdated   func(data interface{}) error
+	OnSocketCoupled func(data interface{}) error
+	OnSocketCreated func(data interface{}) error
+	OnSocketUpdated func(data interface{}) error
 }
 
 func NewCoupler(options Options) *Coupler {
@@ -73,67 +73,101 @@ func (c *Coupler) Start() {
 	maxQueueSize := int(math.Max(float64(c.Options.MaxQueueSize), 1))
 	for i := 0; i < maxWorkers; i++ {
 		wg.Add(1)
-		brokenCh := make(chan Event, maxQueueSize)
-		updatedCh := make(chan Event, maxQueueSize)
-		createdCh := make(chan Event, maxQueueSize)
-		decoupledCh := make(chan Event, maxQueueSize)
-		coupledCh := make(chan Event, maxQueueSize)
-		c.bus.Sub(BrokenTopic, brokenCh)
-		c.bus.Sub(UpdatedTopic, updatedCh)
-		c.bus.Sub(CreatedTopic, createdCh)
-		c.bus.Sub(DecoupledTopic, decoupledCh)
-		c.bus.Sub(CoupledTopic, coupledCh)
+		brokenEventCh := make(chan Event, maxQueueSize)
+		updatedEventCh := make(chan Event, maxQueueSize)
+		createdEventCh := make(chan Event, maxQueueSize)
+		decoupledEventCh := make(chan Event, maxQueueSize)
+		coupledEventCh := make(chan Event, maxQueueSize)
+		c.bus.Sub(BrokenTopic, brokenEventCh)
+		c.bus.Sub(UpdatedTopic, updatedEventCh)
+		c.bus.Sub(CreatedTopic, createdEventCh)
+		c.bus.Sub(DecoupledTopic, decoupledEventCh)
+		c.bus.Sub(CoupledTopic, coupledEventCh)
 		go func() {
 			for {
 				event := Event{}
 				select {
 				case <-c.ctx.Done():
 					c.bus.Teardown()
-					close(brokenCh)
-					close(updatedCh)
-					close(createdCh)
-					close(decoupledCh)
-					close(coupledCh)
+					close(brokenEventCh)
+					close(updatedEventCh)
+					close(createdEventCh)
+					close(decoupledEventCh)
+					close(coupledEventCh)
 					c.Finished = true
 					wg.Done()
-				case event = <-createdCh:
+				case event = <-createdEventCh:
 					if event.Kind == PlugKind {
 						if c.events.OnPlugCreated != nil {
-							c.events.OnPlugCreated(event.Data)
+							if err := c.events.OnPlugCreated(event.Data); err != nil {
+								*event.ErrCh <- err
+								continue
+							}
 						}
 					} else if event.Kind == SocketKind {
 						if c.events.OnSocketCreated != nil {
-							c.events.OnSocketCreated(event.Data)
+							if err := c.events.OnSocketCreated(event.Data); err != nil {
+								*event.ErrCh <- err
+								continue
+							}
 						}
 					}
-				case event = <-coupledCh:
+					*event.ErrCh <- nil
+					continue
+				case event = <-coupledEventCh:
 					if event.Kind == PlugKind {
 						if c.events.OnPlugCoupled != nil {
-							c.events.OnPlugCoupled(event.Data)
+							if err := c.events.OnPlugCoupled(event.Data); err != nil {
+								*event.ErrCh <- nil
+								continue
+							}
 						}
 					} else if event.Kind == SocketKind {
 						if c.events.OnSocketCoupled != nil {
-							c.events.OnSocketCoupled(event.Data)
+							if err := c.events.OnSocketCoupled(event.Data); err != nil {
+								*event.ErrCh <- nil
+								continue
+							}
 						}
 					}
-				case event = <-updatedCh:
+					*event.ErrCh <- nil
+					continue
+				case event = <-updatedEventCh:
 					if event.Kind == PlugKind {
 						if c.events.OnPlugUpdated != nil {
-							c.events.OnPlugUpdated(event.Data)
+							if err := c.events.OnPlugUpdated(event.Data); err != nil {
+								*event.ErrCh <- nil
+								continue
+							}
 						}
 					} else if event.Kind == SocketKind {
 						if c.events.OnSocketUpdated != nil {
-							c.events.OnSocketUpdated(event.Data)
+							if err := c.events.OnSocketUpdated(event.Data); err != nil {
+								*event.ErrCh <- nil
+								continue
+							}
 						}
 					}
-				case event = <-decoupledCh:
+					*event.ErrCh <- nil
+					continue
+				case event = <-decoupledEventCh:
 					if c.events.OnDecoupled != nil {
-						c.events.OnDecoupled(event.Data)
+						if err := c.events.OnDecoupled(event.Data); err != nil {
+							*event.ErrCh <- nil
+							continue
+						}
 					}
-				case event = <-brokenCh:
+					*event.ErrCh <- nil
+					continue
+				case event = <-brokenEventCh:
 					if c.events.OnBroken != nil {
-						c.events.OnBroken(event.Data)
+						if err := c.events.OnBroken(event.Data); err != nil {
+							*event.ErrCh <- nil
+							continue
+						}
 					}
+					*event.ErrCh <- nil
+					continue
 				}
 			}
 		}()
@@ -151,12 +185,13 @@ func (c *Coupler) Wait() {
 }
 
 func (c *Coupler) CreatedPlug(plug *integrationv1alpha2.Plug) error {
+	errCh := make(chan error)
 	b, err := json.Marshal(plug)
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(CreatedTopic, PlugKind, struct{ plug []byte }{plug: b})
-	return nil
+	c.bus.Pub(CreatedTopic, PlugKind, struct{ plug []byte }{plug: b}, errCh)
+	return <-errCh
 }
 
 func (c *Coupler) CoupledPlug(
@@ -164,6 +199,7 @@ func (c *Coupler) CoupledPlug(
 	socket *integrationv1alpha2.Socket,
 	config Config,
 ) error {
+	errCh := make(chan error)
 	bPlug, err := json.Marshal(plug)
 	if err != nil {
 		return err
@@ -176,8 +212,8 @@ func (c *Coupler) CoupledPlug(
 		plug   []byte
 		socket []byte
 		config []byte
-	}{plug: bPlug, socket: bSocket, config: config})
-	return nil
+	}{plug: bPlug, socket: bSocket, config: config}, errCh)
+	return <-errCh
 }
 
 func (c *Coupler) UpdatedPlug(
@@ -185,6 +221,7 @@ func (c *Coupler) UpdatedPlug(
 	socket *integrationv1alpha2.Socket,
 	config Config,
 ) error {
+	errCh := make(chan error)
 	bPlug, err := json.Marshal(plug)
 	if err != nil {
 		return err
@@ -197,19 +234,20 @@ func (c *Coupler) UpdatedPlug(
 		plug   []byte
 		socket []byte
 		config []byte
-	}{plug: bPlug, socket: bSocket, config: config})
-	return nil
+	}{plug: bPlug, socket: bSocket, config: config}, errCh)
+	return <-errCh
 }
 
 func (c *Coupler) CreatedSocket(
 	socket *integrationv1alpha2.Socket,
 ) error {
+	errCh := make(chan error)
 	b, err := json.Marshal(socket)
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(CreatedTopic, SocketKind, struct{ socket []byte }{socket: b})
-	return nil
+	c.bus.Pub(CreatedTopic, SocketKind, struct{ socket []byte }{socket: b}, errCh)
+	return <-errCh
 }
 
 func (c *Coupler) CoupledSocket(
@@ -217,6 +255,7 @@ func (c *Coupler) CoupledSocket(
 	socket *integrationv1alpha2.Socket,
 	config Config,
 ) error {
+	errCh := make(chan error)
 	bPlug, err := json.Marshal(plug)
 	if err != nil {
 		return err
@@ -229,8 +268,8 @@ func (c *Coupler) CoupledSocket(
 		plug   []byte
 		socket []byte
 		config []byte
-	}{plug: bPlug, socket: bSocket, config: config})
-	return nil
+	}{plug: bPlug, socket: bSocket, config: config}, errCh)
+	return <-errCh
 }
 
 func (c *Coupler) UpdatedSocket(
@@ -238,6 +277,7 @@ func (c *Coupler) UpdatedSocket(
 	socket *integrationv1alpha2.Socket,
 	config Config,
 ) error {
+	errCh := make(chan error)
 	bPlug, err := json.Marshal(plug)
 	if err != nil {
 		return err
@@ -250,14 +290,15 @@ func (c *Coupler) UpdatedSocket(
 		plug   []byte
 		socket []byte
 		config []byte
-	}{plug: bPlug, socket: bSocket, config: config})
-	return nil
+	}{plug: bPlug, socket: bSocket, config: config}, errCh)
+	return <-errCh
 }
 
 func (c *Coupler) Decoupled(
 	plug *integrationv1alpha2.Plug,
 	socket *integrationv1alpha2.Socket,
 ) error {
+	errCh := make(chan error)
 	bPlug, err := json.Marshal(plug)
 	if err != nil {
 		return err
@@ -269,12 +310,14 @@ func (c *Coupler) Decoupled(
 	c.bus.Pub(DecoupledTopic, 0, struct {
 		plug   []byte
 		socket []byte
-	}{plug: bPlug, socket: bSocket})
-	return nil
+	}{plug: bPlug, socket: bSocket}, errCh)
+	return <-errCh
 }
 
-func (c *Coupler) Broken() {
-	c.bus.Pub(BrokenTopic, 0, struct{}{})
+func (c *Coupler) Broken() error {
+	errCh := make(chan error)
+	c.bus.Pub(BrokenTopic, 0, struct{}{}, errCh)
+	return <-errCh
 }
 
 func (c *Coupler) GetConfig(endpoint string) (Config, error) {

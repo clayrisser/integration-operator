@@ -25,13 +25,14 @@ const (
 )
 
 type Event struct {
-	Kind  Kind
 	Data  interface{}
+	ErrCh *chan error
+	Kind  Kind
 	Topic Topic
 }
 
 type Bus struct {
-	subscribers map[Topic][](chan<- Event)
+	subscribers map[Topic][]*chan<- Event
 	rm          sync.RWMutex
 	closed      bool
 }
@@ -40,7 +41,7 @@ func NewBus() *Bus {
 	return &Bus{
 		closed:      false,
 		rm:          sync.RWMutex{},
-		subscribers: map[Topic][](chan<- Event){},
+		subscribers: map[Topic][]*chan<- Event{},
 	}
 }
 
@@ -54,29 +55,29 @@ func (b *Bus) Open() {
 
 func (b *Bus) Teardown() {
 	b.Close()
-	b.subscribers = map[Topic][](chan<- Event){}
+	b.subscribers = map[Topic][]*chan<- Event{}
 }
 
-func (b *Bus) Pub(topic Topic, kind Kind, data interface{}) {
+func (b *Bus) Pub(topic Topic, kind Kind, data interface{}, errCh chan error) {
 	b.rm.RLock()
-	if channels, found := b.subscribers[topic]; found {
-		go func(event Event, channels [](chan<- Event)) {
-			for _, ch := range channels {
+	if eventChannels, found := b.subscribers[topic]; found {
+		go func(event Event, eventChannels []*chan<- Event) {
+			for _, eventCh := range eventChannels {
 				if !b.closed {
-					ch <- event
+					*eventCh <- event
 				}
 			}
-		}(Event{Topic: topic, Data: data, Kind: kind}, append([](chan<- Event){}, channels...))
+		}(Event{Topic: topic, Data: data, Kind: kind, ErrCh: &errCh}, append([]*chan<- Event{}, eventChannels...))
 	}
 	b.rm.RUnlock()
 }
 
-func (b *Bus) Sub(topic Topic, ch chan<- Event) {
+func (b *Bus) Sub(topic Topic, eventCh chan<- Event) {
 	b.rm.Lock()
 	if topicSubscribers, found := b.subscribers[topic]; found {
-		b.subscribers[topic] = append(topicSubscribers, ch)
+		b.subscribers[topic] = append(topicSubscribers, &eventCh)
 	} else {
-		b.subscribers[topic] = append([](chan<- Event){}, ch)
+		b.subscribers[topic] = append([]*chan<- Event{}, &eventCh)
 	}
 	b.rm.Unlock()
 }

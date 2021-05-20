@@ -3,6 +3,7 @@ package coupler
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,16 +32,21 @@ func (c *Coupler) Couple(
 		return plugUtil.Error(err)
 	}
 	if coupledCondition == nil {
-		result, err := plugUtil.UpdateStatusSimple(
+		if err := GlobalCoupler.CreatedPlug(plug); err != nil {
+			fmt.Println("FAILED TO CREATE api")
+			return plugUtil.Error(err)
+		}
+		fmt.Println("Updating to pending")
+		return plugUtil.UpdateStatusSimple(
 			integrationv1alpha2.PendingPhase,
 			util.PlugCreatedStatusCondition,
 			nil,
 		)
-		if err := GlobalCoupler.CreatedPlug(plug); err != nil {
-			return plugUtil.Error(err)
-		}
-		return result, err
 	}
+
+	fmt.Println(coupledCondition.Reason)
+
+	(*log).Info("FAILED TO CREATE BUT HERE FOR BAD REASON")
 
 	plugInterfaceUtil := util.NewInterfaceUtil(client, ctx, req, log, &plug.Spec.Interface)
 	plugInterface, err := plugInterfaceUtil.Get()
@@ -80,6 +86,8 @@ func (c *Coupler) Couple(
 		return ctrl.Result{Requeue: true}, nil
 	}
 
+	fmt.Println("I AM HERE")
+
 	var plugConfig []byte
 	if plug.Spec.ConfigEndpoint != "" {
 		plugConfig, err = GlobalCoupler.GetConfig(plug.Spec.ConfigEndpoint)
@@ -87,6 +95,7 @@ func (c *Coupler) Couple(
 			return plugUtil.Error(err)
 		}
 	}
+	fmt.Println("got config")
 	var socketConfig []byte
 	if socket.Spec.ConfigEndpoint != "" {
 		socketConfig, err = GlobalCoupler.GetConfig(socket.Spec.ConfigEndpoint)
@@ -94,6 +103,7 @@ func (c *Coupler) Couple(
 			return plugUtil.Error(err)
 		}
 	}
+	fmt.Println("got socket config")
 
 	if isCoupled {
 		err = GlobalCoupler.CoupledPlug(plug, socket, socketConfig)

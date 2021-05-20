@@ -109,11 +109,10 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if coupledCondition == nil {
-		result, err := socketUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketCreatedStatusCondition, nil)
 		if err = coupler.GlobalCoupler.CreatedSocket(socket); err != nil {
 			return socketUtil.Error(err)
 		}
-		return result, err
+		return socketUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketCreatedStatusCondition, nil)
 	}
 
 	socketInterfaceUtil := util.NewInterfaceUtil(&r.Client, &ctx, &req, &log, &socket.Spec.Interface)

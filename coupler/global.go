@@ -17,15 +17,16 @@ func CreateGlobalCoupler() Coupler {
 		MaxWorkers:   1,
 	})
 	globalCoupler.RegisterEvents(&Events{
-		OnPlugCreated: func(data interface{}) {
+		OnPlugCreated: func(data interface{}) error {
 			d := data.(struct {
 				plug []byte
 			})
 			if err := handlers.HandlePlugCreated(gjson.Parse(string(d.plug))); err != nil {
 				couplerLog.Error(err, "failed to handle plug created")
 			}
+			return nil
 		},
-		OnPlugCoupled: func(data interface{}) {
+		OnPlugCoupled: func(data interface{}) error {
 			d := data.(struct {
 				plug   []byte
 				socket []byte
@@ -38,8 +39,9 @@ func CreateGlobalCoupler() Coupler {
 			); err != nil {
 				couplerLog.Error(err, "failed to handle plug coupled")
 			}
+			return nil
 		},
-		OnPlugUpdated: func(data interface{}) {
+		OnPlugUpdated: func(data interface{}) error {
 			d := data.(struct {
 				plug   []byte
 				socket []byte
@@ -52,16 +54,18 @@ func CreateGlobalCoupler() Coupler {
 			); err != nil {
 				couplerLog.Error(err, "failed to handle plug updated")
 			}
+			return nil
 		},
-		OnSocketCreated: func(data interface{}) {
+		OnSocketCreated: func(data interface{}) error {
 			d := data.(struct {
 				socket []byte
 			})
 			if err := handlers.HandleSocketCreated(gjson.Parse(string(d.socket))); err != nil {
 				couplerLog.Error(err, "failed to handle socket created")
 			}
+			return nil
 		},
-		OnSocketCoupled: func(data interface{}) {
+		OnSocketCoupled: func(data interface{}) error {
 			d := data.(struct {
 				plug   []byte
 				socket []byte
@@ -74,8 +78,9 @@ func CreateGlobalCoupler() Coupler {
 			); err != nil {
 				couplerLog.Error(err, "failed to handle socket coupled")
 			}
+			return nil
 		},
-		OnSocketUpdated: func(data interface{}) {
+		OnSocketUpdated: func(data interface{}) error {
 			d := data.(struct {
 				plug   []byte
 				socket []byte
@@ -88,8 +93,9 @@ func CreateGlobalCoupler() Coupler {
 			); err != nil {
 				couplerLog.Error(err, "failed to handle socket updated")
 			}
+			return nil
 		},
-		OnDecoupled: func(data interface{}) {
+		OnDecoupled: func(data interface{}) error {
 			d := data.(struct {
 				plug   []byte
 				socket []byte
@@ -99,12 +105,14 @@ func CreateGlobalCoupler() Coupler {
 			); err != nil {
 				couplerLog.Error(err, "failed to handle decoupled")
 			}
+			return nil
 		},
-		OnBroken: func(data interface{}) {
+		OnBroken: func(data interface{}) error {
 			err := handlers.HandleBroken()
 			if err != nil {
 				couplerLog.Error(err, "failed to handle broken")
 			}
+			return nil
 		},
 	})
 	return globalCoupler
