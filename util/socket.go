@@ -230,6 +230,7 @@ func (u *SocketUtil) UpdateStatusRemovePlug(
 			condition.Status = "True"
 		}
 	}
+	plug.Status.LastUpdate = metav1.Now()
 	u.UpdateStatus(socket)
 	return nil
 }

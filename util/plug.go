@@ -11,6 +11,8 @@ import (
 	"github.com/go-logr/logr"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 
+	"github.com/silicon-hills/integration-operator/config"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -139,6 +141,7 @@ func (u *PlugUtil) CommonUpdateStatus(
 	if phase != "" {
 		plug.Status.Phase = phase
 	}
+	plug.Status.LastUpdate = metav1.Now()
 	if err := u.UpdateStatus(plug); err != nil {
 		return err
 	}
@@ -187,10 +190,32 @@ func (u *PlugUtil) GetCoupledCondition() (*metav1.Condition, error) {
 	return coupledCondition, nil
 }
 
-func (u *PlugUtil) Error(err error) error {
+func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 	log := *u.log
 	log.Error(err, err.Error())
-	return u.UpdateStatuscoupledConditionError(err)
+	plug, err := u.Get()
+	if err != nil {
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: config.MaxRequeueDuration,
+		}, err
+	}
+	requeueAfter := CalculateExponentialRequireAfter(
+		plug.Status.LastUpdate,
+		plug.Status.Phase == integrationv1alpha2.SucceededPhase,
+		metav1.Now(),
+		2,
+	)
+	if err := u.UpdateStatuscoupledConditionError(err); err != nil {
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: requeueAfter,
+		}, err
+	}
+	return ctrl.Result{
+		Requeue:      true,
+		RequeueAfter: requeueAfter,
+	}, nil
 }
 
 var GlobalPlugMutex *sync.Mutex = &sync.Mutex{}

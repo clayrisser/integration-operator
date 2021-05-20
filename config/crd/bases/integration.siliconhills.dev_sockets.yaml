@@ -218,6 +218,10 @@ spec:
                   - uid
                   type: object
                 type: array
+              lastUpdate:
+                description: last update time
+                format: date-time
+                type: string
               phase:
                 description: integration socket phase (Pending, Succeeded, Failed,
                   Unknown)

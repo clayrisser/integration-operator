@@ -70,6 +70,9 @@ type PlugStatus struct {
 	// integration plug phase (Pending, Succeeded, Failed, Unknown)
 	Phase Phase `json:"phase,omitempty"`
 
+	// last update time
+	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
+
 	// socket coupled to plug
 	CoupledSocket CoupledSocket `json:"coupledSocket,omitempty"`
 }

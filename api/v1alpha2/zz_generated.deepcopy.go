@@ -277,6 +277,7 @@ func (in *PlugStatus) DeepCopyInto(out *PlugStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	in.LastUpdate.DeepCopyInto(&out.LastUpdate)
 	out.CoupledSocket = in.CoupledSocket
 }
 
@@ -380,6 +381,7 @@ func (in *SocketStatus) DeepCopyInto(out *SocketStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	in.LastUpdate.DeepCopyInto(&out.LastUpdate)
 	if in.CoupledPlugs != nil {
 		in, out := &in.CoupledPlugs, &out.CoupledPlugs
 		*out = make([]CoupledPlug, len(*in))

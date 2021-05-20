@@ -73,6 +73,9 @@ type SocketStatus struct {
 	// socket is ready for coupling
 	Ready bool `json:"ready,omitempty"`
 
+	// last update time
+	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
+
 	// plugs coupled to socket
 	CoupledPlugs []CoupledPlug `json:"coupledPlugs,omitempty"`
 }

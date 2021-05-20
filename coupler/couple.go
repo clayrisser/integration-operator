@@ -28,10 +28,7 @@ func (c *Coupler) Couple(
 
 	coupledCondition, err := plugUtil.GetCoupledCondition()
 	if err != nil {
-		if err := plugUtil.Error(err); err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{Requeue: true}, nil
+		return plugUtil.Error(err)
 	}
 	if coupledCondition == nil {
 		if err := plugUtil.UpdateStatusSimple(
@@ -42,9 +39,7 @@ func (c *Coupler) Couple(
 			return ctrl.Result{}, err
 		}
 		if err := GlobalCoupler.CreatedPlug(plug); err != nil {
-			if err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
+			return plugUtil.Error(err)
 		}
 		return ctrl.Result{Requeue: true}, nil
 	}
@@ -52,10 +47,7 @@ func (c *Coupler) Couple(
 	plugInterfaceUtil := util.NewInterfaceUtil(client, ctx, req, log, &plug.Spec.Interface)
 	plugInterface, err := plugInterfaceUtil.Get()
 	if err != nil {
-		if err := plugUtil.Error(err); err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{Requeue: true}, nil
+		return plugUtil.Error(err)
 	}
 
 	socketUtil := util.NewSocketUtil(client, ctx, req, log, &plug.Spec.Socket, util.GlobalSocketMutex)
@@ -64,9 +56,7 @@ func (c *Coupler) Couple(
 		if k8serrors.IsNotFound(err) {
 			plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketNotCreatedStatusCondition, nil)
 		} else {
-			if err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
+			return plugUtil.Error(err)
 		}
 		return ctrl.Result{Requeue: true}, nil
 	}
@@ -78,17 +68,11 @@ func (c *Coupler) Couple(
 	socketInterfaceUtil := util.NewInterfaceUtil(client, ctx, req, log, &socket.Spec.Interface)
 	socketInterface, err := socketInterfaceUtil.Get()
 	if err != nil {
-		if err := plugUtil.Error(err); err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{Requeue: true}, nil
+		return plugUtil.Error(err)
 	}
 
 	if plugInterface.UID != socketInterface.UID {
-		if err := plugUtil.Error(errors.New("plug and socket interface do not match")); err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{Requeue: true}, nil
+		return plugUtil.Error(errors.New("plug and socket interface do not match"))
 	}
 
 	coupledCondition, _ = plugUtil.GetCoupledCondition()
@@ -102,67 +86,48 @@ func (c *Coupler) Couple(
 	if plug.Spec.ConfigEndpoint != "" {
 		plugConfig, err = GlobalCoupler.GetConfig(plug.Spec.ConfigEndpoint)
 		if err != nil {
-			if err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
-			return ctrl.Result{Requeue: true}, nil
+			return plugUtil.Error(err)
 		}
 	}
 	var socketConfig []byte
 	if socket.Spec.ConfigEndpoint != "" {
 		socketConfig, err = GlobalCoupler.GetConfig(socket.Spec.ConfigEndpoint)
 		if err != nil {
-			if err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
-			return ctrl.Result{Requeue: true}, nil
+			return plugUtil.Error(err)
 		}
 	}
 
 	if isCoupled {
 		err = GlobalCoupler.CoupledPlug(plug, socket, socketConfig)
 		if err != nil {
-			if err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
-			return ctrl.Result{Requeue: true}, nil
+			return plugUtil.Error(err)
 		}
 		err = GlobalCoupler.CoupledSocket(plug, socket, plugConfig)
 		if err != nil {
-			if err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
+			result, err := plugUtil.Error(err)
 			if err := socketUtil.UpdateStatusCoupledConditionError(err); err != nil {
 				return ctrl.Result{}, err
 			}
-			return ctrl.Result{Requeue: true}, nil
+			return result, err
 		}
 	} else {
 		err = GlobalCoupler.UpdatedPlug(plug, socket, socketConfig)
 		if err != nil {
-			if err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
-			return ctrl.Result{Requeue: true}, nil
+			return plugUtil.Error(err)
 		}
 		err = GlobalCoupler.UpdatedSocket(plug, socket, socketConfig)
 		if err != nil {
-			if err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
+			result, err := plugUtil.Error(err)
 			if err := socketUtil.UpdateStatusCoupledConditionError(err); err != nil {
 				return ctrl.Result{}, err
 			}
-			return ctrl.Result{Requeue: true}, nil
+			return result, err
 		}
 	}
 
 	coupledCondition, err = plugUtil.GetCoupledCondition()
 	if err != nil {
-		if err := plugUtil.Error(err); err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{Requeue: true}, nil
+		return plugUtil.Error(err)
 	}
 	if !socketUtil.CoupledPlugExits(&socket.Status.CoupledPlugs, plug) {
 		if err := socketUtil.UpdateStatusAppendPlug(plug); err != nil {
@@ -171,9 +136,7 @@ func (c *Coupler) Couple(
 	}
 	if plug.Status.Phase != integrationv1alpha2.SucceededPhase || coupledCondition.Reason != string(util.CouplingSucceededStatusCondition) {
 		if err := plugUtil.UpdateStatusSimple(integrationv1alpha2.SucceededPhase, util.CouplingSucceededStatusCondition, socket); err != nil {
-			if err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
+			return plugUtil.Error(err)
 		}
 	}
 	return ctrl.Result{}, nil

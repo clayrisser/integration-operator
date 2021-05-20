@@ -30,26 +30,17 @@ func (c *Coupler) Decouple(
 	socket, err := socketUtil.Get()
 	if err != nil {
 		if !errors.IsNotFound(err) {
-			if err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
-			return ctrl.Result{Requeue: true}, nil
+			return plugUtil.Error(err)
 		}
 	}
 
 	if err := GlobalCoupler.Decoupled(plug, socket); err != nil {
-		if err := plugUtil.Error(err); err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{Requeue: true}, nil
+		return plugUtil.Error(err)
 	}
 
 	if socket != nil {
 		if err := socketUtil.UpdateStatusRemovePlug(plug); err != nil {
-			if err := plugUtil.Error(err); err != nil {
-				return ctrl.Result{}, err
-			}
-			return ctrl.Result{Requeue: true}, nil
+			return plugUtil.Error(err)
 		}
 	}
 
