@@ -115,7 +115,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return result, nil
 	}
 
-	joinedCondition, err := socketUtil.GetJoinedCondition()
+	coupledCondition, err := socketUtil.GetCoupledCondition()
 	if err != nil {
 		if err := socketUtil.Error(err); err != nil {
 			return result, err
@@ -123,7 +123,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return result, nil
 	}
 
-	if joinedCondition == nil {
+	if coupledCondition == nil {
 		if err := socketUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketCreatedStatusCondition, nil); err != nil {
 			if err := socketUtil.Error(err); err != nil {
 				return result, err
@@ -148,7 +148,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return result, nil
 	}
 
-	if err := socketUtil.UpdateStatusSimple(integrationv1alpha2.ReadyPhase, util.SocketReadyStatusCondition, nil); err != nil {
+	if err := socketUtil.UpdateStatusSimple(integrationv1alpha2.ReadyPhase, util.SocketCoupledStatusCondition, nil); err != nil {
 		if err := socketUtil.Error(err); err != nil {
 			return result, err
 		}

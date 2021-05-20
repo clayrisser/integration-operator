@@ -25,32 +25,32 @@ func CreateGlobalCoupler() Coupler {
 				couplerLog.Error(err, "failed to handle plug created")
 			}
 		},
-		OnPlugJoined: func(data interface{}) {
+		OnPlugCoupled: func(data interface{}) {
 			d := data.(struct {
 				plug   []byte
 				socket []byte
 				config []byte
 			})
-			if err := handlers.HandlePlugJoined(
+			if err := handlers.HandlePlugCoupled(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
 			); err != nil {
-				couplerLog.Error(err, "failed to handle joined")
+				couplerLog.Error(err, "failed to handle plug coupled")
 			}
 		},
-		OnPlugChanged: func(data interface{}) {
+		OnPlugUpdated: func(data interface{}) {
 			d := data.(struct {
 				plug   []byte
 				socket []byte
 				config []byte
 			})
-			if err := handlers.HandlePlugChanged(
+			if err := handlers.HandlePlugUpdated(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
 			); err != nil {
-				couplerLog.Error(err, "failed to handle plug changed")
+				couplerLog.Error(err, "failed to handle plug updated")
 			}
 		},
 		OnSocketCreated: func(data interface{}) {
@@ -61,43 +61,43 @@ func CreateGlobalCoupler() Coupler {
 				couplerLog.Error(err, "failed to handle socket created")
 			}
 		},
-		OnSocketJoined: func(data interface{}) {
+		OnSocketCoupled: func(data interface{}) {
 			d := data.(struct {
 				plug   []byte
 				socket []byte
 				config []byte
 			})
-			if err := handlers.HandleSocketJoined(
+			if err := handlers.HandleSocketCoupled(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
 			); err != nil {
-				couplerLog.Error(err, "failed to handle joined")
+				couplerLog.Error(err, "failed to handle socket coupled")
 			}
 		},
-		OnSocketChanged: func(data interface{}) {
+		OnSocketUpdated: func(data interface{}) {
 			d := data.(struct {
 				plug   []byte
 				socket []byte
 				config []byte
 			})
-			if err := handlers.HandleSocketChanged(
+			if err := handlers.HandleSocketUpdated(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
 			); err != nil {
-				couplerLog.Error(err, "failed to handle socket changed")
+				couplerLog.Error(err, "failed to handle socket updated")
 			}
 		},
-		OnDeparted: func(data interface{}) {
+		OnDecoupled: func(data interface{}) {
 			d := data.(struct {
 				plug   []byte
 				socket []byte
 			})
-			if err := handlers.HandleDeparted(
+			if err := handlers.HandleDecoupled(
 				gjson.Parse(string(d.plug)), gjson.Parse(string(d.socket)),
 			); err != nil {
-				couplerLog.Error(err, "failed to handle departed")
+				couplerLog.Error(err, "failed to handle decoupled")
 			}
 		},
 		OnBroken: func(data interface{}) {

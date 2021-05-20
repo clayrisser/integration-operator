@@ -38,7 +38,7 @@ func (c *Coupler) Decouple(
 		}
 	}
 
-	if err := GlobalCoupler.Departed(plug, socket); err != nil {
+	if err := GlobalCoupler.Decoupled(plug, socket); err != nil {
 		if err := plugUtil.Error(err); err != nil {
 			return err
 		}

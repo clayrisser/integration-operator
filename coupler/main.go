@@ -36,13 +36,13 @@ type Options struct {
 
 type Events struct {
 	OnBroken        func(data interface{})
-	OnDeparted      func(data interface{})
-	OnPlugChanged   func(data interface{})
+	OnDecoupled     func(data interface{})
+	OnPlugCoupled   func(data interface{})
 	OnPlugCreated   func(data interface{})
-	OnPlugJoined    func(data interface{})
-	OnSocketChanged func(data interface{})
+	OnPlugUpdated   func(data interface{})
+	OnSocketCoupled func(data interface{})
 	OnSocketCreated func(data interface{})
-	OnSocketJoined  func(data interface{})
+	OnSocketUpdated func(data interface{})
 }
 
 func NewCoupler(options Options) *Coupler {
@@ -74,15 +74,15 @@ func (c *Coupler) Start() {
 	for i := 0; i < maxWorkers; i++ {
 		wg.Add(1)
 		brokenCh := make(chan Event, maxQueueSize)
-		changedCh := make(chan Event, maxQueueSize)
+		updatedCh := make(chan Event, maxQueueSize)
 		createdCh := make(chan Event, maxQueueSize)
-		departedCh := make(chan Event, maxQueueSize)
-		joinedCh := make(chan Event, maxQueueSize)
+		decoupledCh := make(chan Event, maxQueueSize)
+		coupledCh := make(chan Event, maxQueueSize)
 		c.bus.Sub(BrokenTopic, brokenCh)
-		c.bus.Sub(ChangedTopic, changedCh)
+		c.bus.Sub(UpdatedTopic, updatedCh)
 		c.bus.Sub(CreatedTopic, createdCh)
-		c.bus.Sub(DepartedTopic, departedCh)
-		c.bus.Sub(JoinedTopic, joinedCh)
+		c.bus.Sub(DecoupledTopic, decoupledCh)
+		c.bus.Sub(CoupledTopic, coupledCh)
 		go func() {
 			for {
 				event := Event{}
@@ -90,10 +90,10 @@ func (c *Coupler) Start() {
 				case <-c.ctx.Done():
 					c.bus.Teardown()
 					close(brokenCh)
-					close(changedCh)
+					close(updatedCh)
 					close(createdCh)
-					close(departedCh)
-					close(joinedCh)
+					close(decoupledCh)
+					close(coupledCh)
 					c.Finished = true
 					wg.Done()
 				case event = <-createdCh:
@@ -106,29 +106,29 @@ func (c *Coupler) Start() {
 							c.events.OnSocketCreated(event.Data)
 						}
 					}
-				case event = <-joinedCh:
+				case event = <-coupledCh:
 					if event.Kind == PlugKind {
-						if c.events.OnPlugJoined != nil {
-							c.events.OnPlugJoined(event.Data)
+						if c.events.OnPlugCoupled != nil {
+							c.events.OnPlugCoupled(event.Data)
 						}
 					} else if event.Kind == SocketKind {
-						if c.events.OnSocketJoined != nil {
-							c.events.OnSocketJoined(event.Data)
+						if c.events.OnSocketCoupled != nil {
+							c.events.OnSocketCoupled(event.Data)
 						}
 					}
-				case event = <-changedCh:
+				case event = <-updatedCh:
 					if event.Kind == PlugKind {
-						if c.events.OnPlugChanged != nil {
-							c.events.OnPlugChanged(event.Data)
+						if c.events.OnPlugUpdated != nil {
+							c.events.OnPlugUpdated(event.Data)
 						}
 					} else if event.Kind == SocketKind {
-						if c.events.OnSocketChanged != nil {
-							c.events.OnSocketChanged(event.Data)
+						if c.events.OnSocketUpdated != nil {
+							c.events.OnSocketUpdated(event.Data)
 						}
 					}
-				case event = <-departedCh:
-					if c.events.OnDeparted != nil {
-						c.events.OnDeparted(event.Data)
+				case event = <-decoupledCh:
+					if c.events.OnDecoupled != nil {
+						c.events.OnDecoupled(event.Data)
 					}
 				case event = <-brokenCh:
 					if c.events.OnBroken != nil {
@@ -159,7 +159,7 @@ func (c *Coupler) CreatedPlug(plug *integrationv1alpha2.Plug) error {
 	return nil
 }
 
-func (c *Coupler) JoinedPlug(
+func (c *Coupler) CoupledPlug(
 	plug *integrationv1alpha2.Plug,
 	socket *integrationv1alpha2.Socket,
 	config Config,
@@ -172,7 +172,7 @@ func (c *Coupler) JoinedPlug(
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(JoinedTopic, PlugKind, struct {
+	c.bus.Pub(CoupledTopic, PlugKind, struct {
 		plug   []byte
 		socket []byte
 		config []byte
@@ -180,7 +180,7 @@ func (c *Coupler) JoinedPlug(
 	return nil
 }
 
-func (c *Coupler) ChangedPlug(
+func (c *Coupler) UpdatedPlug(
 	plug *integrationv1alpha2.Plug,
 	socket *integrationv1alpha2.Socket,
 	config Config,
@@ -193,7 +193,7 @@ func (c *Coupler) ChangedPlug(
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(ChangedTopic, PlugKind, struct {
+	c.bus.Pub(UpdatedTopic, PlugKind, struct {
 		plug   []byte
 		socket []byte
 		config []byte
@@ -212,7 +212,7 @@ func (c *Coupler) CreatedSocket(
 	return nil
 }
 
-func (c *Coupler) JoinedSocket(
+func (c *Coupler) CoupledSocket(
 	plug *integrationv1alpha2.Plug,
 	socket *integrationv1alpha2.Socket,
 	config Config,
@@ -225,7 +225,7 @@ func (c *Coupler) JoinedSocket(
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(JoinedTopic, SocketKind, struct {
+	c.bus.Pub(CoupledTopic, SocketKind, struct {
 		plug   []byte
 		socket []byte
 		config []byte
@@ -233,7 +233,7 @@ func (c *Coupler) JoinedSocket(
 	return nil
 }
 
-func (c *Coupler) ChangedSocket(
+func (c *Coupler) UpdatedSocket(
 	plug *integrationv1alpha2.Plug,
 	socket *integrationv1alpha2.Socket,
 	config Config,
@@ -246,7 +246,7 @@ func (c *Coupler) ChangedSocket(
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(ChangedTopic, SocketKind, struct {
+	c.bus.Pub(UpdatedTopic, SocketKind, struct {
 		plug   []byte
 		socket []byte
 		config []byte
@@ -254,7 +254,7 @@ func (c *Coupler) ChangedSocket(
 	return nil
 }
 
-func (c *Coupler) Departed(
+func (c *Coupler) Decoupled(
 	plug *integrationv1alpha2.Plug,
 	socket *integrationv1alpha2.Socket,
 ) error {
@@ -266,7 +266,7 @@ func (c *Coupler) Departed(
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(DepartedTopic, 0, struct {
+	c.bus.Pub(DecoupledTopic, 0, struct {
 		plug   []byte
 		socket []byte
 	}{plug: bPlug, socket: bSocket})

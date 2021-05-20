@@ -14,8 +14,9 @@ const (
 	CouplingSucceededStatusCondition StatusCondition = "CouplingSucceeded"
 	ErrorStatusCondition             StatusCondition = "Error"
 	PlugCreatedStatusCondition       StatusCondition = "PlugCreated"
+	SocketCoupledStatusCondition     StatusCondition = "SocketCoupled"
 	SocketCreatedStatusCondition     StatusCondition = "SocketCreated"
+	SocketEmptyStatusCondition       StatusCondition = "SocketEmpty"
 	SocketNotCreatedStatusCondition  StatusCondition = "SocketNotCreated"
 	SocketNotReadyStatusCondition    StatusCondition = "SocketNotReady"
-	SocketReadyStatusCondition       StatusCondition = "SocketReady"
 )

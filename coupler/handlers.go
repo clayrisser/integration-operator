@@ -54,8 +54,8 @@ func (h *Handlers) HandlePlugCreated(plug gjson.Result) error {
 	}
 }
 
-func (h *Handlers) HandlePlugJoined(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
-	fmt.Printf("plug joined\n")
+func (h *Handlers) HandlePlugCoupled(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
+	fmt.Printf("plug coupled\n")
 	y, err := yaml.JSONToYAML([]byte(config.String()))
 	if err != nil {
 		return err
@@ -64,8 +64,8 @@ func (h *Handlers) HandlePlugJoined(plug gjson.Result, socket gjson.Result, conf
 	return nil
 }
 
-func (h *Handlers) HandleSocketJoined(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
-	fmt.Printf("socket joined\n")
+func (h *Handlers) HandleSocketCoupled(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
+	fmt.Printf("socket coupled\n")
 	y, err := yaml.JSONToYAML([]byte(config.String()))
 	if err != nil {
 		return err
@@ -74,8 +74,8 @@ func (h *Handlers) HandleSocketJoined(plug gjson.Result, socket gjson.Result, co
 	return nil
 }
 
-func (h *Handlers) HandlePlugChanged(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
-	fmt.Println("plug changed")
+func (h *Handlers) HandlePlugUpdated(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
+	fmt.Println("plug updated")
 	return nil
 }
 
@@ -85,13 +85,13 @@ func (h *Handlers) HandleSocketCreated(socket gjson.Result) error {
 
 }
 
-func (h *Handlers) HandleSocketChanged(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
-	fmt.Println("socket changed")
+func (h *Handlers) HandleSocketUpdated(plug gjson.Result, socket gjson.Result, config gjson.Result) error {
+	fmt.Println("socket updated")
 	return nil
 }
 
-func (h *Handlers) HandleDeparted(plug gjson.Result, socket gjson.Result) error {
-	fmt.Println("departed")
+func (h *Handlers) HandleDecoupled(plug gjson.Result, socket gjson.Result) error {
+	fmt.Println("decoupled")
 	return nil
 }
 

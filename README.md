@@ -9,12 +9,16 @@ This operator takes inspiration from [Juju](https://juju.is) [Charm](https://juj
 
 ## Terminology
 
-| Term        | Juju Equivalent | Definition                                                                                    |
-| ----------- | --------------- | --------------------------------------------------------------------------------------------- |
-| Integration | Relation        | means to unite and connect applications through mutual communication and shared configuration |
-| Plug        | Requires        | request from an application to integrate with another application                             |
-| Socket      | Provides        | fulfils requests from applications trying to integrate                                        |
-| Interface   | Interface       | plug and socket schema required to connect                                                    |
+| Term            | Juju Equivalent | Definition                                                                                    |
+| --------------- | --------------- | --------------------------------------------------------------------------------------------- |
+| Integration     | Relation        | means to unite and connect applications through mutual communication and shared configuration |
+| Plug            | Requires        | request from an application to integrate with another application                             |
+| Socket          | Provides        | fulfils requests from applications trying to integrate                                        |
+| Interface       | Interface       | plug and socket schema required to connect                                                    |
+| Created Event   | Created Event   | event triggered when plug or socket created                                                   |
+| Updated Event   | Changed Event   | event triggered when plug or socket updated                                                   |
+| Coupled Event   | Joined Event    | event triggered when applications connected                                                   |
+| Decoupled Event | Detached Event  | event triggered when applications disconnected                                                |
 
 ## Architecture
 

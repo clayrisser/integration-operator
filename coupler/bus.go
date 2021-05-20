@@ -10,9 +10,10 @@ type Topic int
 
 const (
 	CreatedTopic Topic = iota + 1
-	JoinedTopic
-	ChangedTopic
-	DepartedTopic
+	CoupledTopic
+	UpdatedTopic
+	DecoupledTopic
+	DeletedTopic
 	BrokenTopic
 )
 

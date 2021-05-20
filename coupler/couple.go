@@ -27,14 +27,14 @@ func (c *Coupler) Couple(
 		return err
 	}
 
-	joinedCondition, err := plugUtil.GetJoinedCondition()
+	coupledCondition, err := plugUtil.GetCoupledCondition()
 	if err != nil {
 		if err := plugUtil.Error(err); err != nil {
 			return err
 		}
 		return nil
 	}
-	if joinedCondition == nil {
+	if coupledCondition == nil {
 		if err := plugUtil.UpdateStatusSimple(
 			integrationv1alpha2.PendingPhase,
 			util.PlugCreatedStatusCondition,
@@ -92,9 +92,9 @@ func (c *Coupler) Couple(
 		return nil
 	}
 
-	joinedCondition, _ = plugUtil.GetJoinedCondition()
-	isJoined := joinedCondition != nil && joinedCondition.Status != "True"
-	if joinedCondition.Reason != string(util.CouplingInProcessStatusCondition) && joinedCondition.Reason != string(util.CouplingSucceededStatusCondition) {
+	coupledCondition, _ = plugUtil.GetCoupledCondition()
+	isCoupled := coupledCondition != nil && coupledCondition.Status != "True"
+	if coupledCondition.Reason != string(util.CouplingInProcessStatusCondition) && coupledCondition.Reason != string(util.CouplingSucceededStatusCondition) {
 		plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.CouplingInProcessStatusCondition, nil)
 		return nil
 	}
@@ -120,45 +120,45 @@ func (c *Coupler) Couple(
 		}
 	}
 
-	if isJoined {
-		err = GlobalCoupler.JoinedPlug(plug, socket, socketConfig)
+	if isCoupled {
+		err = GlobalCoupler.CoupledPlug(plug, socket, socketConfig)
 		if err != nil {
 			if err := plugUtil.Error(err); err != nil {
 				return err
 			}
 			return nil
 		}
-		err = GlobalCoupler.JoinedSocket(plug, socket, plugConfig)
+		err = GlobalCoupler.CoupledSocket(plug, socket, plugConfig)
 		if err != nil {
 			if err := plugUtil.Error(err); err != nil {
 				return err
 			}
-			if err := socketUtil.UpdateStatusJoinedConditionError(err); err != nil {
+			if err := socketUtil.UpdateStatusCoupledConditionError(err); err != nil {
 				return err
 			}
 			return nil
 		}
 	} else {
-		err = GlobalCoupler.ChangedPlug(plug, socket, socketConfig)
+		err = GlobalCoupler.UpdatedPlug(plug, socket, socketConfig)
 		if err != nil {
 			if err := plugUtil.Error(err); err != nil {
 				return err
 			}
 			return nil
 		}
-		err = GlobalCoupler.ChangedSocket(plug, socket, socketConfig)
+		err = GlobalCoupler.UpdatedSocket(plug, socket, socketConfig)
 		if err != nil {
 			if err := plugUtil.Error(err); err != nil {
 				return err
 			}
-			if err := socketUtil.UpdateStatusJoinedConditionError(err); err != nil {
+			if err := socketUtil.UpdateStatusCoupledConditionError(err); err != nil {
 				return err
 			}
 			return nil
 		}
 	}
 
-	joinedCondition, err = plugUtil.GetJoinedCondition()
+	coupledCondition, err = plugUtil.GetCoupledCondition()
 	if err != nil {
 		if err := plugUtil.Error(err); err != nil {
 			return err
@@ -170,7 +170,7 @@ func (c *Coupler) Couple(
 			return err
 		}
 	}
-	if plug.Status.Phase != integrationv1alpha2.SucceededPhase || joinedCondition.Reason != string(util.CouplingSucceededStatusCondition) {
+	if plug.Status.Phase != integrationv1alpha2.SucceededPhase || coupledCondition.Reason != string(util.CouplingSucceededStatusCondition) {
 		if err := plugUtil.UpdateStatusSimple(integrationv1alpha2.SucceededPhase, util.CouplingSucceededStatusCondition, socket); err != nil {
 			if err := plugUtil.Error(err); err != nil {
 				return err

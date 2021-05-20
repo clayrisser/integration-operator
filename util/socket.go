@@ -93,7 +93,7 @@ func (u *SocketUtil) CoupledPlugExits(coupledPlugs *[]integrationv1alpha2.Couple
 
 func (u *SocketUtil) CommonUpdateStatus(
 	phase integrationv1alpha2.Phase,
-	joinedStatusCondition StatusCondition,
+	coupledStatusCondition StatusCondition,
 	appendPlug *integrationv1alpha2.Plug,
 	message string,
 	reset bool,
@@ -115,42 +115,48 @@ func (u *SocketUtil) CommonUpdateStatus(
 				UID:        appendPlug.UID,
 			})
 		}
-		joinedCondition, err := u.GetJoinedCondition()
+		coupledCondition, err := u.GetCoupledCondition()
 		if err != nil {
 			return err
 		}
-		if (*joinedCondition).Reason == string(SocketReadyStatusCondition) {
-			joinedStatusCondition = SocketReadyStatusCondition
+		if (*coupledCondition).Reason == string(SocketCoupledStatusCondition) {
+			coupledStatusCondition = SocketCoupledStatusCondition
 		}
 	}
-	if joinedStatusCondition != "" {
+	if coupledStatusCondition != "" {
 		socket.Status.Ready = false
-		joinedStatus := false
+		coupledStatus := false
 		coupledPlugsCount := len(socket.Status.CoupledPlugs)
 		if message == "" {
-			if joinedStatusCondition == SocketCreatedStatusCondition {
+			if coupledStatusCondition == SocketCreatedStatusCondition {
 				message = "socket created"
-			} else if joinedStatusCondition == ErrorStatusCondition {
+			} else if coupledStatusCondition == ErrorStatusCondition {
 				message = "unknown error"
-			} else if joinedStatusCondition == SocketReadyStatusCondition {
+			} else if coupledStatusCondition == SocketCoupledStatusCondition {
 				message = "socket ready with " + fmt.Sprint(coupledPlugsCount) + " plugs coupled"
+			} else if coupledStatusCondition == SocketEmptyStatusCondition {
+				message = "socket ready with 0 plugs coupled"
 			}
 		}
-		if joinedStatusCondition == SocketReadyStatusCondition && coupledPlugsCount > 0 {
-			joinedStatus = true
+		if coupledStatusCondition == SocketCoupledStatusCondition {
+			if coupledPlugsCount > 0 {
+				coupledStatus = true
+			} else {
+				coupledStatusCondition = SocketEmptyStatusCondition
+			}
 		}
 		c := metav1.Condition{
 			Message:            message,
 			ObservedGeneration: socket.Generation,
-			Reason:             string(joinedStatusCondition),
+			Reason:             string(coupledStatusCondition),
 			Status:             "False",
-			Type:               "Joined",
+			Type:               "Coupled",
 		}
-		if joinedStatus {
+		if coupledStatus {
 			c.Status = "True"
 		}
 		meta.SetStatusCondition(&socket.Status.Conditions, c)
-		if joinedStatusCondition == SocketReadyStatusCondition {
+		if coupledStatusCondition == SocketCoupledStatusCondition || coupledStatusCondition == SocketEmptyStatusCondition {
 			socket.Status.Ready = true
 		}
 	}
@@ -165,10 +171,10 @@ func (u *SocketUtil) CommonUpdateStatus(
 
 func (u *SocketUtil) UpdateStatusSimple(
 	phase integrationv1alpha2.Phase,
-	joinedStatusCondition StatusCondition,
+	coupledStatusCondition StatusCondition,
 	appendPlug *integrationv1alpha2.Plug,
 ) error {
-	return u.CommonUpdateStatus(phase, joinedStatusCondition, appendPlug, "", false)
+	return u.CommonUpdateStatus(phase, coupledStatusCondition, appendPlug, "", false)
 }
 
 func (u *SocketUtil) UpdateStatusAppendPlug(
@@ -183,14 +189,14 @@ func (u *SocketUtil) UpdateStatusPhase(
 	return u.CommonUpdateStatus(phase, "", nil, "", false)
 }
 
-func (u *SocketUtil) UpdateStatusJoinedCondition(
-	joinedStatusCondition StatusCondition,
+func (u *SocketUtil) UpdateStatusCoupledCondition(
+	coupledStatusCondition StatusCondition,
 	message string,
 ) error {
-	return u.CommonUpdateStatus("", joinedStatusCondition, nil, message, false)
+	return u.CommonUpdateStatus("", coupledStatusCondition, nil, message, false)
 }
 
-func (u *SocketUtil) UpdateStatusJoinedConditionError(
+func (u *SocketUtil) UpdateStatusCoupledConditionError(
 	err error,
 ) error {
 	return u.CommonUpdateStatus(integrationv1alpha2.FailedPhase, ErrorStatusCondition, nil, err.Error(), false)
@@ -210,16 +216,17 @@ func (u *SocketUtil) UpdateStatusRemovePlug(
 		}
 	}
 	socket.Status.CoupledPlugs = coupledPlugs
-	joinedCondition, err := u.GetJoinedCondition()
-	if (*joinedCondition).Reason == string(SocketReadyStatusCondition) {
+	coupledCondition, err := u.GetCoupledCondition()
+	if (*coupledCondition).Reason == string(SocketCoupledStatusCondition) {
 		condition := metav1.Condition{
 			Message:            "socket ready with " + fmt.Sprint(len(coupledPlugs)) + " plugs coupled",
 			ObservedGeneration: socket.Generation,
 			Reason:             "SocketReady",
 			Status:             "False",
-			Type:               "Joined",
+			Type:               "Coupled",
 		}
 		if len(coupledPlugs) > 0 {
+			condition.Reason = string(SocketEmptyStatusCondition)
 			condition.Status = "True"
 		}
 	}
@@ -227,19 +234,19 @@ func (u *SocketUtil) UpdateStatusRemovePlug(
 	return nil
 }
 
-func (u *SocketUtil) GetJoinedCondition() (*metav1.Condition, error) {
+func (u *SocketUtil) GetCoupledCondition() (*metav1.Condition, error) {
 	socket, err := u.Get()
 	if err != nil {
 		return nil, err
 	}
-	joinedCondition := meta.FindStatusCondition(socket.Status.Conditions, "Joined")
-	return joinedCondition, nil
+	coupledCondition := meta.FindStatusCondition(socket.Status.Conditions, "Coupled")
+	return coupledCondition, nil
 }
 
 func (u *SocketUtil) Error(err error) error {
 	log := *u.log
 	log.Error(err, err.Error())
-	return u.UpdateStatusJoinedConditionError(err)
+	return u.UpdateStatusCoupledConditionError(err)
 }
 
 var GlobalSocketMutex *sync.Mutex = &sync.Mutex{}
