@@ -39,20 +39,16 @@ func GetOperatorNamespace() string {
 }
 
 func CalculateExponentialRequireAfter(
-	previousLastUpdate metav1.Time,
-	succeeded bool,
 	lastUpdate metav1.Time,
 	factor int64,
 ) time.Duration {
 	if factor == 0 {
 		factor = 2
 	}
-	if lastUpdate.IsZero() {
-		lastUpdate = metav1.Now()
-	}
+	now := metav1.Now()
 	retryInterval := time.Second
-	if !previousLastUpdate.Time.IsZero() && !succeeded {
-		retryInterval = lastUpdate.Sub(previousLastUpdate.Time).Round(time.Second)
+	if !lastUpdate.Time.IsZero() {
+		retryInterval = now.Sub(lastUpdate.Time).Round(time.Second)
 	}
 	return time.Duration(math.Min(
 		float64(retryInterval.Nanoseconds()*factor),

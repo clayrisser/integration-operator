@@ -71,9 +71,6 @@ func (c *Coupler) Couple(
 
 	coupledCondition, _ = plugUtil.GetCoupledCondition()
 	isCoupled := coupledCondition != nil && coupledCondition.Status != "True"
-	if coupledCondition.Reason != string(util.CouplingInProcessStatusCondition) && coupledCondition.Reason != string(util.CouplingSucceededStatusCondition) {
-		return plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.CouplingInProcessStatusCondition, nil)
-	}
 
 	var plugConfig []byte
 	if plug.Spec.ConfigEndpoint != "" {

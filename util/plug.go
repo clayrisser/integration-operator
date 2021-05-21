@@ -7,6 +7,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
+
+	"k8s.io/apiserver/pkg/registry/generic/registry"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/go-logr/logr"
@@ -74,7 +77,9 @@ func (u *PlugUtil) Update(plug *integrationv1alpha2.Plug) error {
 func (u *PlugUtil) UpdateStatus(plug *integrationv1alpha2.Plug) error {
 	client := *u.client
 	ctx := *u.ctx
-	plug.Status.LastUpdate = metav1.Now()
+	if plug.Status.Phase != integrationv1alpha2.FailedPhase || plug.Status.LastUpdate.IsZero() {
+		plug.Status.LastUpdate = metav1.Now()
+	}
 	u.mutex.Lock()
 	if err := client.Status().Update(ctx, plug); err != nil {
 		u.mutex.Unlock()
@@ -96,7 +101,7 @@ func (u *PlugUtil) GetCoupledCondition() (*metav1.Condition, error) {
 func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 	stashedErr := err
 	log := *u.log
-	log.Error(err, err.Error())
+	log.Error(nil, err.Error())
 	plug, err := u.Get()
 	if err != nil {
 		return ctrl.Result{
@@ -106,15 +111,14 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 	}
 	requeueAfter := CalculateExponentialRequireAfter(
 		plug.Status.LastUpdate,
-		plug.Status.Phase == integrationv1alpha2.SucceededPhase,
-		metav1.Now(),
-		999,
+		2,
 	)
-	if strings.Index(stashedErr.Error(), "the object has been modified; please apply your changes to the latest version and try again") <= -1 {
+	if strings.Index(stashedErr.Error(), registry.OptimisticLockErrorMsg) <= -1 {
 		if _, err := u.UpdateErrorStatus(stashedErr); err != nil {
-			if strings.Index(err.Error(), "the object has been modified; please apply your changes to the latest version and try again") > -1 {
+			if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) > -1 {
 				return ctrl.Result{}, nil
 			}
+
 			return ctrl.Result{
 				Requeue:      true,
 				RequeueAfter: requeueAfter,

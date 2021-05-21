@@ -15,6 +15,7 @@ require (
 	github.com/tdewolff/parse v2.3.4+incompatible // indirect
 	github.com/tidwall/gjson v1.7.5
 	k8s.io/apimachinery v0.20.2
+	k8s.io/apiserver v0.20.1
 	k8s.io/client-go v0.20.2
 	sigs.k8s.io/controller-runtime v0.8.3
 	sigs.k8s.io/kustomize/api v0.8.9
