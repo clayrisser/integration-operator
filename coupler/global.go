@@ -22,7 +22,7 @@ func CreateGlobalCoupler() Coupler {
 				plug []byte
 			})
 			if err := handlers.HandlePlugCreated(gjson.Parse(string(d.plug))); err != nil {
-				couplerLog.Error(err, "failed to handle plug created")
+				return err
 			}
 			return nil
 		},
@@ -37,7 +37,7 @@ func CreateGlobalCoupler() Coupler {
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
 			); err != nil {
-				couplerLog.Error(err, "failed to handle plug coupled")
+				return err
 			}
 			return nil
 		},
@@ -52,7 +52,7 @@ func CreateGlobalCoupler() Coupler {
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
 			); err != nil {
-				couplerLog.Error(err, "failed to handle plug updated")
+				return err
 			}
 			return nil
 		},
@@ -61,7 +61,7 @@ func CreateGlobalCoupler() Coupler {
 				socket []byte
 			})
 			if err := handlers.HandleSocketCreated(gjson.Parse(string(d.socket))); err != nil {
-				couplerLog.Error(err, "failed to handle socket created")
+				return err
 			}
 			return nil
 		},
@@ -76,7 +76,7 @@ func CreateGlobalCoupler() Coupler {
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
 			); err != nil {
-				couplerLog.Error(err, "failed to handle socket coupled")
+				return err
 			}
 			return nil
 		},
@@ -91,7 +91,7 @@ func CreateGlobalCoupler() Coupler {
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.config)),
 			); err != nil {
-				couplerLog.Error(err, "failed to handle socket updated")
+				return err
 			}
 			return nil
 		},
@@ -103,14 +103,14 @@ func CreateGlobalCoupler() Coupler {
 			if err := handlers.HandleDecoupled(
 				gjson.Parse(string(d.plug)), gjson.Parse(string(d.socket)),
 			); err != nil {
-				couplerLog.Error(err, "failed to handle decoupled")
+				return err
 			}
 			return nil
 		},
 		OnBroken: func(data interface{}) error {
 			err := handlers.HandleBroken()
 			if err != nil {
-				couplerLog.Error(err, "failed to handle broken")
+				return err
 			}
 			return nil
 		},

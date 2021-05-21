@@ -93,6 +93,7 @@ func (u *PlugUtil) GetCoupledCondition() (*metav1.Condition, error) {
 }
 
 func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
+	stashedErr := err
 	log := *u.log
 	log.Error(err, err.Error())
 	plug, err := u.Get()
@@ -108,7 +109,7 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 		metav1.Now(),
 		2,
 	)
-	if _, err := u.UpdateErrorStatus(err); err != nil {
+	if _, err := u.UpdateErrorStatus(stashedErr); err != nil {
 		return ctrl.Result{
 			Requeue:      true,
 			RequeueAfter: requeueAfter,
@@ -121,11 +122,12 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 }
 
 func (u *PlugUtil) UpdateErrorStatus(err error) (ctrl.Result, error) {
+	stashedErr := err
 	plug, err := u.Get()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	u.setErrorStatus(plug, err)
+	u.setErrorStatus(plug, stashedErr)
 	if err := u.UpdateStatus(plug); err != nil {
 		return ctrl.Result{}, err
 	}
