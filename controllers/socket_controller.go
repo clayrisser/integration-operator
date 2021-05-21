@@ -121,10 +121,6 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return socketUtil.Error(err)
 	}
 
-	result, err := socketUtil.UpdateStatusSimple(integrationv1alpha2.ReadyPhase, util.SocketCoupledStatusCondition, nil)
-	if err != nil {
-		return socketUtil.Error(err)
-	}
 	for _, connectedPlug := range socket.Status.CoupledPlugs {
 		plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 			Name:      connectedPlug.Name,
@@ -141,7 +137,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return socketUtil.Error(err)
 		}
 	}
-	return result, nil
+	return socketUtil.UpdateStatusSimple(integrationv1alpha2.ReadyPhase, util.SocketCoupledStatusCondition, nil)
 }
 
 func filterSocketPredicate() predicate.Predicate {

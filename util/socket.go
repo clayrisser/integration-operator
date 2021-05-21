@@ -3,6 +3,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -117,13 +118,18 @@ func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 		plug.Status.LastUpdate,
 		plug.Status.Phase == integrationv1alpha2.SucceededPhase,
 		metav1.Now(),
-		2,
+		999,
 	)
-	if _, err := u.UpdateErrorStatus(stashedErr); err != nil {
-		return ctrl.Result{
-			Requeue:      true,
-			RequeueAfter: requeueAfter,
-		}, err
+	if strings.Index(stashedErr.Error(), "the object has been modified; please apply your changes to the latest version and try again") <= -1 {
+		if _, err := u.UpdateErrorStatus(stashedErr); err != nil {
+			if strings.Index(err.Error(), "the object has been modified; please apply your changes to the latest version and try again") > -1 {
+				return ctrl.Result{}, nil
+			}
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: requeueAfter,
+			}, err
+		}
 	}
 	return ctrl.Result{
 		Requeue:      true,
@@ -207,6 +213,9 @@ func (u *SocketUtil) setPhaseStatus(
 	phase integrationv1alpha2.Phase,
 
 ) {
+	if phase != integrationv1alpha2.FailedPhase {
+		socket.Status.Message = ""
+	}
 	socket.Status.Phase = phase
 }
 

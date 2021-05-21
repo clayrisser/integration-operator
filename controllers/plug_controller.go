@@ -86,10 +86,11 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 		return ctrl.Result{}, nil
 	}
-	return coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
+	result, err := coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 		Name:      plug.Name,
 		Namespace: plug.Namespace,
 	})
+	return result, err
 }
 
 func filterPlugPredicate() predicate.Predicate {
