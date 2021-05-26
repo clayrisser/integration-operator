@@ -73,15 +73,15 @@ func (c *Coupler) Couple(
 	isCoupled := coupledCondition != nil && coupledCondition.Status != "True"
 
 	var plugConfig []byte
-	if plug.Spec.ConfigEndpoint != "" {
-		plugConfig, err = GlobalCoupler.GetConfig(plug.Spec.ConfigEndpoint)
+	if plug.Spec.IntegrationEndpoint != "" {
+		plugConfig, err = GlobalCoupler.GetConfig(plug.Spec.IntegrationEndpoint)
 		if err != nil {
 			return plugUtil.Error(err)
 		}
 	}
 	var socketConfig []byte
-	if socket.Spec.ConfigEndpoint != "" {
-		socketConfig, err = GlobalCoupler.GetConfig(socket.Spec.ConfigEndpoint)
+	if socket.Spec.IntegrationEndpoint != "" {
+		socketConfig, err = GlobalCoupler.GetConfig(socket.Spec.IntegrationEndpoint)
 		if err != nil {
 			return plugUtil.Error(err)
 		}

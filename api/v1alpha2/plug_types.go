@@ -58,8 +58,8 @@ type PlugSpec struct {
 	// config mapper
 	ConfigMapper string `json:"configMapper,omitempty"`
 
-	// config endpoint
-	ConfigEndpoint string `json:"configEndpoint,omitempty"`
+	// integration endpoint
+	IntegrationEndpoint string `json:"integrationEndpoint,omitempty"`
 }
 
 // PlugStatus defines the observed state of Plug

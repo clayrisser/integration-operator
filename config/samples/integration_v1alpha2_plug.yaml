@@ -10,7 +10,7 @@ spec:
   interfaceVersions: '*'
   meta: |
     hello: world
-  configEndpoint: http://localhost:3000/config
+  integrationEndpoint: localhost:3000/integration
   configMapper: |
     hello: resource.spec.meta.hello.world
     howdy: meta.hello.world

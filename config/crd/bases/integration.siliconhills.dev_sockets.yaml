@@ -36,11 +36,11 @@ spec:
           spec:
             description: SocketSpec defines the desired state of Socket
             properties:
-              configEndpoint:
-                description: config endpoint
-                type: string
               configMapper:
                 description: config mapper
+                type: string
+              integrationEndpoint:
+                description: integration endpoint
                 type: string
               interface:
                 description: interface

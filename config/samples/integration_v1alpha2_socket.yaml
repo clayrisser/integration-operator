@@ -7,3 +7,4 @@ spec:
   interface:
     name: interface-sample
     namespace: integration-test
+  integrationEndpoint: localhost:3000/integration

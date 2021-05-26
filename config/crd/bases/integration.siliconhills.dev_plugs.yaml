@@ -36,11 +36,11 @@ spec:
           spec:
             description: PlugSpec defines the desired state of Plug
             properties:
-              configEndpoint:
-                description: config endpoint
-                type: string
               configMapper:
                 description: config mapper
+                type: string
+              integrationEndpoint:
+                description: integration endpoint
                 type: string
               interface:
                 description: interface
