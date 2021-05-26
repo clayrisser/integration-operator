@@ -28,14 +28,16 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnPlugCoupled: func(data interface{}) error {
 			d := data.(struct {
-				plug   []byte
-				socket []byte
-				config []byte
+				plug         []byte
+				socket       []byte
+				plugConfig   []byte
+				socketConfig []byte
 			})
 			if err := handlers.HandlePlugCoupled(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
-				gjson.Parse(string(d.config)),
+				gjson.Parse(string(d.plugConfig)),
+				gjson.Parse(string(d.socketConfig)),
 			); err != nil {
 				return err
 			}
@@ -43,15 +45,46 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnPlugUpdated: func(data interface{}) error {
 			d := data.(struct {
-				plug   []byte
-				socket []byte
-				config []byte
+				plug         []byte
+				socket       []byte
+				plugConfig   []byte
+				socketConfig []byte
 			})
 			if err := handlers.HandlePlugUpdated(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
-				gjson.Parse(string(d.config)),
+				gjson.Parse(string(d.plugConfig)),
+				gjson.Parse(string(d.socketConfig)),
 			); err != nil {
+				return err
+			}
+			return nil
+		},
+		OnPlugDecoupled: func(data interface{}) error {
+			d := data.(struct {
+				plug         []byte
+				socket       []byte
+				plugConfig   []byte
+				socketConfig []byte
+			})
+			if err := handlers.HandlePlugDecoupled(
+				gjson.Parse(string(d.plug)),
+				gjson.Parse(string(d.socket)),
+				gjson.Parse(string(d.plugConfig)),
+				gjson.Parse(string(d.socketConfig)),
+			); err != nil {
+				return err
+			}
+			return nil
+		},
+		OnPlugBroken: func(data interface{}) error {
+			d := data.(struct {
+				plug []byte
+			})
+			err := handlers.HandlePlugBroken(
+				gjson.Parse(string(d.plug)),
+			)
+			if err != nil {
 				return err
 			}
 			return nil
@@ -67,14 +100,16 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnSocketCoupled: func(data interface{}) error {
 			d := data.(struct {
-				plug   []byte
-				socket []byte
-				config []byte
+				plug         []byte
+				socket       []byte
+				plugConfig   []byte
+				socketConfig []byte
 			})
 			if err := handlers.HandleSocketCoupled(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
-				gjson.Parse(string(d.config)),
+				gjson.Parse(string(d.plugConfig)),
+				gjson.Parse(string(d.socketConfig)),
 			); err != nil {
 				return err
 			}
@@ -82,33 +117,45 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnSocketUpdated: func(data interface{}) error {
 			d := data.(struct {
-				plug   []byte
-				socket []byte
-				config []byte
+				plug         []byte
+				socket       []byte
+				plugConfig   []byte
+				socketConfig []byte
 			})
 			if err := handlers.HandleSocketUpdated(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
-				gjson.Parse(string(d.config)),
+				gjson.Parse(string(d.plugConfig)),
+				gjson.Parse(string(d.socketConfig)),
 			); err != nil {
 				return err
 			}
 			return nil
 		},
-		OnDecoupled: func(data interface{}) error {
+		OnSocketDecoupled: func(data interface{}) error {
 			d := data.(struct {
-				plug   []byte
+				plug         []byte
+				socket       []byte
+				plugConfig   []byte
+				socketConfig []byte
+			})
+			if err := handlers.HandleSocketDecoupled(
+				gjson.Parse(string(d.plug)),
+				gjson.Parse(string(d.socket)),
+				gjson.Parse(string(d.plugConfig)),
+				gjson.Parse(string(d.socketConfig)),
+			); err != nil {
+				return err
+			}
+			return nil
+		},
+		OnSocketBroken: func(data interface{}) error {
+			d := data.(struct {
 				socket []byte
 			})
-			if err := handlers.HandleDecoupled(
-				gjson.Parse(string(d.plug)), gjson.Parse(string(d.socket)),
-			); err != nil {
-				return err
-			}
-			return nil
-		},
-		OnBroken: func(data interface{}) error {
-			err := handlers.HandleBroken()
+			err := handlers.HandlePlugBroken(
+				gjson.Parse(string(d.socket)),
+			)
 			if err != nil {
 				return err
 			}

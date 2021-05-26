@@ -88,11 +88,11 @@ func (c *Coupler) Couple(
 	}
 
 	if isCoupled {
-		err = GlobalCoupler.CoupledPlug(plug, socket, socketConfig)
+		err = GlobalCoupler.CoupledPlug(plug, socket, plugConfig, socketConfig)
 		if err != nil {
 			return plugUtil.Error(err)
 		}
-		err = GlobalCoupler.CoupledSocket(plug, socket, plugConfig)
+		err = GlobalCoupler.CoupledSocket(plug, socket, plugConfig, socketConfig)
 		if err != nil {
 			result, err := plugUtil.Error(err)
 			if _, err := socketUtil.UpdateErrorStatus(err); err != nil {
@@ -101,11 +101,11 @@ func (c *Coupler) Couple(
 			return result, err
 		}
 	} else {
-		err = GlobalCoupler.UpdatedPlug(plug, socket, socketConfig)
+		err = GlobalCoupler.UpdatedPlug(plug, socket, plugConfig, socketConfig)
 		if err != nil {
 			return plugUtil.Error(err)
 		}
-		err = GlobalCoupler.UpdatedSocket(plug, socket, socketConfig)
+		err = GlobalCoupler.UpdatedSocket(plug, socket, plugConfig, socketConfig)
 		if err != nil {
 			result, err := plugUtil.Error(err)
 			if _, err := socketUtil.UpdateErrorStatus(err); err != nil {

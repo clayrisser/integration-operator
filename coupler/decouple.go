@@ -34,7 +34,25 @@ func (c *Coupler) Decouple(
 		}
 	}
 
-	if err := GlobalCoupler.Decoupled(plug, socket); err != nil {
+	var plugConfig []byte
+	if plug.Spec.IntegrationEndpoint != "" {
+		plugConfig, err = GlobalCoupler.GetConfig(plug.Spec.IntegrationEndpoint)
+		if err != nil {
+			return plugUtil.Error(err)
+		}
+	}
+	var socketConfig []byte
+	if socket != nil && socket.Spec.IntegrationEndpoint != "" {
+		socketConfig, err = GlobalCoupler.GetConfig(socket.Spec.IntegrationEndpoint)
+		if err != nil {
+			return plugUtil.Error(err)
+		}
+	}
+
+	if err := GlobalCoupler.DecoupledPlug(plug, socket, plugConfig, socketConfig); err != nil {
+		return plugUtil.Error(err)
+	}
+	if err := GlobalCoupler.DecoupledSocket(plug, socket, plugConfig, socketConfig); err != nil {
 		return plugUtil.Error(err)
 	}
 
