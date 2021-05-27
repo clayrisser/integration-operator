@@ -77,7 +77,7 @@ func (u *PlugUtil) Update(plug *integrationv1alpha2.Plug) error {
 func (u *PlugUtil) UpdateStatus(plug *integrationv1alpha2.Plug) error {
 	client := *u.client
 	ctx := *u.ctx
-	if plug.Status.Phase != integrationv1alpha2.FailedPhase || plug.Status.LastUpdate.IsZero() {
+	if plug.Status.Phase != integrationv1alpha2.FailedPhase || plug.Status.LastUpdate.IsZero() || config.StartTime.Unix() > plug.Status.LastUpdate.Unix() {
 		plug.Status.LastUpdate = metav1.Now()
 	}
 	u.mutex.Lock()
@@ -217,7 +217,13 @@ func (u *PlugUtil) setCoupledStatusCondition(
 
 func (u *PlugUtil) setErrorStatus(plug *integrationv1alpha2.Plug, err error) {
 	message := err.Error()
-	u.setCoupledStatusCondition(plug, ErrorStatusCondition, message)
+	coupledCondition, err := u.GetCoupledCondition()
+	if err == nil {
+		coupledCondition = nil
+	}
+	if coupledCondition != nil {
+		u.setCoupledStatusCondition(plug, ErrorStatusCondition, message)
+	}
 	plug.Status.Phase = integrationv1alpha2.FailedPhase
 	plug.Status.Message = message
 }

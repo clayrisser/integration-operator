@@ -65,7 +65,7 @@ type PlugSpec struct {
 // PlugStatus defines the observed state of Plug
 type PlugStatus struct {
 	// Conditions represent the latest available observations of an object's state
-	Conditions []metav1.Condition `json:"conditions"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// integration plug phase (Pending, Succeeded, Failed, Unknown)
 	Phase Phase `json:"phase,omitempty"`

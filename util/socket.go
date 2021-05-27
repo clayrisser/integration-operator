@@ -75,7 +75,7 @@ func (u *SocketUtil) Update(socket *integrationv1alpha2.Socket) error {
 func (u *SocketUtil) UpdateStatus(socket *integrationv1alpha2.Socket) error {
 	client := *u.client
 	ctx := *u.ctx
-	if socket.Status.Phase != integrationv1alpha2.FailedPhase || socket.Status.LastUpdate.IsZero() {
+	if socket.Status.Phase != integrationv1alpha2.FailedPhase || socket.Status.LastUpdate.IsZero() || config.StartTime.Unix() > socket.Status.LastUpdate.Unix() {
 		socket.Status.LastUpdate = metav1.Now()
 	}
 	u.mutex.Lock()
@@ -126,7 +126,6 @@ func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 			if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) > -1 {
 				return ctrl.Result{}, nil
 			}
-
 			return ctrl.Result{
 				Requeue:      true,
 				RequeueAfter: requeueAfter,
@@ -269,7 +268,13 @@ func (u *SocketUtil) setReadyStatus(socket *integrationv1alpha2.Socket, ready bo
 
 func (u *SocketUtil) setErrorStatus(socket *integrationv1alpha2.Socket, err error) {
 	message := err.Error()
-	u.setCoupledStatusCondition(socket, ErrorStatusCondition, message)
+	coupledCondition, err := u.GetCoupledCondition()
+	if err == nil {
+		coupledCondition = nil
+	}
+	if coupledCondition != nil {
+		u.setCoupledStatusCondition(socket, ErrorStatusCondition, message)
+	}
 	socket.Status.Phase = integrationv1alpha2.FailedPhase
 	socket.Status.Message = message
 }

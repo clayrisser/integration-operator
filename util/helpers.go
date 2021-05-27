@@ -13,6 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var startTime metav1.Time = metav1.Now()
+
 func Default(value string, defaultValue string) string {
 	if value == "" {
 		value = defaultValue
@@ -46,6 +48,9 @@ func CalculateExponentialRequireAfter(
 		factor = 2
 	}
 	now := metav1.Now()
+	if startTime.Unix() > lastUpdate.Unix() {
+		return time.Duration(time.Second * 2)
+	}
 	retryInterval := time.Second
 	if !lastUpdate.Time.IsZero() {
 		retryInterval = now.Sub(lastUpdate.Time).Round(time.Second)

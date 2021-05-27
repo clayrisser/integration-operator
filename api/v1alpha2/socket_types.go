@@ -65,7 +65,7 @@ type SocketSpec struct {
 // SocketStatus defines the observed state of Socket
 type SocketStatus struct {
 	// Conditions represent the latest available observations of an object's state
-	Conditions []metav1.Condition `json:"conditions"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// integration socket phase (Pending, Succeeded, Failed, Unknown)
 	Phase Phase `json:"phase,omitempty"`

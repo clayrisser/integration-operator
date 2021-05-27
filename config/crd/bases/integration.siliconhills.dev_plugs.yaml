@@ -228,8 +228,6 @@ spec:
               phase:
                 description: integration plug phase (Pending, Succeeded, Failed, Unknown)
                 type: string
-            required:
-            - conditions
             type: object
         type: object
     served: true
