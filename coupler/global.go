@@ -77,6 +77,17 @@ func CreateGlobalCoupler() Coupler {
 			}
 			return nil
 		},
+		OnPlugDeleted: func(data interface{}) error {
+			d := data.(struct {
+				plug []byte
+			})
+			if err := handlers.HandlePlugDeleted(
+				gjson.Parse(string(d.plug)),
+			); err != nil {
+				return err
+			}
+			return nil
+		},
 		OnPlugBroken: func(data interface{}) error {
 			d := data.(struct {
 				plug []byte
@@ -144,6 +155,17 @@ func CreateGlobalCoupler() Coupler {
 				gjson.Parse(string(d.socket)),
 				gjson.Parse(string(d.plugConfig)),
 				gjson.Parse(string(d.socketConfig)),
+			); err != nil {
+				return err
+			}
+			return nil
+		},
+		OnSocketDeleted: func(data interface{}) error {
+			d := data.(struct {
+				socket []byte
+			})
+			if err := handlers.HandleSocketDeleted(
+				gjson.Parse(string(d.socket)),
 			); err != nil {
 				return err
 			}

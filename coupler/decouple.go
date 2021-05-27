@@ -6,7 +6,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/go-logr/logr"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
@@ -62,9 +61,5 @@ func (c *Coupler) Decouple(
 		}
 	}
 
-	controllerutil.RemoveFinalizer(plug, integrationv1alpha2.PlugFinalizer)
-	if err := plugUtil.Update(plug); err != nil {
-		return ctrl.Result{}, err
-	}
 	return ctrl.Result{}, nil
 }

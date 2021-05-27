@@ -72,10 +72,19 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	if plug.GetDeletionTimestamp() != nil {
 		if controllerutil.ContainsFinalizer(plug, integrationv1alpha2.PlugFinalizer) {
-			return coupler.GlobalCoupler.Decouple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
+			result, err := coupler.GlobalCoupler.Decouple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 				Name:      plug.Name,
 				Namespace: plug.Namespace,
 			})
+			if err != nil {
+				return result, err
+			}
+			coupler.GlobalCoupler.DeletedPlug(plug)
+			controllerutil.RemoveFinalizer(plug, integrationv1alpha2.PlugFinalizer)
+			if err := plugUtil.Update(plug); err != nil {
+				return ctrl.Result{}, err
+			}
+			return result, nil
 		}
 		return ctrl.Result{}, nil
 	}

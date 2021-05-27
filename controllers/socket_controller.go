@@ -88,6 +88,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					return socketUtil.Error(err)
 				}
 			}
+			coupler.GlobalCoupler.DeletedSocket(socket)
 			controllerutil.RemoveFinalizer(socket, integrationv1alpha2.PlugFinalizer)
 			if err := r.Update(ctx, socket); err != nil {
 				return socketUtil.Error(err)

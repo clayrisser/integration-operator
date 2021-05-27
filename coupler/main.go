@@ -39,11 +39,13 @@ type Events struct {
 	OnPlugCoupled     func(data interface{}) error
 	OnPlugCreated     func(data interface{}) error
 	OnPlugDecoupled   func(data interface{}) error
+	OnPlugDeleted     func(data interface{}) error
 	OnPlugUpdated     func(data interface{}) error
 	OnSocketBroken    func(data interface{}) error
 	OnSocketCoupled   func(data interface{}) error
 	OnSocketCreated   func(data interface{}) error
 	OnSocketDecoupled func(data interface{}) error
+	OnSocketDeleted   func(data interface{}) error
 	OnSocketUpdated   func(data interface{}) error
 }
 
@@ -79,12 +81,14 @@ func (c *Coupler) Start() {
 		updatedEventCh := make(chan Event, maxQueueSize)
 		createdEventCh := make(chan Event, maxQueueSize)
 		decoupledEventCh := make(chan Event, maxQueueSize)
+		deletedEventCh := make(chan Event, maxQueueSize)
 		coupledEventCh := make(chan Event, maxQueueSize)
 		c.bus.Sub(BrokenTopic, brokenEventCh)
-		c.bus.Sub(UpdatedTopic, updatedEventCh)
+		c.bus.Sub(CoupledTopic, coupledEventCh)
 		c.bus.Sub(CreatedTopic, createdEventCh)
 		c.bus.Sub(DecoupledTopic, decoupledEventCh)
-		c.bus.Sub(CoupledTopic, coupledEventCh)
+		c.bus.Sub(DeletedTopic, deletedEventCh)
+		c.bus.Sub(UpdatedTopic, updatedEventCh)
 		go func() {
 			for {
 				event := Event{}
@@ -163,6 +167,24 @@ func (c *Coupler) Start() {
 					} else if event.Kind == SocketKind {
 						if c.events.OnSocketDecoupled != nil {
 							if err := c.events.OnSocketDecoupled(event.Data); err != nil {
+								*event.ErrCh <- nil
+								continue
+							}
+						}
+					}
+					*event.ErrCh <- nil
+					continue
+				case event = <-deletedEventCh:
+					if event.Kind == PlugKind {
+						if c.events.OnPlugDeleted != nil {
+							if err := c.events.OnPlugDeleted(event.Data); err != nil {
+								*event.ErrCh <- nil
+								continue
+							}
+						}
+					} else if event.Kind == SocketKind {
+						if c.events.OnSocketDeleted != nil {
+							if err := c.events.OnSocketDeleted(event.Data); err != nil {
 								*event.ErrCh <- nil
 								continue
 							}
@@ -286,6 +308,20 @@ func (c *Coupler) DecoupledPlug(
 	return <-errCh
 }
 
+func (c *Coupler) DeletedPlug(
+	plug *integrationv1alpha2.Plug,
+) error {
+	bPlug, err := json.Marshal(plug)
+	if err != nil {
+		return err
+	}
+	errCh := make(chan error)
+	c.bus.Pub(DeletedTopic, PlugKind, struct {
+		plug []byte
+	}{plug: bPlug}, errCh)
+	return <-errCh
+}
+
 func (c *Coupler) BrokenPlug(
 	plug *integrationv1alpha2.Plug,
 ) error {
@@ -381,6 +417,20 @@ func (c *Coupler) DecoupledSocket(
 		plugConfig   []byte
 		socketConfig []byte
 	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
+	return <-errCh
+}
+
+func (c *Coupler) DeletedSocket(
+	socket *integrationv1alpha2.Socket,
+) error {
+	bSocket, err := json.Marshal(socket)
+	if err != nil {
+		return err
+	}
+	errCh := make(chan error)
+	c.bus.Pub(DeletedTopic, SocketKind, struct {
+		socket []byte
+	}{socket: bSocket}, errCh)
 	return <-errCh
 }
 

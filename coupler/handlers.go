@@ -77,6 +77,19 @@ func (h *Handlers) HandlePlugDecoupled(
 	)
 }
 
+func (h *Handlers) HandlePlugDeleted(
+	plug gjson.Result,
+) error {
+	return h.processEvent(
+		&plug,
+		nil,
+		nil,
+		nil,
+		plug.Get("spec.integrationEndpoint").String(),
+		"deleted",
+	)
+}
+
 func (h *Handlers) HandlePlugBroken(
 	plug gjson.Result,
 ) error {
@@ -146,6 +159,19 @@ func (h *Handlers) HandleSocketDecoupled(
 		&socketConfig,
 		socket.Get("spec.integrationEndpoint").String(),
 		"decoupled",
+	)
+}
+
+func (h *Handlers) HandleSocketDeleted(
+	socket gjson.Result,
+) error {
+	return h.processEvent(
+		nil,
+		&socket,
+		nil,
+		nil,
+		socket.Get("spec.integrationEndpoint").String(),
+		"deleted",
 	)
 }
 
