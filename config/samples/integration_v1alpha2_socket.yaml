@@ -4,7 +4,15 @@ metadata:
   name: socket-sample
   namespace: integration-test
 spec: 
+  namespaceScope: '*'
+  interfaceVersions: '*'
   interface:
     name: interface-sample
     namespace: integration-test
   integrationEndpoint: localhost:3000/socket
+  meta: |
+    host: localhost
+    password: postgres
+    port: 5432
+    protocol: psql
+    username: postgres

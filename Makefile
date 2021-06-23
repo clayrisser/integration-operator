@@ -3,6 +3,10 @@ REGISTRY := codejamninja
 VERSION := 0.0.1
 IMAGE := $(REGISTRY)/$(NAME)
 
+.PHONY: install
+install:
+	@go get
+
 docker-build:
 	@$(MAKE) -f operator-framework.mk docker-build IMG="$(IMAGE):$(VERSION)"
 

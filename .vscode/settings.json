@@ -1,6 +1,5 @@
 {
     "cSpell.words": [
-        "Readyz",
         "clientgoscheme",
         "controllerutil",
         "finalizers",
@@ -15,7 +14,11 @@
         "kustomize",
         "logr",
         "metav",
+        "oidc",
+        "postgres",
+        "psql",
         "rbac",
+        "readyz",
         "resty",
         "serrors",
         "sigs",

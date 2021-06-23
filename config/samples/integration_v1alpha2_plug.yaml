@@ -4,18 +4,14 @@ metadata:
   name: plug-sample
   namespace: integration-test
 spec: 
+  namespaceScope: '*'
+  interfaceVersions: '*'
   interface:
     name: interface-sample
     namespace: integration-test
-  interfaceVersions: '*'
-  meta: |
-    hello: world
   integrationEndpoint: localhost:3000/plug
-  configMapper: |
-    hello: resource.spec.meta.hello.world
-    howdy: meta.hello.world
-  namespaceScope: '*'
   socket:
     name: socket-sample
     namespace: integration-test
-  vars: []
+  meta: |
+    database: hello

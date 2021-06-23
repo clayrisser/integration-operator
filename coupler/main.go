@@ -7,6 +7,7 @@ package coupler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math"
 	"os"
 	"os/signal"
@@ -14,9 +15,14 @@ import (
 	"syscall"
 	"time"
 
+	minifyJson "github.com/tdewolff/minify/json"
+	"github.com/tidwall/gjson"
+	"sigs.k8s.io/yaml"
+
 	"github.com/go-resty/resty/v2"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/util"
+	"github.com/tdewolff/minify"
 )
 
 type Coupler struct {
@@ -448,14 +454,49 @@ func (c *Coupler) BrokenSocket(
 	return <-errCh
 }
 
-func (c *Coupler) GetConfig(endpoint string) (Config, error) {
+func (c *Coupler) GetConfig(
+	endpoint string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+) (Config, error) {
+	bPlug, err := json.Marshal(plug)
+	if err != nil {
+		return nil, err
+	}
+	bSocket, err := json.Marshal(socket)
+	if err != nil {
+		return nil, err
+	}
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
+	m := minify.New()
+	m.AddFunc("application/json", minifyJson.Minify)
 	go func() {
-		r, err := client.R().EnableTrace().SetQueryParams(map[string]string{
-			"version": "1",
-		}).Get(util.GetEndpoint(endpoint) + "/config")
+		body := `{"version":"1"`
+		if plug != nil {
+			jsonPlug := gjson.Parse(string(bPlug))
+			body += fmt.Sprintf(`,"plug":%s`, jsonPlug)
+			meta, _ := yaml.YAMLToJSON([]byte(jsonPlug.Get("spec").Get("meta").String()))
+			if meta == nil {
+				meta = []byte("{}")
+			}
+			body += fmt.Sprintf(`,"plugMeta":%s`, meta)
+		}
+		if socket != nil {
+			jsonSocket := gjson.Parse(string(bSocket))
+			body += fmt.Sprintf(`,"socket":%s`, jsonSocket)
+			meta, _ := yaml.YAMLToJSON([]byte(jsonSocket.Get("spec").Get("meta").String()))
+			if meta == nil {
+				meta = []byte("{}")
+			}
+			body += fmt.Sprintf(`,"socketMeta":%s`, meta)
+		}
+		body += "}"
+		body, err := m.String("application/json", body)
+		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
+			"Content-Type": "application/json",
+		}).SetBody([]byte(body)).Post(util.GetEndpoint(endpoint) + "/config")
 		if err != nil {
 			errCh <- err
 		}

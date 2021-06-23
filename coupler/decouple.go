@@ -35,14 +35,14 @@ func (c *Coupler) Decouple(
 
 	var plugConfig []byte
 	if plug.Spec.IntegrationEndpoint != "" {
-		plugConfig, err = GlobalCoupler.GetConfig(plug.Spec.IntegrationEndpoint)
+		plugConfig, err = GlobalCoupler.GetConfig(plug.Spec.IntegrationEndpoint, plug, nil)
 		if err != nil {
 			return plugUtil.Error(err)
 		}
 	}
 	var socketConfig []byte
 	if socket != nil && socket.Spec.IntegrationEndpoint != "" {
-		socketConfig, err = GlobalCoupler.GetConfig(socket.Spec.IntegrationEndpoint)
+		socketConfig, err = GlobalCoupler.GetConfig(socket.Spec.IntegrationEndpoint, nil, socket)
 		if err != nil {
 			return plugUtil.Error(err)
 		}

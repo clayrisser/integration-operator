@@ -3,4 +3,34 @@ kind: Interface
 metadata:
   name: interface-sample
   namespace: integration-test
-spec: {}
+spec:
+  version: v0.0.1
+  plugDefinition: |
+    description: connect postgres database
+      properties:
+        database:
+          description: postgres database
+          type: string
+  socketDefinition: |
+    description: connect postgres database
+      properties:
+        password:
+          description: postgres password
+          type: string
+          default: postgres
+        username:
+          description: postgres username
+          type: string
+          default: postgres
+        port:
+          description: postgres port
+          type: integer
+          default: 5432
+        host:
+          description: postgres password
+          type: string
+          default: localhost
+        protocol:
+          description: postgres protocol
+          type: string
+          default: psql
