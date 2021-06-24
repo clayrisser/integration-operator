@@ -55,11 +55,31 @@ type SocketSpec struct {
 	// meta
 	Meta string `json:"meta,omitempty"`
 
+	// data
+	Data map[string]string `json:"data,omitempty"`
+
+	// data config map name
+	DataConfigMapName string `json:"dataConfigMapName,omitempty"`
+
+	// data secret name
+	DataSecretName string `json:"dataSecretName,omitempty"`
+
+	// config
+	Config map[string]string `json:"config,omitempty"`
+
 	// config mapper
-	ConfigMapper string `json:"configMapper,omitempty"`
+	ConfigMapper map[string]string `json:"configMapper,omitempty"`
 
 	// integration endpoint
 	IntegrationEndpoint string `json:"integrationEndpoint,omitempty"`
+
+	// Resources
+	Resources []*SocketSpecResource `json:"resources,omitempty"`
+}
+
+type SocketSpecResource struct {
+	Resource string `json:"resource,omitempty"`
+	When     string `json:"when,omitempty"`
 }
 
 // SocketStatus defines the observed state of Socket

@@ -36,8 +36,26 @@ spec:
           spec:
             description: PlugSpec defines the desired state of Plug
             properties:
+              config:
+                additionalProperties:
+                  type: string
+                description: config
+                type: object
               configMapper:
+                additionalProperties:
+                  type: string
                 description: config mapper
+                type: object
+              data:
+                additionalProperties:
+                  type: string
+                description: data
+                type: object
+              dataConfigMapName:
+                description: data config map name
+                type: string
+              dataSecretName:
+                description: data secret name
                 type: string
               integrationEndpoint:
                 description: integration endpoint
@@ -63,6 +81,16 @@ spec:
               namespaceScope:
                 description: namspace scope
                 type: string
+              resources:
+                description: Resources
+                items:
+                  properties:
+                    resource:
+                      type: string
+                    when:
+                      type: string
+                  type: object
+                type: array
               socket:
                 description: socket
                 properties:
