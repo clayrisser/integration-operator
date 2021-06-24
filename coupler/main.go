@@ -15,7 +15,6 @@ import (
 	"time"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
-	"github.com/silicon-hills/integration-operator/util"
 )
 
 type Coupler struct {
@@ -445,18 +444,4 @@ func (c *Coupler) BrokenSocket(
 		socket []byte
 	}{socket: bSocket}, errCh)
 	return <-errCh
-}
-
-func (c *Coupler) GetPlugConfig(
-	plug *integrationv1alpha2.Plug,
-) (Config, error) {
-	configUtil := util.NewConfigUtil()
-	return configUtil.GetPlugConfig(plug)
-}
-
-func (c *Coupler) GetSocketConfig(
-	socket *integrationv1alpha2.Socket,
-) (Config, error) {
-	configUtil := util.NewConfigUtil()
-	return configUtil.GetSocketConfig(socket)
 }

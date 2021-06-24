@@ -37,10 +37,21 @@ type InterfaceSpecSchema struct {
 	Version string `json:"version,omitempty"`
 
 	// plug definition
-	PlugDefinition string `json:"plugDefinition,omitempty"`
+	PlugDefinition *SchemaDefinition `json:"plugDefinition,omitempty"`
 
 	// socket definition
-	SocketDefinition string `json:"socketDefinition,omitempty"`
+	SocketDefinition *SchemaDefinition `json:"socketDefinition,omitempty"`
+}
+
+type SchemaDefinition struct {
+	Description string                     `json:"description,omitempty"`
+	Properties  map[string]*SchemaProperty `json:"properties,omitempty"`
+}
+
+type SchemaProperty struct {
+	Default     string `json:"default,omitempty"`
+	Description string `json:"description,omitempty"`
+	Required    bool   `json:"required,omitempty"`
 }
 
 // InterfaceStatus defines the observed state of Interface

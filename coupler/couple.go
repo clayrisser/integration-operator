@@ -20,6 +20,8 @@ func (c *Coupler) Couple(
 	log *logr.Logger,
 	plugNamespacedName *integrationv1alpha2.NamespacedName,
 ) (ctrl.Result, error) {
+	configUtil := util.NewConfigUtil()
+
 	plugUtil := util.NewPlugUtil(client, ctx, req, log, plugNamespacedName, util.GlobalPlugMutex)
 	plug, err := plugUtil.Get()
 	if err != nil {
@@ -74,14 +76,14 @@ func (c *Coupler) Couple(
 
 	var plugConfig []byte
 	if plug.Spec.IntegrationEndpoint != "" {
-		plugConfig, err = GlobalCoupler.GetPlugConfig(plug)
+		plugConfig, err = configUtil.GetPlugConfig(plug)
 		if err != nil {
 			return plugUtil.Error(err)
 		}
 	}
 	var socketConfig []byte
 	if socket.Spec.IntegrationEndpoint != "" {
-		socketConfig, err = GlobalCoupler.GetSocketConfig(socket)
+		socketConfig, err = configUtil.GetSocketConfig(socket)
 		if err != nil {
 			return plugUtil.Error(err)
 		}

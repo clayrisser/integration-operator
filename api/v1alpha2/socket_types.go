@@ -67,6 +67,12 @@ type SocketSpec struct {
 	// config
 	Config map[string]string `json:"config,omitempty"`
 
+	// config config map name
+	ConfigConfigMapName string `json:"configConfigMapName,omitempty"`
+
+	// config secret name
+	ConfigSecretName string `json:"configSecretName,omitempty"`
+
 	// config mapper
 	ConfigMapper map[string]string `json:"configMapper,omitempty"`
 
@@ -74,12 +80,7 @@ type SocketSpec struct {
 	IntegrationEndpoint string `json:"integrationEndpoint,omitempty"`
 
 	// Resources
-	Resources []*SocketSpecResource `json:"resources,omitempty"`
-}
-
-type SocketSpecResource struct {
-	Resource string `json:"resource,omitempty"`
-	When     string `json:"when,omitempty"`
+	Resources []*Resource `json:"resources,omitempty"`
 }
 
 // SocketStatus defines the observed state of Socket

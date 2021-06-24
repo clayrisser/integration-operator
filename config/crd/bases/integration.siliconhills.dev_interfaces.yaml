@@ -42,10 +42,38 @@ spec:
                   properties:
                     plugDefinition:
                       description: plug definition
-                      type: string
+                      properties:
+                        description:
+                          type: string
+                        properties:
+                          additionalProperties:
+                            properties:
+                              default:
+                                type: string
+                              description:
+                                type: string
+                              required:
+                                type: boolean
+                            type: object
+                          type: object
+                      type: object
                     socketDefinition:
                       description: socket definition
-                      type: string
+                      properties:
+                        description:
+                          type: string
+                        properties:
+                          additionalProperties:
+                            properties:
+                              default:
+                                type: string
+                              description:
+                                type: string
+                              required:
+                                type: boolean
+                            type: object
+                          type: object
+                      type: object
                     version:
                       description: version
                       type: string

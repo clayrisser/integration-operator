@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/Jeffail/gabs/v2 v2.6.0
+	github.com/getkin/kin-openapi v0.64.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v0.3.0
 	github.com/go-resty/resty/v2 v2.6.0

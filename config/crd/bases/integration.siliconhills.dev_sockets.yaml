@@ -41,11 +41,17 @@ spec:
                   type: string
                 description: config
                 type: object
+              configConfigMapName:
+                description: config config map name
+                type: string
               configMapper:
                 additionalProperties:
                   type: string
                 description: config mapper
                 type: object
+              configSecretName:
+                description: config secret name
+                type: string
               data:
                 additionalProperties:
                   type: string
@@ -89,6 +95,8 @@ spec:
                 description: Resources
                 items:
                   properties:
+                    do:
+                      type: string
                     resource:
                       type: string
                     when:
