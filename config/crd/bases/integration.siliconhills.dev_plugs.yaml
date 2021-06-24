@@ -81,9 +81,6 @@ spec:
               interfaceVersions:
                 description: interface versions
                 type: string
-              meta:
-                description: meta
-                type: string
               namespaceScope:
                 description: namspace scope
                 type: string

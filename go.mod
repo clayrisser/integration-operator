@@ -15,7 +15,8 @@ require (
 	github.com/tdewolff/minify v2.3.6+incompatible
 	github.com/tdewolff/minify/v2 v2.9.16
 	github.com/tdewolff/parse v2.3.4+incompatible // indirect
-	github.com/tidwall/gjson v1.7.5
+	github.com/tidwall/gjson v1.8.0
+	github.com/tidwall/sjson v1.1.7
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2
 	k8s.io/apiserver v0.20.1

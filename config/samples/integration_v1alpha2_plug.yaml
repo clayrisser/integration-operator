@@ -13,5 +13,5 @@ spec:
   socket:
     name: socket-sample
     namespace: integration-test
-  meta: |
+  data:
     database: hello

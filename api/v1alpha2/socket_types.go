@@ -52,9 +52,6 @@ type SocketSpec struct {
 	// value of the specified field has been determined.
 	Vars []kustomizeTypes.Var `json:"vars,omitempty" yaml:"vars,omitempty"`
 
-	// meta
-	Meta string `json:"meta,omitempty"`
-
 	// data
 	Data map[string]string `json:"data,omitempty"`
 

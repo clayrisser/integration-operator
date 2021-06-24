@@ -2,12 +2,15 @@ package coupler
 
 import (
 	"github.com/tidwall/gjson"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
-	couplerLog = ctrl.Log.WithName("coupler")
+	couplerLog      = ctrl.Log.WithName("coupler")
+	decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 )
 
 func CreateGlobalCoupler() Coupler {

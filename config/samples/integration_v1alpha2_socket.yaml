@@ -10,9 +10,9 @@ spec:
     name: interface-sample
     namespace: integration-test
   integrationEndpoint: localhost:3000/socket
-  meta: |
+  data:
     host: localhost
     password: postgres
-    port: 5432
+    port: '5432'
     protocol: psql
     username: postgres

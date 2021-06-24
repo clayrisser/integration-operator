@@ -85,9 +85,6 @@ spec:
                 description: limit
                 format: int32
                 type: integer
-              meta:
-                description: meta
-                type: string
               namespaceScope:
                 description: namspace scope
                 type: string

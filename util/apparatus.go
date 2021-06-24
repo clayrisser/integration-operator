@@ -2,14 +2,14 @@ package util
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/go-resty/resty/v2"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/tdewolff/minify"
 	minifyJson "github.com/tdewolff/minify/json"
 	"github.com/tidwall/gjson"
-	"sigs.k8s.io/yaml"
+	"github.com/tidwall/sjson"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 type ApparatusUtil struct{}
@@ -21,28 +21,33 @@ func NewApparatusUtil() *ApparatusUtil {
 func (u *ApparatusUtil) GetPlugConfig(
 	plug *integrationv1alpha2.Plug,
 ) ([]byte, error) {
-	bPlug, err := json.Marshal(plug)
-	if err != nil {
-		return nil, err
-	}
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
 	m := minify.New()
 	m.AddFunc("application/json", minifyJson.Minify)
 	go func() {
-		body := `{"version":"1"`
+		body := `{"version":1}`
+		var err error
 		if plug != nil {
-			jsonPlug := gjson.Parse(string(bPlug))
-			body += fmt.Sprintf(`,"plug":%s`, jsonPlug)
-			meta, _ := yaml.YAMLToJSON([]byte(jsonPlug.Get("spec").Get("meta").String()))
-			if meta == nil {
-				meta = []byte("{}")
+			bPlug, err := json.Marshal(plug)
+			if err != nil {
+				errCh <- err
 			}
-			body += fmt.Sprintf(`,"plugMeta":%s`, meta)
+			plugObj := &unstructured.Unstructured{}
+			_, _, err = decUnstructured.Decode(bPlug, nil, plugObj)
+			if err != nil {
+				errCh <- err
+			}
+			body, err = sjson.Set(body, "plug", plugObj)
+			if err != nil {
+				errCh <- err
+			}
 		}
-		body += "}"
-		body, err := m.String("application/json", body)
+		body, err = m.String("application/json", string(body))
+		if err != nil {
+			errCh <- err
+		}
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 		}).SetBody([]byte(body)).Post(GetEndpoint(plug.Spec.IntegrationEndpoint) + "/config")
@@ -62,28 +67,33 @@ func (u *ApparatusUtil) GetPlugConfig(
 func (u *ApparatusUtil) GetSocketConfig(
 	socket *integrationv1alpha2.Socket,
 ) ([]byte, error) {
-	bSocket, err := json.Marshal(socket)
-	if err != nil {
-		return nil, err
-	}
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
 	m := minify.New()
 	m.AddFunc("application/json", minifyJson.Minify)
 	go func() {
-		body := `{"version":"1"`
+		body := `{"version":1}`
+		var err error
 		if socket != nil {
-			jsonSocket := gjson.Parse(string(bSocket))
-			body += fmt.Sprintf(`,"socket":%s`, jsonSocket)
-			meta, _ := yaml.YAMLToJSON([]byte(jsonSocket.Get("spec").Get("meta").String()))
-			if meta == nil {
-				meta = []byte("{}")
+			bSocket, err := json.Marshal(socket)
+			if err != nil {
+				errCh <- err
 			}
-			body += fmt.Sprintf(`,"socketMeta":%s`, meta)
+			socketObj := &unstructured.Unstructured{}
+			_, _, err = decUnstructured.Decode(bSocket, nil, socketObj)
+			if err != nil {
+				errCh <- err
+			}
+			body, err = sjson.Set(body, "socket", socketObj)
+			if err != nil {
+				errCh <- err
+			}
 		}
-		body += "}"
-		body, err := m.String("application/json", body)
+		body, err = m.String("application/json", body)
+		if err != nil {
+			errCh <- err
+		}
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 		}).SetBody([]byte(body)).Post(GetEndpoint(socket.Spec.IntegrationEndpoint) + "/config")
@@ -283,22 +293,33 @@ func (u *ApparatusUtil) processEvent(
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
-
-	body := `{"version":"1"`
+	body := `{"version":"1"}`
+	var err error
 	if plug != nil {
-		body += fmt.Sprintf(`,"plug":%s`, plug.String())
+		body, err = sjson.Set(body, "plug", plug.String())
+		if err != nil {
+			return err
+		}
 	}
 	if socket != nil {
-		body += fmt.Sprintf(`,"socket":%s`, socket.String())
+		body, err = sjson.Set(body, "socket", socket.String())
+		if err != nil {
+			return err
+		}
 	}
 	if plugConfig != nil {
-		body += fmt.Sprintf(`,"plugConfig":%s`, plugConfig.String())
+		body, err = sjson.Set(body, "plugConfig", plugConfig.String())
+		if err != nil {
+			return err
+		}
 	}
 	if socketConfig != nil {
-		body += fmt.Sprintf(`,"socketConfig":%s`, socketConfig.String())
+		body, err = sjson.Set(body, "socketConfig", socketConfig.String())
+		if err != nil {
+			return err
+		}
 	}
-	body += "}"
-	body, err := m.String("application/json", body)
+	body, err = m.String("application/json", body)
 	if err != nil {
 		return err
 	}
