@@ -1,8 +1,10 @@
 {
     "cSpell.words": [
         "apparartus",
+        "clientcmdapi",
         "clientgoscheme",
         "controllerutil",
+        "corev",
         "finalizers",
         "ghodss",
         "gjson",
@@ -11,6 +13,8 @@
         "kube",
         "kubebuilder",
         "kubeclient",
+        "kubeconfig",
+        "kubectl",
         "kubernetes",
         "kustomize",
         "logr",
