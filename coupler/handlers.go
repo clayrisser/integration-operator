@@ -5,7 +5,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type Config []byte
+type Config map[string]string
 
 type Handlers struct {
 	apparatusUtil *util.ApparatusUtil
@@ -24,8 +24,8 @@ func (h *Handlers) HandlePlugCreated(plug gjson.Result) error {
 func (h *Handlers) HandlePlugCoupled(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
 ) error {
 	return h.apparatusUtil.PlugCoupled(plug, socket, plugConfig, socketConfig)
 }
@@ -33,8 +33,8 @@ func (h *Handlers) HandlePlugCoupled(
 func (h *Handlers) HandlePlugUpdated(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
 ) error {
 	return h.apparatusUtil.PlugUpdated(plug, socket, plugConfig, socketConfig)
 }
@@ -42,8 +42,8 @@ func (h *Handlers) HandlePlugUpdated(
 func (h *Handlers) HandlePlugDecoupled(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
 ) error {
 	return h.apparatusUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig)
 }
@@ -67,8 +67,8 @@ func (h *Handlers) HandleSocketCreated(socket gjson.Result) error {
 func (h *Handlers) HandleSocketCoupled(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
 ) error {
 	return h.apparatusUtil.SocketCoupled(plug, socket, plugConfig, socketConfig)
 }
@@ -76,8 +76,8 @@ func (h *Handlers) HandleSocketCoupled(
 func (h *Handlers) HandleSocketUpdated(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
 ) error {
 	return h.apparatusUtil.SocketUpdated(plug, socket, plugConfig, socketConfig)
 }
@@ -85,8 +85,8 @@ func (h *Handlers) HandleSocketUpdated(
 func (h *Handlers) HandleSocketDecoupled(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
 ) error {
 	return h.apparatusUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig)
 }

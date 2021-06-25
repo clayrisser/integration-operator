@@ -252,8 +252,8 @@ func (c *Coupler) CoupledPlug(
 	c.bus.Pub(CoupledTopic, PlugKind, struct {
 		plug         []byte
 		socket       []byte
-		plugConfig   []byte
-		socketConfig []byte
+		plugConfig   map[string]string
+		socketConfig map[string]string
 	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
 	return <-errCh
 }
@@ -276,8 +276,8 @@ func (c *Coupler) UpdatedPlug(
 	c.bus.Pub(UpdatedTopic, PlugKind, struct {
 		plug         []byte
 		socket       []byte
-		plugConfig   []byte
-		socketConfig []byte
+		plugConfig   map[string]string
+		socketConfig map[string]string
 	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
 	return <-errCh
 }
@@ -300,8 +300,8 @@ func (c *Coupler) DecoupledPlug(
 	c.bus.Pub(DecoupledTopic, PlugKind, struct {
 		plug         []byte
 		socket       []byte
-		plugConfig   []byte
-		socketConfig []byte
+		plugConfig   map[string]string
+		socketConfig map[string]string
 	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
 	return <-errCh
 }
@@ -364,8 +364,8 @@ func (c *Coupler) CoupledSocket(
 	c.bus.Pub(CoupledTopic, SocketKind, struct {
 		plug         []byte
 		socket       []byte
-		plugConfig   []byte
-		socketConfig []byte
+		plugConfig   map[string]string
+		socketConfig map[string]string
 	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
 	return <-errCh
 }
@@ -388,8 +388,8 @@ func (c *Coupler) UpdatedSocket(
 	c.bus.Pub(UpdatedTopic, SocketKind, struct {
 		plug         []byte
 		socket       []byte
-		plugConfig   []byte
-		socketConfig []byte
+		plugConfig   map[string]string
+		socketConfig map[string]string
 	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
 	return <-errCh
 }
@@ -412,8 +412,8 @@ func (c *Coupler) DecoupledSocket(
 	c.bus.Pub(DecoupledTopic, SocketKind, struct {
 		plug         []byte
 		socket       []byte
-		plugConfig   []byte
-		socketConfig []byte
+		plugConfig   map[string]string
+		socketConfig map[string]string
 	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
 	return <-errCh
 }

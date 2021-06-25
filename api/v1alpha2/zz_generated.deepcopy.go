@@ -287,7 +287,11 @@ func (in *PlugSpec) DeepCopyInto(out *PlugSpec) {
 			(*out)[key] = val
 		}
 	}
-	in.Apparatus.DeepCopyInto(&out.Apparatus)
+	if in.Apparatus != nil {
+		in, out := &in.Apparatus, &out.Apparatus
+		*out = new(SpecApparatus)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
 		*out = make([]*Resource, len(*in))
@@ -484,7 +488,11 @@ func (in *SocketSpec) DeepCopyInto(out *SocketSpec) {
 			(*out)[key] = val
 		}
 	}
-	in.Apparatus.DeepCopyInto(&out.Apparatus)
+	if in.Apparatus != nil {
+		in, out := &in.Apparatus, &out.Apparatus
+		*out = new(SpecApparatus)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
 		*out = make([]*Resource, len(*in))

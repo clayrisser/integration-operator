@@ -74,7 +74,7 @@ type PlugSpec struct {
 	ConfigMapper map[string]string `json:"configMapper,omitempty"`
 
 	// apparatus
-	Apparatus SpecApparatus `json:"apparatus,omitempty"`
+	Apparatus *SpecApparatus `json:"apparatus,omitempty"`
 
 	// Resources
 	Resources []*Resource `json:"resources,omitempty"`

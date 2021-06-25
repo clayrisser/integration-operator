@@ -33,14 +33,14 @@ func CreateGlobalCoupler() Coupler {
 			d := data.(struct {
 				plug         []byte
 				socket       []byte
-				plugConfig   []byte
-				socketConfig []byte
+				plugConfig   map[string]string
+				socketConfig map[string]string
 			})
 			if err := handlers.HandlePlugCoupled(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
-				gjson.Parse(string(d.plugConfig)),
-				gjson.Parse(string(d.socketConfig)),
+				d.plugConfig,
+				d.socketConfig,
 			); err != nil {
 				return err
 			}
@@ -50,14 +50,14 @@ func CreateGlobalCoupler() Coupler {
 			d := data.(struct {
 				plug         []byte
 				socket       []byte
-				plugConfig   []byte
-				socketConfig []byte
+				plugConfig   map[string]string
+				socketConfig map[string]string
 			})
 			if err := handlers.HandlePlugUpdated(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
-				gjson.Parse(string(d.plugConfig)),
-				gjson.Parse(string(d.socketConfig)),
+				d.plugConfig,
+				d.socketConfig,
 			); err != nil {
 				return err
 			}
@@ -67,14 +67,14 @@ func CreateGlobalCoupler() Coupler {
 			d := data.(struct {
 				plug         []byte
 				socket       []byte
-				plugConfig   []byte
-				socketConfig []byte
+				plugConfig   map[string]string
+				socketConfig map[string]string
 			})
 			if err := handlers.HandlePlugDecoupled(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
-				gjson.Parse(string(d.plugConfig)),
-				gjson.Parse(string(d.socketConfig)),
+				d.plugConfig,
+				d.socketConfig,
 			); err != nil {
 				return err
 			}
@@ -116,14 +116,14 @@ func CreateGlobalCoupler() Coupler {
 			d := data.(struct {
 				plug         []byte
 				socket       []byte
-				plugConfig   []byte
-				socketConfig []byte
+				plugConfig   map[string]string
+				socketConfig map[string]string
 			})
 			if err := handlers.HandleSocketCoupled(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
-				gjson.Parse(string(d.plugConfig)),
-				gjson.Parse(string(d.socketConfig)),
+				d.plugConfig,
+				d.socketConfig,
 			); err != nil {
 				return err
 			}
@@ -133,14 +133,14 @@ func CreateGlobalCoupler() Coupler {
 			d := data.(struct {
 				plug         []byte
 				socket       []byte
-				plugConfig   []byte
-				socketConfig []byte
+				plugConfig   map[string]string
+				socketConfig map[string]string
 			})
 			if err := handlers.HandleSocketUpdated(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
-				gjson.Parse(string(d.plugConfig)),
-				gjson.Parse(string(d.socketConfig)),
+				d.plugConfig,
+				d.socketConfig,
 			); err != nil {
 				return err
 			}
@@ -150,14 +150,14 @@ func CreateGlobalCoupler() Coupler {
 			d := data.(struct {
 				plug         []byte
 				socket       []byte
-				plugConfig   []byte
-				socketConfig []byte
+				plugConfig   map[string]string
+				socketConfig map[string]string
 			})
 			if err := handlers.HandleSocketDecoupled(
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
-				gjson.Parse(string(d.plugConfig)),
-				gjson.Parse(string(d.socketConfig)),
+				d.plugConfig,
+				d.socketConfig,
 			); err != nil {
 				return err
 			}

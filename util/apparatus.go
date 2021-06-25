@@ -124,8 +124,8 @@ func (u *ApparatusUtil) PlugCreated(plug gjson.Result) error {
 func (u *ApparatusUtil) PlugCoupled(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
 ) error {
 	return u.processEvent(
 		&plug,
@@ -140,8 +140,8 @@ func (u *ApparatusUtil) PlugCoupled(
 func (u *ApparatusUtil) PlugUpdated(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
 ) error {
 	return u.processEvent(
 		&plug,
@@ -156,8 +156,8 @@ func (u *ApparatusUtil) PlugUpdated(
 func (u *ApparatusUtil) PlugDecoupled(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
 ) error {
 	return u.processEvent(
 		&plug,
@@ -209,8 +209,8 @@ func (u *ApparatusUtil) SocketCreated(socket gjson.Result) error {
 func (u *ApparatusUtil) SocketCoupled(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
 ) error {
 	return u.processEvent(
 		&plug,
@@ -225,8 +225,9 @@ func (u *ApparatusUtil) SocketCoupled(
 func (u *ApparatusUtil) SocketUpdated(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
+
 ) error {
 	return u.processEvent(
 		&plug,
@@ -241,8 +242,8 @@ func (u *ApparatusUtil) SocketUpdated(
 func (u *ApparatusUtil) SocketDecoupled(
 	plug gjson.Result,
 	socket gjson.Result,
-	plugConfig gjson.Result,
-	socketConfig gjson.Result,
+	plugConfig map[string]string,
+	socketConfig map[string]string,
 ) error {
 	return u.processEvent(
 		&plug,
@@ -283,8 +284,8 @@ func (u *ApparatusUtil) SocketBroken(
 func (u *ApparatusUtil) processEvent(
 	plug *gjson.Result,
 	socket *gjson.Result,
-	plugConfig *gjson.Result,
-	socketConfig *gjson.Result,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 	endpoint string,
 	eventName string,
 ) error {
@@ -308,13 +309,13 @@ func (u *ApparatusUtil) processEvent(
 		}
 	}
 	if plugConfig != nil {
-		body, err = sjson.Set(body, "plugConfig", plugConfig.String())
+		body, err = sjson.Set(body, "plugConfig", plugConfig)
 		if err != nil {
 			return err
 		}
 	}
 	if socketConfig != nil {
-		body, err = sjson.Set(body, "socketConfig", socketConfig.String())
+		body, err = sjson.Set(body, "socketConfig", socketConfig)
 		if err != nil {
 			return err
 		}
