@@ -9,7 +9,8 @@ spec:
   interface:
     name: interface-sample
     namespace: integration-test
-  integrationEndpoint: localhost:3000/plug
+  apparatus:
+    endpoint: localhost:3000/plug
   socket:
     name: socket-sample
     namespace: integration-test

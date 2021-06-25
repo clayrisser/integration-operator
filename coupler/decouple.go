@@ -36,14 +36,14 @@ func (c *Coupler) Decouple(
 	}
 
 	var plugConfig []byte
-	if plug.Spec.IntegrationEndpoint != "" {
+	if plug.Spec.Apparatus.Endpoint != "" {
 		plugConfig, err = configUtil.GetPlugConfig(plug)
 		if err != nil {
 			return plugUtil.Error(err)
 		}
 	}
 	var socketConfig []byte
-	if socket != nil && socket.Spec.IntegrationEndpoint != "" {
+	if socket != nil && socket.Spec.Apparatus.Endpoint != "" {
 		socketConfig, err = configUtil.GetSocketConfig(socket)
 		if err != nil {
 			return plugUtil.Error(err)

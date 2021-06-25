@@ -50,7 +50,7 @@ func (u *ApparatusUtil) GetPlugConfig(
 		}
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
-		}).SetBody([]byte(body)).Post(GetEndpoint(plug.Spec.IntegrationEndpoint) + "/config")
+		}).SetBody([]byte(body)).Post(GetEndpoint(plug.Spec.Apparatus.Endpoint) + "/config")
 		if err != nil {
 			errCh <- err
 		}
@@ -96,7 +96,7 @@ func (u *ApparatusUtil) GetSocketConfig(
 		}
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
-		}).SetBody([]byte(body)).Post(GetEndpoint(socket.Spec.IntegrationEndpoint) + "/config")
+		}).SetBody([]byte(body)).Post(GetEndpoint(socket.Spec.Apparatus.Endpoint) + "/config")
 		if err != nil {
 			errCh <- err
 		}
@@ -116,7 +116,7 @@ func (u *ApparatusUtil) PlugCreated(plug gjson.Result) error {
 		nil,
 		nil,
 		nil,
-		plug.Get("spec.integrationEndpoint").String(),
+		plug.Get("spec.apparatus.endpoint").String(),
 		"created",
 	)
 }
@@ -132,7 +132,7 @@ func (u *ApparatusUtil) PlugCoupled(
 		&socket,
 		&plugConfig,
 		&socketConfig,
-		plug.Get("spec.integrationEndpoint").String(),
+		plug.Get("spec.apparatus.endpoint").String(),
 		"coupled",
 	)
 }
@@ -148,7 +148,7 @@ func (u *ApparatusUtil) PlugUpdated(
 		&socket,
 		&plugConfig,
 		&socketConfig,
-		plug.Get("spec.integrationEndpoint").String(),
+		plug.Get("spec.apparatus.endpoint").String(),
 		"updated",
 	)
 }
@@ -164,7 +164,7 @@ func (u *ApparatusUtil) PlugDecoupled(
 		&socket,
 		&plugConfig,
 		&socketConfig,
-		plug.Get("spec.integrationEndpoint").String(),
+		plug.Get("spec.apparatus.endpoint").String(),
 		"decoupled",
 	)
 }
@@ -177,7 +177,7 @@ func (u *ApparatusUtil) PlugDeleted(
 		nil,
 		nil,
 		nil,
-		plug.Get("spec.integrationEndpoint").String(),
+		plug.Get("spec.apparatus.endpoint").String(),
 		"deleted",
 	)
 }
@@ -190,7 +190,7 @@ func (u *ApparatusUtil) PlugBroken(
 		nil,
 		nil,
 		nil,
-		plug.Get("spec.integrationEndpoint").String(),
+		plug.Get("spec.apparatus.endpoint").String(),
 		"broken",
 	)
 }
@@ -201,7 +201,7 @@ func (u *ApparatusUtil) SocketCreated(socket gjson.Result) error {
 		&socket,
 		nil,
 		nil,
-		socket.Get("spec.integrationEndpoint").String(),
+		socket.Get("spec.apparatus.endpoint").String(),
 		"created",
 	)
 }
@@ -217,7 +217,7 @@ func (u *ApparatusUtil) SocketCoupled(
 		&socket,
 		&plugConfig,
 		&socketConfig,
-		socket.Get("spec.integrationEndpoint").String(),
+		socket.Get("spec.apparatus.endpoint").String(),
 		"coupled",
 	)
 }
@@ -233,7 +233,7 @@ func (u *ApparatusUtil) SocketUpdated(
 		&socket,
 		&plugConfig,
 		&socketConfig,
-		socket.Get("spec.integrationEndpoint").String(),
+		socket.Get("spec.apparatus.endpoint").String(),
 		"updated",
 	)
 }
@@ -249,7 +249,7 @@ func (u *ApparatusUtil) SocketDecoupled(
 		&socket,
 		&plugConfig,
 		&socketConfig,
-		socket.Get("spec.integrationEndpoint").String(),
+		socket.Get("spec.apparatus.endpoint").String(),
 		"decoupled",
 	)
 }
@@ -262,7 +262,7 @@ func (u *ApparatusUtil) SocketDeleted(
 		&socket,
 		nil,
 		nil,
-		socket.Get("spec.integrationEndpoint").String(),
+		socket.Get("spec.apparatus.endpoint").String(),
 		"deleted",
 	)
 }
@@ -275,7 +275,7 @@ func (u *ApparatusUtil) SocketBroken(
 		&socket,
 		nil,
 		nil,
-		socket.Get("spec.integrationEndpoint").String(),
+		socket.Get("spec.apparatus.endpoint").String(),
 		"broken",
 	)
 }

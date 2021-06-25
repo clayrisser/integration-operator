@@ -9,7 +9,8 @@ spec:
   interface:
     name: interface-sample
     namespace: integration-test
-  integrationEndpoint: localhost:3000/socket
+  apparatus:
+    endpoint: localhost:3000/socket
   data:
     host: localhost
     password: postgres

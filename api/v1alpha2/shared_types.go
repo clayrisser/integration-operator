@@ -1,5 +1,9 @@
 package v1alpha2
 
+import (
+	v1 "k8s.io/api/core/v1"
+)
+
 type Phase string
 
 const (
@@ -40,4 +44,12 @@ type NamespacedName struct {
 
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
+}
+
+type SpecApparatus struct {
+	// endpoint
+	Endpoint string `json:"endpoint,omitempty"`
+
+	// containers
+	Containers []*v1.Container `json:"containers,omitempty"`
 }

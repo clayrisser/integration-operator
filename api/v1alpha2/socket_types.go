@@ -73,8 +73,8 @@ type SocketSpec struct {
 	// config mapper
 	ConfigMapper map[string]string `json:"configMapper,omitempty"`
 
-	// integration endpoint
-	IntegrationEndpoint string `json:"integrationEndpoint,omitempty"`
+	// apparatus
+	Apparatus SpecApparatus `json:"apparatus,omitempty"`
 
 	// Resources
 	Resources []*Resource `json:"resources,omitempty"`
