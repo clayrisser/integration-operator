@@ -1,6 +1,7 @@
 package util
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-resty/resty/v2"
@@ -12,10 +13,18 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-type ApparatusUtil struct{}
+type ApparatusUtil struct {
+	dataUtil *DataUtil
+	ctx      *context.Context
+}
 
-func NewApparatusUtil() *ApparatusUtil {
-	return &ApparatusUtil{}
+func NewApparatusUtil(
+	ctx *context.Context,
+) *ApparatusUtil {
+	return &ApparatusUtil{
+		ctx:      ctx,
+		dataUtil: NewDataUtil(ctx),
+	}
 }
 
 func (u *ApparatusUtil) GetPlugConfig(

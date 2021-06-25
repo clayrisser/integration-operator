@@ -1,6 +1,8 @@
 package coupler
 
 import (
+	"context"
+
 	"github.com/tidwall/gjson"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
@@ -22,21 +24,24 @@ func CreateGlobalCoupler() Coupler {
 	globalCoupler.RegisterEvents(&Events{
 		OnPlugCreated: func(data interface{}) error {
 			d := data.(struct {
+				ctx  *context.Context
 				plug []byte
 			})
-			if err := handlers.HandlePlugCreated(gjson.Parse(string(d.plug))); err != nil {
+			if err := handlers.HandlePlugCreated(d.ctx, gjson.Parse(string(d.plug))); err != nil {
 				return err
 			}
 			return nil
 		},
 		OnPlugCoupled: func(data interface{}) error {
 			d := data.(struct {
+				ctx          *context.Context
 				plug         []byte
 				socket       []byte
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
 			if err := handlers.HandlePlugCoupled(
+				d.ctx,
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				d.plugConfig,
@@ -48,12 +53,14 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnPlugUpdated: func(data interface{}) error {
 			d := data.(struct {
+				ctx          *context.Context
 				plug         []byte
 				socket       []byte
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
 			if err := handlers.HandlePlugUpdated(
+				d.ctx,
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				d.plugConfig,
@@ -65,12 +72,14 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnPlugDecoupled: func(data interface{}) error {
 			d := data.(struct {
+				ctx          *context.Context
 				plug         []byte
 				socket       []byte
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
 			if err := handlers.HandlePlugDecoupled(
+				d.ctx,
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				d.plugConfig,
@@ -82,9 +91,11 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnPlugDeleted: func(data interface{}) error {
 			d := data.(struct {
+				ctx  *context.Context
 				plug []byte
 			})
 			if err := handlers.HandlePlugDeleted(
+				d.ctx,
 				gjson.Parse(string(d.plug)),
 			); err != nil {
 				return err
@@ -93,9 +104,11 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnPlugBroken: func(data interface{}) error {
 			d := data.(struct {
+				ctx  *context.Context
 				plug []byte
 			})
 			err := handlers.HandlePlugBroken(
+				d.ctx,
 				gjson.Parse(string(d.plug)),
 			)
 			if err != nil {
@@ -105,21 +118,24 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnSocketCreated: func(data interface{}) error {
 			d := data.(struct {
+				ctx    *context.Context
 				socket []byte
 			})
-			if err := handlers.HandleSocketCreated(gjson.Parse(string(d.socket))); err != nil {
+			if err := handlers.HandleSocketCreated(d.ctx, gjson.Parse(string(d.socket))); err != nil {
 				return err
 			}
 			return nil
 		},
 		OnSocketCoupled: func(data interface{}) error {
 			d := data.(struct {
+				ctx          *context.Context
 				plug         []byte
 				socket       []byte
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
 			if err := handlers.HandleSocketCoupled(
+				d.ctx,
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				d.plugConfig,
@@ -131,12 +147,14 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnSocketUpdated: func(data interface{}) error {
 			d := data.(struct {
+				ctx          *context.Context
 				plug         []byte
 				socket       []byte
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
 			if err := handlers.HandleSocketUpdated(
+				d.ctx,
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				d.plugConfig,
@@ -148,12 +166,14 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnSocketDecoupled: func(data interface{}) error {
 			d := data.(struct {
+				ctx          *context.Context
 				plug         []byte
 				socket       []byte
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
 			if err := handlers.HandleSocketDecoupled(
+				d.ctx,
 				gjson.Parse(string(d.plug)),
 				gjson.Parse(string(d.socket)),
 				d.plugConfig,
@@ -165,9 +185,11 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnSocketDeleted: func(data interface{}) error {
 			d := data.(struct {
+				ctx    *context.Context
 				socket []byte
 			})
 			if err := handlers.HandleSocketDeleted(
+				d.ctx,
 				gjson.Parse(string(d.socket)),
 			); err != nil {
 				return err
@@ -176,9 +198,11 @@ func CreateGlobalCoupler() Coupler {
 		},
 		OnSocketBroken: func(data interface{}) error {
 			d := data.(struct {
+				ctx    *context.Context
 				socket []byte
 			})
 			err := handlers.HandlePlugBroken(
+				d.ctx,
 				gjson.Parse(string(d.socket)),
 			)
 			if err != nil {

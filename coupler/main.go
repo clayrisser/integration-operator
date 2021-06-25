@@ -230,7 +230,13 @@ func (c *Coupler) CreatedPlug(plug *integrationv1alpha2.Plug) error {
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(CreatedTopic, PlugKind, struct{ plug []byte }{plug: b}, errCh)
+	c.bus.Pub(CreatedTopic, PlugKind, struct {
+		ctx  *context.Context
+		plug []byte
+	}{
+		ctx:  &c.ctx,
+		plug: b,
+	}, errCh)
 	return <-errCh
 }
 
@@ -250,11 +256,18 @@ func (c *Coupler) CoupledPlug(
 		return err
 	}
 	c.bus.Pub(CoupledTopic, PlugKind, struct {
+		ctx          *context.Context
 		plug         []byte
 		socket       []byte
 		plugConfig   map[string]string
 		socketConfig map[string]string
-	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
+	}{
+		ctx:          &c.ctx,
+		plug:         bPlug,
+		socket:       bSocket,
+		plugConfig:   plugConfig,
+		socketConfig: socketConfig,
+	}, errCh)
 	return <-errCh
 }
 
@@ -274,11 +287,18 @@ func (c *Coupler) UpdatedPlug(
 		return err
 	}
 	c.bus.Pub(UpdatedTopic, PlugKind, struct {
+		ctx          *context.Context
 		plug         []byte
 		socket       []byte
 		plugConfig   map[string]string
 		socketConfig map[string]string
-	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
+	}{
+		ctx:          &c.ctx,
+		plug:         bPlug,
+		socket:       bSocket,
+		plugConfig:   plugConfig,
+		socketConfig: socketConfig,
+	}, errCh)
 	return <-errCh
 }
 
@@ -298,11 +318,18 @@ func (c *Coupler) DecoupledPlug(
 		return err
 	}
 	c.bus.Pub(DecoupledTopic, PlugKind, struct {
+		ctx          *context.Context
 		plug         []byte
 		socket       []byte
 		plugConfig   map[string]string
 		socketConfig map[string]string
-	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
+	}{
+		ctx:          &c.ctx,
+		plug:         bPlug,
+		socket:       bSocket,
+		plugConfig:   plugConfig,
+		socketConfig: socketConfig,
+	}, errCh)
 	return <-errCh
 }
 
@@ -315,8 +342,9 @@ func (c *Coupler) DeletedPlug(
 	}
 	errCh := make(chan error)
 	c.bus.Pub(DeletedTopic, PlugKind, struct {
+		ctx  *context.Context
 		plug []byte
-	}{plug: bPlug}, errCh)
+	}{ctx: &c.ctx, plug: bPlug}, errCh)
 	return <-errCh
 }
 
@@ -329,8 +357,9 @@ func (c *Coupler) BrokenPlug(
 	}
 	errCh := make(chan error)
 	c.bus.Pub(BrokenTopic, PlugKind, struct {
+		ctx  *context.Context
 		plug []byte
-	}{plug: bPlug}, errCh)
+	}{ctx: &c.ctx, plug: bPlug}, errCh)
 	return <-errCh
 }
 
@@ -342,7 +371,10 @@ func (c *Coupler) CreatedSocket(
 	if err != nil {
 		return err
 	}
-	c.bus.Pub(CreatedTopic, SocketKind, struct{ socket []byte }{socket: b}, errCh)
+	c.bus.Pub(CreatedTopic, SocketKind, struct {
+		ctx    *context.Context
+		socket []byte
+	}{ctx: &c.ctx, socket: b}, errCh)
 	return <-errCh
 }
 
@@ -362,11 +394,18 @@ func (c *Coupler) CoupledSocket(
 		return err
 	}
 	c.bus.Pub(CoupledTopic, SocketKind, struct {
+		ctx          *context.Context
 		plug         []byte
 		socket       []byte
 		plugConfig   map[string]string
 		socketConfig map[string]string
-	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
+	}{
+		ctx:          &c.ctx,
+		plug:         bPlug,
+		socket:       bSocket,
+		plugConfig:   plugConfig,
+		socketConfig: socketConfig,
+	}, errCh)
 	return <-errCh
 }
 
@@ -386,11 +425,18 @@ func (c *Coupler) UpdatedSocket(
 		return err
 	}
 	c.bus.Pub(UpdatedTopic, SocketKind, struct {
+		ctx          *context.Context
 		plug         []byte
 		socket       []byte
 		plugConfig   map[string]string
 		socketConfig map[string]string
-	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
+	}{
+		ctx:          &c.ctx,
+		plug:         bPlug,
+		socket:       bSocket,
+		plugConfig:   plugConfig,
+		socketConfig: socketConfig,
+	}, errCh)
 	return <-errCh
 }
 
@@ -410,11 +456,18 @@ func (c *Coupler) DecoupledSocket(
 		return err
 	}
 	c.bus.Pub(DecoupledTopic, SocketKind, struct {
+		ctx          *context.Context
 		plug         []byte
 		socket       []byte
 		plugConfig   map[string]string
 		socketConfig map[string]string
-	}{plug: bPlug, socket: bSocket, plugConfig: plugConfig, socketConfig: socketConfig}, errCh)
+	}{
+		ctx:          &c.ctx,
+		plug:         bPlug,
+		socket:       bSocket,
+		plugConfig:   plugConfig,
+		socketConfig: socketConfig,
+	}, errCh)
 	return <-errCh
 }
 
@@ -427,8 +480,9 @@ func (c *Coupler) DeletedSocket(
 	}
 	errCh := make(chan error)
 	c.bus.Pub(DeletedTopic, SocketKind, struct {
+		ctx    *context.Context
 		socket []byte
-	}{socket: bSocket}, errCh)
+	}{ctx: &c.ctx, socket: bSocket}, errCh)
 	return <-errCh
 }
 
@@ -441,7 +495,8 @@ func (c *Coupler) BrokenSocket(
 	}
 	errCh := make(chan error)
 	c.bus.Pub(BrokenTopic, SocketKind, struct {
+		ctx    *context.Context
 		socket []byte
-	}{socket: bSocket}, errCh)
+	}{ctx: &c.ctx, socket: bSocket}, errCh)
 	return <-errCh
 }
