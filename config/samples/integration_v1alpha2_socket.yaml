@@ -15,5 +15,6 @@ spec:
     host: localhost
     password: postgres
     port: '5432'
-    protocol: psql
     username: postgres
+  config:
+    protocol: psql

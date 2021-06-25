@@ -37,21 +37,29 @@ func (u *ConfigUtil) GetPlugConfig(
 		if err != nil {
 			return nil, err
 		}
-		if bSecretData, err := json.Marshal(secret.Data); err != nil {
-			if secretData, err := u.jsonToHashMap(bSecretData); err != nil {
-				for key, value := range secretData {
-					plugConfig[key] = value
-				}
-			}
+		bSecretData, err := json.Marshal(secret.Data)
+		if err != nil {
+			return nil, err
+		}
+		secretData, err := u.jsonToHashMap(bSecretData)
+		if err != nil {
+			return nil, err
+		}
+		for key, value := range secretData {
+			plugConfig[key] = value
 		}
 	}
 	if plug.Spec.Config != nil {
-		if bConfig, err := json.Marshal(plug.Spec.Config); err != nil {
-			if config, err := u.jsonToHashMap(bConfig); err != nil {
-				for key, value := range config {
-					plugConfig[key] = value
-				}
-			}
+		bConfig, err := json.Marshal(plug.Spec.Config)
+		if err != nil {
+			return nil, err
+		}
+		config, err := u.jsonToHashMap(bConfig)
+		if err != nil {
+			return nil, err
+		}
+		for key, value := range config {
+			plugConfig[key] = value
 		}
 	}
 	if plug.Spec.ConfigConfigMapName != "" {
@@ -59,12 +67,16 @@ func (u *ConfigUtil) GetPlugConfig(
 		if err != nil {
 			return nil, err
 		}
-		if bConfigMapData, err := json.Marshal(configMap.Data); err != nil {
-			if configMapData, err := u.jsonToHashMap(bConfigMapData); err != nil {
-				for key, value := range configMapData {
-					plugConfig[key] = value
-				}
-			}
+		bConfigMapData, err := json.Marshal(configMap.Data)
+		if err != nil {
+			return nil, err
+		}
+		configMapData, err := u.jsonToHashMap(bConfigMapData)
+		if err != nil {
+			return nil, err
+		}
+		for key, value := range configMapData {
+			plugConfig[key] = value
 		}
 	}
 	if plug.Spec.Apparatus != nil {
@@ -72,9 +84,12 @@ func (u *ConfigUtil) GetPlugConfig(
 		if err != nil {
 			return nil, err
 		}
-		plugConfig, err = u.jsonToHashMap(body)
+		apparatusPlugConfig, err := u.jsonToHashMap(body)
 		if err != nil {
 			return nil, err
+		}
+		for key, value := range apparatusPlugConfig {
+			plugConfig[key] = value
 		}
 	}
 	return plugConfig, nil
@@ -89,21 +104,29 @@ func (u *ConfigUtil) GetSocketConfig(
 		if err != nil {
 			return nil, err
 		}
-		if bSecretData, err := json.Marshal(secret.Data); err != nil {
-			if secretData, err := u.jsonToHashMap(bSecretData); err != nil {
-				for key, value := range secretData {
-					socketConfig[key] = value
-				}
-			}
+		bSecretData, err := json.Marshal(secret.Data)
+		if err != nil {
+			return nil, err
+		}
+		secretData, err := u.jsonToHashMap(bSecretData)
+		if err != nil {
+			return nil, err
+		}
+		for key, value := range secretData {
+			socketConfig[key] = value
 		}
 	}
 	if socket.Spec.Config != nil {
-		if bConfig, err := json.Marshal(socket.Spec.Config); err != nil {
-			if config, err := u.jsonToHashMap(bConfig); err != nil {
-				for key, value := range config {
-					socketConfig[key] = value
-				}
-			}
+		bConfig, err := json.Marshal(socket.Spec.Config)
+		if err != nil {
+			return nil, err
+		}
+		config, err := u.jsonToHashMap(bConfig)
+		if err != nil {
+			return nil, err
+		}
+		for key, value := range config {
+			socketConfig[key] = value
 		}
 	}
 	if socket.Spec.ConfigConfigMapName != "" {
@@ -111,12 +134,16 @@ func (u *ConfigUtil) GetSocketConfig(
 		if err != nil {
 			return nil, err
 		}
-		if bConfigMapData, err := json.Marshal(configMap.Data); err != nil {
-			if configMapData, err := u.jsonToHashMap(bConfigMapData); err != nil {
-				for key, value := range configMapData {
-					socketConfig[key] = value
-				}
-			}
+		bConfigMapData, err := json.Marshal(configMap.Data)
+		if err != nil {
+			return nil, err
+		}
+		configMapData, err := u.jsonToHashMap(bConfigMapData)
+		if err != nil {
+			return nil, err
+		}
+		for key, value := range configMapData {
+			socketConfig[key] = value
 		}
 	}
 	if socket.Spec.Apparatus != nil {
@@ -124,9 +151,12 @@ func (u *ConfigUtil) GetSocketConfig(
 		if err != nil {
 			return nil, err
 		}
-		socketConfig, err = u.jsonToHashMap(body)
+		apparatusSocketConfig, err := u.jsonToHashMap(body)
 		if err != nil {
 			return nil, err
+		}
+		for key, value := range apparatusSocketConfig {
+			socketConfig[key] = value
 		}
 	}
 	return socketConfig, nil
