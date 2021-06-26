@@ -19,7 +19,7 @@ func (c *Coupler) Decouple(
 	log *logr.Logger,
 	plugNamespacedName *integrationv1alpha2.NamespacedName,
 ) (ctrl.Result, error) {
-	configUtil := util.NewConfigUtil(client, ctx)
+	configUtil := util.NewConfigUtil(ctx)
 
 	plugUtil := util.NewPlugUtil(client, ctx, req, log, plugNamespacedName, util.GlobalPlugMutex)
 	plug, err := plugUtil.Get()

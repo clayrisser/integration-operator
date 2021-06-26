@@ -2,7 +2,6 @@ package util
 
 import (
 	"context"
-	"encoding/json"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,33 +31,17 @@ func (u *DataUtil) GetPlugData(plug *integrationv1alpha2.Plug) (map[string]strin
 		if err != nil {
 			return nil, err
 		}
-		bSecretData, err := json.Marshal(secret.Data)
-		if err != nil {
-			return nil, err
-		}
-		secretData, err := jsonToHashMap(bSecretData)
-		if err != nil {
-			return nil, err
-		}
-		for key, value := range secretData {
-			plugData[key] = value
+		for key, value := range secret.Data {
+			plugData[key] = string(value)
 		}
 	}
 	if plug.Spec.Data != nil {
-		bConfig, err := json.Marshal(plug.Spec.Data)
-		if err != nil {
-			return nil, err
-		}
-		config, err := jsonToHashMap(bConfig)
-		if err != nil {
-			return nil, err
-		}
-		for key, value := range config {
+		for key, value := range plug.Spec.Data {
 			plugData[key] = value
 		}
 	}
 	if plug.Spec.ConfigConfigMapName != "" {
-		configMap, err := u.client.CoreV1().Secrets(plug.Namespace).Get(
+		configMap, err := u.client.CoreV1().ConfigMaps(plug.Namespace).Get(
 			*u.ctx,
 			plug.Spec.ConfigConfigMapName,
 			metav1.GetOptions{},
@@ -66,15 +49,7 @@ func (u *DataUtil) GetPlugData(plug *integrationv1alpha2.Plug) (map[string]strin
 		if err != nil {
 			return nil, err
 		}
-		bConfigMapData, err := json.Marshal(configMap.Data)
-		if err != nil {
-			return nil, err
-		}
-		configMapData, err := jsonToHashMap(bConfigMapData)
-		if err != nil {
-			return nil, err
-		}
-		for key, value := range configMapData {
+		for key, value := range configMap.Data {
 			plugData[key] = value
 		}
 	}
@@ -92,33 +67,17 @@ func (u *DataUtil) GetSocketData(socket *integrationv1alpha2.Socket) (map[string
 		if err != nil {
 			return nil, err
 		}
-		bSecretData, err := json.Marshal(secret.Data)
-		if err != nil {
-			return nil, err
-		}
-		secretData, err := jsonToHashMap(bSecretData)
-		if err != nil {
-			return nil, err
-		}
-		for key, value := range secretData {
-			socketData[key] = value
+		for key, value := range secret.Data {
+			socketData[key] = string(value)
 		}
 	}
 	if socket.Spec.Data != nil {
-		bConfig, err := json.Marshal(socket.Spec.Data)
-		if err != nil {
-			return nil, err
-		}
-		config, err := jsonToHashMap(bConfig)
-		if err != nil {
-			return nil, err
-		}
-		for key, value := range config {
+		for key, value := range socket.Spec.Data {
 			socketData[key] = value
 		}
 	}
 	if socket.Spec.ConfigConfigMapName != "" {
-		configMap, err := u.client.CoreV1().Secrets(socket.Namespace).Get(
+		configMap, err := u.client.CoreV1().ConfigMaps(socket.Namespace).Get(
 			*u.ctx,
 			socket.Spec.DataConfigMapName,
 			metav1.GetOptions{},
@@ -126,15 +85,7 @@ func (u *DataUtil) GetSocketData(socket *integrationv1alpha2.Socket) (map[string
 		if err != nil {
 			return nil, err
 		}
-		bConfigMapData, err := json.Marshal(configMap.Data)
-		if err != nil {
-			return nil, err
-		}
-		configMapData, err := jsonToHashMap(bConfigMapData)
-		if err != nil {
-			return nil, err
-		}
-		for key, value := range configMapData {
+		for key, value := range configMap.Data {
 			socketData[key] = value
 		}
 	}
