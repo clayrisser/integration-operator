@@ -20,8 +20,8 @@ func (h *Handlers) HandlePlugCreated(
 	ctx *context.Context,
 	plug gjson.Result,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.PlugCreated(plug)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.PlugCreated(plug)
 }
 
 func (h *Handlers) HandlePlugCoupled(
@@ -31,8 +31,8 @@ func (h *Handlers) HandlePlugCoupled(
 	plugConfig map[string]string,
 	socketConfig map[string]string,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.PlugCoupled(plug, socket, plugConfig, socketConfig)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.PlugCoupled(plug, socket, plugConfig, socketConfig)
 }
 
 func (h *Handlers) HandlePlugUpdated(
@@ -42,8 +42,8 @@ func (h *Handlers) HandlePlugUpdated(
 	plugConfig map[string]string,
 	socketConfig map[string]string,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.PlugUpdated(plug, socket, plugConfig, socketConfig)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.PlugUpdated(plug, socket, plugConfig, socketConfig)
 }
 
 func (h *Handlers) HandlePlugDecoupled(
@@ -53,32 +53,32 @@ func (h *Handlers) HandlePlugDecoupled(
 	plugConfig map[string]string,
 	socketConfig map[string]string,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig)
 }
 
 func (h *Handlers) HandlePlugDeleted(
 	ctx *context.Context,
 	plug gjson.Result,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.PlugDeleted(plug)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.PlugDeleted(plug)
 }
 
 func (h *Handlers) HandlePlugBroken(
 	ctx *context.Context,
 	plug gjson.Result,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.PlugBroken(plug)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.PlugBroken(plug)
 }
 
 func (h *Handlers) HandleSocketCreated(
 	ctx *context.Context,
 	socket gjson.Result,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.SocketCreated(socket)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.SocketCreated(socket)
 }
 
 func (h *Handlers) HandleSocketCoupled(
@@ -88,8 +88,8 @@ func (h *Handlers) HandleSocketCoupled(
 	plugConfig map[string]string,
 	socketConfig map[string]string,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.SocketCoupled(plug, socket, plugConfig, socketConfig)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.SocketCoupled(plug, socket, plugConfig, socketConfig)
 }
 
 func (h *Handlers) HandleSocketUpdated(
@@ -99,8 +99,8 @@ func (h *Handlers) HandleSocketUpdated(
 	plugConfig map[string]string,
 	socketConfig map[string]string,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.SocketUpdated(plug, socket, plugConfig, socketConfig)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.SocketUpdated(plug, socket, plugConfig, socketConfig)
 }
 
 func (h *Handlers) HandleSocketDecoupled(
@@ -110,22 +110,22 @@ func (h *Handlers) HandleSocketDecoupled(
 	plugConfig map[string]string,
 	socketConfig map[string]string,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig)
 }
 
 func (h *Handlers) HandleSocketDeleted(
 	ctx *context.Context,
 	socket gjson.Result,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.SocketDeleted(socket)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.SocketDeleted(socket)
 }
 
 func (h *Handlers) HandleSocketBroken(
 	ctx *context.Context,
 	socket gjson.Result,
 ) error {
-	apparatusUtil := util.NewApparatusUtil(ctx)
-	return apparatusUtil.SocketBroken(socket)
+	eventUtil := util.NewEventUtil(ctx)
+	return eventUtil.SocketBroken(socket)
 }
