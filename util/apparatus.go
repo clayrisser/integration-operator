@@ -8,7 +8,6 @@ import (
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/tdewolff/minify"
 	minifyJson "github.com/tdewolff/minify/json"
-	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -119,180 +118,180 @@ func (u *ApparatusUtil) GetSocketConfig(
 	}
 }
 
-func (u *ApparatusUtil) PlugCreated(plug gjson.Result) error {
+func (u *ApparatusUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
 	return u.processEvent(
-		&plug,
+		plug,
 		nil,
 		nil,
 		nil,
-		plug.Get("spec.apparatus.endpoint").String(),
+		plug.Spec.Apparatus.Endpoint,
 		"created",
 	)
 }
 
 func (u *ApparatusUtil) PlugCoupled(
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 ) error {
 	return u.processEvent(
-		&plug,
-		&socket,
-		&plugConfig,
-		&socketConfig,
-		plug.Get("spec.apparatus.endpoint").String(),
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		plug.Spec.Apparatus.Endpoint,
 		"coupled",
 	)
 }
 
 func (u *ApparatusUtil) PlugUpdated(
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 ) error {
 	return u.processEvent(
-		&plug,
-		&socket,
-		&plugConfig,
-		&socketConfig,
-		plug.Get("spec.apparatus.endpoint").String(),
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		plug.Spec.Apparatus.Endpoint,
 		"updated",
 	)
 }
 
 func (u *ApparatusUtil) PlugDecoupled(
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 ) error {
 	return u.processEvent(
-		&plug,
-		&socket,
-		&plugConfig,
-		&socketConfig,
-		plug.Get("spec.apparatus.endpoint").String(),
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		plug.Spec.Apparatus.Endpoint,
 		"decoupled",
 	)
 }
 
 func (u *ApparatusUtil) PlugDeleted(
-	plug gjson.Result,
+	plug *integrationv1alpha2.Plug,
 ) error {
 	return u.processEvent(
-		&plug,
+		plug,
 		nil,
 		nil,
 		nil,
-		plug.Get("spec.apparatus.endpoint").String(),
+		plug.Spec.Apparatus.Endpoint,
 		"deleted",
 	)
 }
 
 func (u *ApparatusUtil) PlugBroken(
-	plug gjson.Result,
+	plug *integrationv1alpha2.Plug,
 ) error {
 	return u.processEvent(
-		&plug,
+		plug,
 		nil,
 		nil,
 		nil,
-		plug.Get("spec.apparatus.endpoint").String(),
+		plug.Spec.Apparatus.Endpoint,
 		"broken",
 	)
 }
 
-func (u *ApparatusUtil) SocketCreated(socket gjson.Result) error {
+func (u *ApparatusUtil) SocketCreated(socket *integrationv1alpha2.Socket) error {
 	return u.processEvent(
 		nil,
-		&socket,
+		socket,
 		nil,
 		nil,
-		socket.Get("spec.apparatus.endpoint").String(),
+		socket.Spec.Apparatus.Endpoint,
 		"created",
 	)
 }
 
 func (u *ApparatusUtil) SocketCoupled(
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 ) error {
 	return u.processEvent(
-		&plug,
-		&socket,
-		&plugConfig,
-		&socketConfig,
-		socket.Get("spec.apparatus.endpoint").String(),
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		socket.Spec.Apparatus.Endpoint,
 		"coupled",
 	)
 }
 
 func (u *ApparatusUtil) SocketUpdated(
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 
 ) error {
 	return u.processEvent(
-		&plug,
-		&socket,
-		&plugConfig,
-		&socketConfig,
-		socket.Get("spec.apparatus.endpoint").String(),
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		socket.Spec.Apparatus.Endpoint,
 		"updated",
 	)
 }
 
 func (u *ApparatusUtil) SocketDecoupled(
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 ) error {
 	return u.processEvent(
-		&plug,
-		&socket,
-		&plugConfig,
-		&socketConfig,
-		socket.Get("spec.apparatus.endpoint").String(),
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		socket.Spec.Apparatus.Endpoint,
 		"decoupled",
 	)
 }
 
 func (u *ApparatusUtil) SocketDeleted(
-	socket gjson.Result,
+	socket *integrationv1alpha2.Socket,
 ) error {
 	return u.processEvent(
 		nil,
-		&socket,
+		socket,
 		nil,
 		nil,
-		socket.Get("spec.apparatus.endpoint").String(),
+		socket.Spec.Apparatus.Endpoint,
 		"deleted",
 	)
 }
 
 func (u *ApparatusUtil) SocketBroken(
-	socket gjson.Result,
+	socket *integrationv1alpha2.Socket,
 ) error {
 	return u.processEvent(
 		nil,
-		&socket,
+		socket,
 		nil,
 		nil,
-		socket.Get("spec.apparatus.endpoint").String(),
+		socket.Spec.Apparatus.Endpoint,
 		"broken",
 	)
 }
 
 func (u *ApparatusUtil) processEvent(
-	plug *gjson.Result,
-	socket *gjson.Result,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 	endpoint string,
@@ -306,13 +305,13 @@ func (u *ApparatusUtil) processEvent(
 	body := `{"version":"1"}`
 	var err error
 	if plug != nil {
-		body, err = sjson.Set(body, "plug", plug.String())
+		body, err = sjson.Set(body, "plug", plug)
 		if err != nil {
 			return err
 		}
 	}
 	if socket != nil {
-		body, err = sjson.Set(body, "socket", socket.String())
+		body, err = sjson.Set(body, "socket", socket)
 		if err != nil {
 			return err
 		}

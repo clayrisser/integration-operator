@@ -2,8 +2,9 @@ package coupler
 
 import (
 	"context"
+	"encoding/json"
 
-	"github.com/tidwall/gjson"
+	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -26,7 +27,11 @@ func CreateGlobalCoupler() Coupler {
 				ctx  *context.Context
 				plug []byte
 			})
-			if err := handlers.HandlePlugCreated(d.ctx, gjson.Parse(string(d.plug))); err != nil {
+			var plug integrationv1alpha2.Plug
+			if err := json.Unmarshal(d.plug, &plug); err != nil {
+				return err
+			}
+			if err := handlers.HandlePlugCreated(d.ctx, &plug); err != nil {
 				return err
 			}
 			return nil
@@ -39,12 +44,20 @@ func CreateGlobalCoupler() Coupler {
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
+			var plug integrationv1alpha2.Plug
+			if err := json.Unmarshal(d.plug, &plug); err != nil {
+				return err
+			}
+			var socket integrationv1alpha2.Socket
+			if err := json.Unmarshal(d.socket, &socket); err != nil {
+				return err
+			}
 			if err := handlers.HandlePlugCoupled(
 				d.ctx,
-				gjson.Parse(string(d.plug)),
-				gjson.Parse(string(d.socket)),
-				d.plugConfig,
-				d.socketConfig,
+				&plug,
+				&socket,
+				&d.plugConfig,
+				&d.socketConfig,
 			); err != nil {
 				return err
 			}
@@ -58,12 +71,20 @@ func CreateGlobalCoupler() Coupler {
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
+			var plug integrationv1alpha2.Plug
+			if err := json.Unmarshal(d.plug, &plug); err != nil {
+				return err
+			}
+			var socket integrationv1alpha2.Socket
+			if err := json.Unmarshal(d.socket, &socket); err != nil {
+				return err
+			}
 			if err := handlers.HandlePlugUpdated(
 				d.ctx,
-				gjson.Parse(string(d.plug)),
-				gjson.Parse(string(d.socket)),
-				d.plugConfig,
-				d.socketConfig,
+				&plug,
+				&socket,
+				&d.plugConfig,
+				&d.socketConfig,
 			); err != nil {
 				return err
 			}
@@ -77,12 +98,20 @@ func CreateGlobalCoupler() Coupler {
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
+			var plug integrationv1alpha2.Plug
+			if err := json.Unmarshal(d.plug, &plug); err != nil {
+				return err
+			}
+			var socket integrationv1alpha2.Socket
+			if err := json.Unmarshal(d.socket, &socket); err != nil {
+				return err
+			}
 			if err := handlers.HandlePlugDecoupled(
 				d.ctx,
-				gjson.Parse(string(d.plug)),
-				gjson.Parse(string(d.socket)),
-				d.plugConfig,
-				d.socketConfig,
+				&plug,
+				&socket,
+				&d.plugConfig,
+				&d.socketConfig,
 			); err != nil {
 				return err
 			}
@@ -93,9 +122,13 @@ func CreateGlobalCoupler() Coupler {
 				ctx  *context.Context
 				plug []byte
 			})
+			var plug integrationv1alpha2.Plug
+			if err := json.Unmarshal(d.plug, &plug); err != nil {
+				return err
+			}
 			if err := handlers.HandlePlugDeleted(
 				d.ctx,
-				gjson.Parse(string(d.plug)),
+				&plug,
 			); err != nil {
 				return err
 			}
@@ -106,9 +139,13 @@ func CreateGlobalCoupler() Coupler {
 				ctx  *context.Context
 				plug []byte
 			})
+			var plug integrationv1alpha2.Plug
+			if err := json.Unmarshal(d.plug, &plug); err != nil {
+				return err
+			}
 			err := handlers.HandlePlugBroken(
 				d.ctx,
-				gjson.Parse(string(d.plug)),
+				&plug,
 			)
 			if err != nil {
 				return err
@@ -120,7 +157,11 @@ func CreateGlobalCoupler() Coupler {
 				ctx    *context.Context
 				socket []byte
 			})
-			if err := handlers.HandleSocketCreated(d.ctx, gjson.Parse(string(d.socket))); err != nil {
+			var socket integrationv1alpha2.Socket
+			if err := json.Unmarshal(d.socket, &socket); err != nil {
+				return err
+			}
+			if err := handlers.HandleSocketCreated(d.ctx, &socket); err != nil {
 				return err
 			}
 			return nil
@@ -133,12 +174,20 @@ func CreateGlobalCoupler() Coupler {
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
+			var plug integrationv1alpha2.Plug
+			if err := json.Unmarshal(d.plug, &plug); err != nil {
+				return err
+			}
+			var socket integrationv1alpha2.Socket
+			if err := json.Unmarshal(d.socket, &socket); err != nil {
+				return err
+			}
 			if err := handlers.HandleSocketCoupled(
 				d.ctx,
-				gjson.Parse(string(d.plug)),
-				gjson.Parse(string(d.socket)),
-				d.plugConfig,
-				d.socketConfig,
+				&plug,
+				&socket,
+				&d.plugConfig,
+				&d.socketConfig,
 			); err != nil {
 				return err
 			}
@@ -152,12 +201,20 @@ func CreateGlobalCoupler() Coupler {
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
+			var plug integrationv1alpha2.Plug
+			if err := json.Unmarshal(d.plug, &plug); err != nil {
+				return err
+			}
+			var socket integrationv1alpha2.Socket
+			if err := json.Unmarshal(d.socket, &socket); err != nil {
+				return err
+			}
 			if err := handlers.HandleSocketUpdated(
 				d.ctx,
-				gjson.Parse(string(d.plug)),
-				gjson.Parse(string(d.socket)),
-				d.plugConfig,
-				d.socketConfig,
+				&plug,
+				&socket,
+				&d.plugConfig,
+				&d.socketConfig,
 			); err != nil {
 				return err
 			}
@@ -171,12 +228,20 @@ func CreateGlobalCoupler() Coupler {
 				plugConfig   map[string]string
 				socketConfig map[string]string
 			})
+			var plug integrationv1alpha2.Plug
+			if err := json.Unmarshal(d.plug, &plug); err != nil {
+				return err
+			}
+			var socket integrationv1alpha2.Socket
+			if err := json.Unmarshal(d.socket, &socket); err != nil {
+				return err
+			}
 			if err := handlers.HandleSocketDecoupled(
 				d.ctx,
-				gjson.Parse(string(d.plug)),
-				gjson.Parse(string(d.socket)),
-				d.plugConfig,
-				d.socketConfig,
+				&plug,
+				&socket,
+				&d.plugConfig,
+				&d.socketConfig,
 			); err != nil {
 				return err
 			}
@@ -187,9 +252,13 @@ func CreateGlobalCoupler() Coupler {
 				ctx    *context.Context
 				socket []byte
 			})
+			var socket integrationv1alpha2.Socket
+			if err := json.Unmarshal(d.socket, &socket); err != nil {
+				return err
+			}
 			if err := handlers.HandleSocketDeleted(
 				d.ctx,
-				gjson.Parse(string(d.socket)),
+				&socket,
 			); err != nil {
 				return err
 			}
@@ -200,9 +269,13 @@ func CreateGlobalCoupler() Coupler {
 				ctx    *context.Context
 				socket []byte
 			})
-			err := handlers.HandlePlugBroken(
+			var socket integrationv1alpha2.Socket
+			if err := json.Unmarshal(d.socket, &socket); err != nil {
+				return err
+			}
+			err := handlers.HandleSocketBroken(
 				d.ctx,
-				gjson.Parse(string(d.socket)),
+				&socket,
 			)
 			if err != nil {
 				return err

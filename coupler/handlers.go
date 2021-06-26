@@ -3,8 +3,8 @@ package coupler
 import (
 	"context"
 
+	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/util"
-	"github.com/tidwall/gjson"
 )
 
 type Config map[string]string
@@ -18,7 +18,7 @@ func NewHandlers() *Handlers {
 
 func (h *Handlers) HandlePlugCreated(
 	ctx *context.Context,
-	plug gjson.Result,
+	plug *integrationv1alpha2.Plug,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.PlugCreated(plug)
@@ -26,10 +26,10 @@ func (h *Handlers) HandlePlugCreated(
 
 func (h *Handlers) HandlePlugCoupled(
 	ctx *context.Context,
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.PlugCoupled(plug, socket, plugConfig, socketConfig)
@@ -37,10 +37,10 @@ func (h *Handlers) HandlePlugCoupled(
 
 func (h *Handlers) HandlePlugUpdated(
 	ctx *context.Context,
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.PlugUpdated(plug, socket, plugConfig, socketConfig)
@@ -48,10 +48,10 @@ func (h *Handlers) HandlePlugUpdated(
 
 func (h *Handlers) HandlePlugDecoupled(
 	ctx *context.Context,
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig)
@@ -59,7 +59,7 @@ func (h *Handlers) HandlePlugDecoupled(
 
 func (h *Handlers) HandlePlugDeleted(
 	ctx *context.Context,
-	plug gjson.Result,
+	plug *integrationv1alpha2.Plug,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.PlugDeleted(plug)
@@ -67,7 +67,7 @@ func (h *Handlers) HandlePlugDeleted(
 
 func (h *Handlers) HandlePlugBroken(
 	ctx *context.Context,
-	plug gjson.Result,
+	plug *integrationv1alpha2.Plug,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.PlugBroken(plug)
@@ -75,7 +75,7 @@ func (h *Handlers) HandlePlugBroken(
 
 func (h *Handlers) HandleSocketCreated(
 	ctx *context.Context,
-	socket gjson.Result,
+	socket *integrationv1alpha2.Socket,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.SocketCreated(socket)
@@ -83,10 +83,10 @@ func (h *Handlers) HandleSocketCreated(
 
 func (h *Handlers) HandleSocketCoupled(
 	ctx *context.Context,
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.SocketCoupled(plug, socket, plugConfig, socketConfig)
@@ -94,10 +94,10 @@ func (h *Handlers) HandleSocketCoupled(
 
 func (h *Handlers) HandleSocketUpdated(
 	ctx *context.Context,
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.SocketUpdated(plug, socket, plugConfig, socketConfig)
@@ -105,10 +105,10 @@ func (h *Handlers) HandleSocketUpdated(
 
 func (h *Handlers) HandleSocketDecoupled(
 	ctx *context.Context,
-	plug gjson.Result,
-	socket gjson.Result,
-	plugConfig map[string]string,
-	socketConfig map[string]string,
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+	plugConfig *map[string]string,
+	socketConfig *map[string]string,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig)
@@ -116,7 +116,7 @@ func (h *Handlers) HandleSocketDecoupled(
 
 func (h *Handlers) HandleSocketDeleted(
 	ctx *context.Context,
-	socket gjson.Result,
+	socket *integrationv1alpha2.Socket,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.SocketDeleted(socket)
@@ -124,7 +124,7 @@ func (h *Handlers) HandleSocketDeleted(
 
 func (h *Handlers) HandleSocketBroken(
 	ctx *context.Context,
-	socket gjson.Result,
+	socket *integrationv1alpha2.Socket,
 ) error {
 	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.SocketBroken(socket)
