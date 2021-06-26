@@ -5,20 +5,15 @@ import (
 	"strings"
 	"sync"
 
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/types"
-
-	"k8s.io/apiserver/pkg/registry/generic/registry"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/go-logr/logr"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
-
 	"github.com/silicon-hills/integration-operator/config"
-
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apiserver/pkg/registry/generic/registry"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PlugUtil struct {

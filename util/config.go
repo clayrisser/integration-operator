@@ -2,8 +2,10 @@ package util
 
 import (
 	"context"
+	"encoding/json"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
+	"github.com/tidwall/gjson"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -13,7 +15,7 @@ type ConfigUtil struct {
 	apparatusUtil *ApparatusUtil
 	client        *kubernetes.Clientset
 	ctx           *context.Context
-	varUtil       *VarUtil
+	lookupUtil    *LookupUtil
 }
 
 func NewConfigUtil(
@@ -22,7 +24,7 @@ func NewConfigUtil(
 	return &ConfigUtil{
 		apparatusUtil: NewApparatusUtil(ctx),
 		client:        kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
-		varUtil:       NewVarUtil(ctx),
+		lookupUtil:    NewLookupUtil(ctx),
 	}
 }
 
@@ -50,8 +52,16 @@ func (u *ConfigUtil) GetPlugConfig(
 	}
 	if plug.Spec.ConfigMapper != nil {
 		for key, value := range plug.Spec.ConfigMapper {
-			// TODO
-			plugConfig[key] = value
+			bJson, err := json.Marshal(plug)
+			if err != nil {
+				return nil, err
+			}
+			plugGjson := gjson.Parse(string(bJson))
+			result, err := u.lookupUtil.Lookup(plugGjson, value)
+			if err != nil {
+				return nil, err
+			}
+			plugConfig[key] = result
 		}
 	}
 	if plug.Spec.ConfigConfigMapName != "" {
@@ -106,7 +116,18 @@ func (u *ConfigUtil) GetSocketConfig(
 		}
 	}
 	if socket.Spec.ConfigMapper != nil {
-		// TODO: get config from config mapper
+		for key, value := range socket.Spec.ConfigMapper {
+			bJson, err := json.Marshal(socket)
+			if err != nil {
+				return nil, err
+			}
+			socketGjson := gjson.Parse(string(bJson))
+			result, err := u.lookupUtil.Lookup(socketGjson, value)
+			if err != nil {
+				return nil, err
+			}
+			socketConfig[key] = result
+		}
 	}
 	if socket.Spec.ConfigConfigMapName != "" {
 		configMap, err := u.client.CoreV1().ConfigMaps(socket.Namespace).Get(

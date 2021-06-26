@@ -20,6 +20,9 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
+	"github.com/silicon-hills/integration-operator/coupler"
+	"github.com/silicon-hills/integration-operator/util"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -27,12 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
-	"github.com/silicon-hills/integration-operator/coupler"
-	"github.com/silicon-hills/integration-operator/util"
 )
 
 // PlugReconciler reconciles a Plug object

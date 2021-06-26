@@ -20,11 +20,10 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 )
 
 // InterfaceReconciler reconciles a Interface object
