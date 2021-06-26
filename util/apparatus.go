@@ -2,19 +2,18 @@ package util
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/go-resty/resty/v2"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/tdewolff/minify"
 	minifyJson "github.com/tdewolff/minify/json"
 	"github.com/tidwall/sjson"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 type ApparatusUtil struct {
-	dataUtil *DataUtil
 	ctx      *context.Context
+	dataUtil *DataUtil
+	varUtil  *VarUtil
 }
 
 func NewApparatusUtil(
@@ -23,6 +22,7 @@ func NewApparatusUtil(
 	return &ApparatusUtil{
 		ctx:      ctx,
 		dataUtil: NewDataUtil(ctx),
+		varUtil:  NewVarUtil(ctx),
 	}
 }
 
@@ -32,35 +32,53 @@ func (u *ApparatusUtil) GetPlugConfig(
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
-	m := minify.New()
-	m.AddFunc("application/json", minifyJson.Minify)
+	min := minify.New()
+	min.AddFunc("application/json", minifyJson.Minify)
 	go func() {
 		body := `{"version":1}`
 		var err error
 		if plug != nil {
-			bPlug, err := json.Marshal(plug)
+			body, err = sjson.Set(body, "plug", plug)
 			if err != nil {
 				errCh <- err
+				return
 			}
-			plugObj := &unstructured.Unstructured{}
-			_, _, err = decUnstructured.Decode(bPlug, nil, plugObj)
+
+			data, err := u.dataUtil.GetPlugData(plug)
 			if err != nil {
 				errCh <- err
+				return
 			}
-			body, err = sjson.Set(body, "plug", plugObj)
+			body, err = sjson.Set(body, "data", data)
 			if err != nil {
 				errCh <- err
+				return
+			}
+
+			if plug.Spec.Vars != nil {
+				vars, err := u.varUtil.GetVars(plug.Spec.Vars)
+				if err != nil {
+					errCh <- err
+					return
+				}
+				body, err = sjson.Set(body, "vars", vars)
+				if err != nil {
+					errCh <- err
+					return
+				}
 			}
 		}
-		body, err = m.String("application/json", string(body))
+		body, err = min.String("application/json", string(body))
 		if err != nil {
 			errCh <- err
+			return
 		}
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 		}).SetBody([]byte(body)).Post(GetEndpoint(plug.Spec.Apparatus.Endpoint) + "/config")
 		if err != nil {
 			errCh <- err
+			return
 		}
 		rCh <- r
 	}()
@@ -78,35 +96,53 @@ func (u *ApparatusUtil) GetSocketConfig(
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
-	m := minify.New()
-	m.AddFunc("application/json", minifyJson.Minify)
+	min := minify.New()
+	min.AddFunc("application/json", minifyJson.Minify)
 	go func() {
 		body := `{"version":1}`
 		var err error
 		if socket != nil {
-			bSocket, err := json.Marshal(socket)
+			body, err = sjson.Set(body, "socket", socket)
 			if err != nil {
 				errCh <- err
+				return
 			}
-			socketObj := &unstructured.Unstructured{}
-			_, _, err = decUnstructured.Decode(bSocket, nil, socketObj)
+
+			data, err := u.dataUtil.GetSocketData(socket)
 			if err != nil {
 				errCh <- err
+				return
 			}
-			body, err = sjson.Set(body, "socket", socketObj)
+			body, err = sjson.Set(body, "data", data)
 			if err != nil {
 				errCh <- err
+				return
+			}
+
+			if socket.Spec.Vars != nil {
+				vars, err := u.varUtil.GetVars(socket.Spec.Vars)
+				if err != nil {
+					errCh <- err
+					return
+				}
+				body, err = sjson.Set(body, "vars", vars)
+				if err != nil {
+					errCh <- err
+					return
+				}
 			}
 		}
-		body, err = m.String("application/json", body)
+		body, err = min.String("application/json", body)
 		if err != nil {
 			errCh <- err
+			return
 		}
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 		}).SetBody([]byte(body)).Post(GetEndpoint(socket.Spec.Apparatus.Endpoint) + "/config")
 		if err != nil {
 			errCh <- err
+			return
 		}
 		rCh <- r
 	}()
