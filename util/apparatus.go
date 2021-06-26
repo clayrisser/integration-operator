@@ -155,6 +155,9 @@ func (u *ApparatusUtil) GetSocketConfig(
 }
 
 func (u *ApparatusUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
+	if plug.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		plug,
 		nil,
@@ -171,6 +174,9 @@ func (u *ApparatusUtil) PlugCoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
+	if plug.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		plug,
 		socket,
@@ -187,6 +193,9 @@ func (u *ApparatusUtil) PlugUpdated(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
+	if plug.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		plug,
 		socket,
@@ -203,6 +212,9 @@ func (u *ApparatusUtil) PlugDecoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
+	if plug.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		plug,
 		socket,
@@ -216,6 +228,9 @@ func (u *ApparatusUtil) PlugDecoupled(
 func (u *ApparatusUtil) PlugDeleted(
 	plug *integrationv1alpha2.Plug,
 ) error {
+	if plug.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		plug,
 		nil,
@@ -229,6 +244,9 @@ func (u *ApparatusUtil) PlugDeleted(
 func (u *ApparatusUtil) PlugBroken(
 	plug *integrationv1alpha2.Plug,
 ) error {
+	if plug.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		plug,
 		nil,
@@ -240,6 +258,9 @@ func (u *ApparatusUtil) PlugBroken(
 }
 
 func (u *ApparatusUtil) SocketCreated(socket *integrationv1alpha2.Socket) error {
+	if socket.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		nil,
 		socket,
@@ -256,6 +277,9 @@ func (u *ApparatusUtil) SocketCoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
+	if socket.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		plug,
 		socket,
@@ -271,8 +295,10 @@ func (u *ApparatusUtil) SocketUpdated(
 	socket *integrationv1alpha2.Socket,
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
-
 ) error {
+	if socket.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		plug,
 		socket,
@@ -289,6 +315,9 @@ func (u *ApparatusUtil) SocketDecoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
+	if socket.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		plug,
 		socket,
@@ -302,6 +331,9 @@ func (u *ApparatusUtil) SocketDecoupled(
 func (u *ApparatusUtil) SocketDeleted(
 	socket *integrationv1alpha2.Socket,
 ) error {
+	if socket.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		nil,
 		socket,
@@ -315,6 +347,9 @@ func (u *ApparatusUtil) SocketDeleted(
 func (u *ApparatusUtil) SocketBroken(
 	socket *integrationv1alpha2.Socket,
 ) error {
+	if socket.Spec.Apparatus == nil {
+		return nil
+	}
 	return u.processEvent(
 		nil,
 		socket,

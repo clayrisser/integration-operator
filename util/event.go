@@ -19,7 +19,10 @@ func NewEventUtil(ctx *context.Context) *EventUtil {
 }
 
 func (u *EventUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
-	return u.apparatusUtil.PlugCreated(plug)
+	if err := u.apparatusUtil.PlugCreated(plug); err != nil {
+		return err
+	}
+	return u.resourceUtil.PlugCreated(plug)
 }
 
 func (u *EventUtil) PlugCoupled(
@@ -28,7 +31,10 @@ func (u *EventUtil) PlugCoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	return u.apparatusUtil.PlugCoupled(plug, socket, plugConfig, socketConfig)
+	if err := u.apparatusUtil.PlugCoupled(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	return u.resourceUtil.PlugCoupled(plug, socket, plugConfig, socketConfig)
 }
 
 func (u *EventUtil) PlugUpdated(
@@ -37,7 +43,10 @@ func (u *EventUtil) PlugUpdated(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	return u.apparatusUtil.PlugUpdated(plug, socket, plugConfig, socketConfig)
+	if err := u.apparatusUtil.PlugUpdated(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	return u.resourceUtil.PlugUpdated(plug, socket, plugConfig, socketConfig)
 }
 
 func (u *EventUtil) PlugDecoupled(
@@ -46,23 +55,35 @@ func (u *EventUtil) PlugDecoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	return u.apparatusUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig)
+	if err := u.apparatusUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	return u.resourceUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig)
 }
 
 func (u *EventUtil) PlugDeleted(
 	plug *integrationv1alpha2.Plug,
 ) error {
-	return u.apparatusUtil.PlugDeleted(plug)
+	if err := u.apparatusUtil.PlugDeleted(plug); err != nil {
+		return err
+	}
+	return u.resourceUtil.PlugDeleted(plug)
 }
 
 func (u *EventUtil) PlugBroken(
 	plug *integrationv1alpha2.Plug,
 ) error {
-	return u.apparatusUtil.PlugBroken(plug)
+	if err := u.apparatusUtil.PlugBroken(plug); err != nil {
+		return err
+	}
+	return u.resourceUtil.PlugBroken(plug)
 }
 
 func (u *EventUtil) SocketCreated(socket *integrationv1alpha2.Socket) error {
-	return u.apparatusUtil.SocketCreated(socket)
+	if err := u.apparatusUtil.SocketCreated(socket); err != nil {
+		return err
+	}
+	return u.resourceUtil.SocketCreated(socket)
 }
 
 func (u *EventUtil) SocketCoupled(
@@ -71,7 +92,10 @@ func (u *EventUtil) SocketCoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	return u.apparatusUtil.SocketCoupled(plug, socket, plugConfig, socketConfig)
+	if err := u.apparatusUtil.SocketCoupled(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	return u.resourceUtil.SocketCoupled(plug, socket, plugConfig, socketConfig)
 }
 
 func (u *EventUtil) SocketUpdated(
@@ -80,7 +104,10 @@ func (u *EventUtil) SocketUpdated(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	return u.apparatusUtil.SocketUpdated(plug, socket, plugConfig, socketConfig)
+	if err := u.apparatusUtil.SocketUpdated(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	return u.resourceUtil.SocketUpdated(plug, socket, plugConfig, socketConfig)
 }
 
 func (u *EventUtil) SocketDecoupled(
@@ -89,17 +116,26 @@ func (u *EventUtil) SocketDecoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	return u.apparatusUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig)
+	if err := u.apparatusUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	return u.resourceUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig)
 }
 
 func (u *EventUtil) SocketDeleted(
 	socket *integrationv1alpha2.Socket,
 ) error {
-	return u.apparatusUtil.SocketDeleted(socket)
+	if err := u.apparatusUtil.SocketDeleted(socket); err != nil {
+		return err
+	}
+	return u.resourceUtil.SocketDeleted(socket)
 }
 
 func (u *EventUtil) SocketBroken(
 	socket *integrationv1alpha2.Socket,
 ) error {
-	return u.apparatusUtil.SocketBroken(socket)
+	if err := u.apparatusUtil.SocketBroken(socket); err != nil {
+		return err
+	}
+	return u.resourceUtil.SocketBroken(socket)
 }
