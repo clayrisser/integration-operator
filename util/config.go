@@ -2,10 +2,8 @@ package util
 
 import (
 	"context"
-	"encoding/json"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
-	"github.com/tidwall/gjson"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,12 +50,7 @@ func (u *ConfigUtil) GetPlugConfig(
 	}
 	if plug.Spec.ConfigMapper != nil {
 		for key, value := range plug.Spec.ConfigMapper {
-			bJson, err := json.Marshal(plug)
-			if err != nil {
-				return nil, err
-			}
-			plugGjson := gjson.Parse(string(bJson))
-			result, err := u.lookupUtil.Lookup(plugGjson, value)
+			result, err := u.lookupUtil.PlugLookup(plug, value)
 			if err != nil {
 				return nil, err
 			}
@@ -117,12 +110,7 @@ func (u *ConfigUtil) GetSocketConfig(
 	}
 	if socket.Spec.ConfigMapper != nil {
 		for key, value := range socket.Spec.ConfigMapper {
-			bJson, err := json.Marshal(socket)
-			if err != nil {
-				return nil, err
-			}
-			socketGjson := gjson.Parse(string(bJson))
-			result, err := u.lookupUtil.Lookup(socketGjson, value)
+			result, err := u.lookupUtil.SocketLookup(socket, value)
 			if err != nil {
 				return nil, err
 			}
