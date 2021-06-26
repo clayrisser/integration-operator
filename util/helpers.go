@@ -1,16 +1,16 @@
 package util
 
 import (
+	"encoding/json"
+	"fmt"
 	"math"
 	"os"
 	"time"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/config"
-
-	"k8s.io/apimachinery/pkg/types"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var startTime metav1.Time = metav1.Now()
@@ -72,4 +72,16 @@ func GetEndpoint(endpoint string) string {
 		endpoint = string(endpoint[0 : len(endpoint)-2])
 	}
 	return endpoint
+}
+
+func JsonToHashMap(body []byte) (map[string]string, error) {
+	hashMap := make(map[string]string)
+	var obj map[string]interface{}
+	if err := json.Unmarshal(body, &obj); err != nil {
+		return nil, err
+	}
+	for key, value := range obj {
+		hashMap[key] = fmt.Sprintf("%v", value)
+	}
+	return hashMap, nil
 }

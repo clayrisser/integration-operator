@@ -15,8 +15,6 @@ type LookupUtil struct {
 	varUtil *VarUtil
 }
 
-type Lookup map[string]map[string]string
-
 func NewLookupUtil(ctx *context.Context) *LookupUtil {
 	return &LookupUtil{
 		varUtil: NewVarUtil(ctx),

@@ -72,7 +72,7 @@ func (u *ConfigUtil) GetPlugConfig(
 		if err != nil {
 			return nil, err
 		}
-		apparatusPlugConfig, err := jsonToHashMap(body)
+		apparatusPlugConfig, err := JsonToHashMap(body)
 		if err != nil {
 			return nil, err
 		}
@@ -126,7 +126,7 @@ func (u *ConfigUtil) GetSocketConfig(
 		if err != nil {
 			return nil, err
 		}
-		apparatusSocketConfig, err := jsonToHashMap(body)
+		apparatusSocketConfig, err := JsonToHashMap(body)
 		if err != nil {
 			return nil, err
 		}
