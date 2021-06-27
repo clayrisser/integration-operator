@@ -85,11 +85,11 @@
   ],
   "psi-header.lang-config": [
     {
+      "language": "*",
       "begin": "/*",
       "blankLinesAfter": 1,
       "end": " */",
       "forceToTop": true,
-      "language": "*",
       "lineLength": 80,
       "modAuthor": "Modified By:",
       "modDate": "Last Modified:",
@@ -98,12 +98,27 @@
       "replace": ["File:"],
       "rootDirFileName": "LICENSE",
       "suffix": ""
+    },
+    {
+      "language": "makefile",
+      "begin": "",
+      "blankLinesAfter": 1,
+      "end": "",
+      "forceToTop": true,
+      "lineLength": 80,
+      "modAuthor": "Modified By:",
+      "modDate": "Last Modified:",
+      "modDateFormat": "dd-MM-yyyy HH:mm:ss",
+      "prefix": "#",
+      "replace": ["File:"],
+      "rootDirFileName": "LICENSE",
+      "suffix": ""
     }
   ],
   "psi-header.changes-tracking": {
     "autoHeader": "autoSave",
     "enforceHeader": true,
-    "include": ["go"],
+    "include": ["go", "makefile"],
     "isActive": true,
     "modAuthor": "Modified By:",
     "modDate": "Last Modified:",
