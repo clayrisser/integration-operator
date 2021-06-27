@@ -10,7 +10,9 @@
     "gjson",
     "gomega",
     "healthz",
+    "hirotaka",
     "integrationv",
+    "kasun",
     "kube",
     "kubebuilder",
     "kubeclient",
@@ -27,13 +29,16 @@
     "rbac",
     "readyz",
     "resty",
+    "risser",
     "serrors",
     "sigs",
     "siliconhills",
     "sjson",
     "tdewolff",
     "tidwall",
-    "tmpl"
+    "tmpl",
+    "vithanage",
+    "yamamoto"
   ],
   "psi-header.variables": [["projectCreationYear", "2021"]],
   "psi-header.config": {
@@ -48,31 +53,31 @@
     "license": "Custom"
   },
   "psi-header.license-text": [
-    "Licensed under the Apache License, Version 2.0 (the \"License\");",
-    "you may not use this file except in compliance with the License.",
-    "You may obtain a copy of the License at",
+    " Licensed under the Apache License, Version 2.0 (the \"License\");",
+    " you may not use this file except in compliance with the License.",
+    " You may obtain a copy of the License at",
     "",
-    "    http://www.apache.org/licenses/LICENSE-2.0",
+    "     http://www.apache.org/licenses/LICENSE-2.0",
     "",
-    "Unless required by applicable law or agreed to in writing, software",
-    "distributed under the License is distributed on an \"AS IS\" BASIS,",
-    "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.",
-    "See the License for the specific language governing permissions and",
-    "limitations under the License."
+    " Unless required by applicable law or agreed to in writing, software",
+    " distributed under the License is distributed on an \"AS IS\" BASIS,",
+    " WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.",
+    " See the License for the specific language governing permissions and",
+    " limitations under the License."
   ],
   "psi-header.templates": [
     {
       "language": "*",
       "template": [
-        "File: <<filerelativepath>>",
-        "Project: <<projectname>>",
-        "File Created: <<filecreated('DD-MM-YYYY HH:mm:ss')>>",
-        "Author: <<author>> <<<authoremail>>>",
+        " File: <<filerelativepath>>",
+        " Project: <<projectname>>",
+        " File Created: <<filecreated('DD-MM-YYYY HH:mm:ss')>>",
+        " Author: <<author>> <<<authoremail>>>",
+        " -----",
+        " Last Modified: <<dateformat('DD-MM-YYYY HH:mm:ss')>>",
+        " Modified By: <<author>> <<<authoremail>>>",
         "-----",
-        "Last Modified: <<dateformat('DD-MM-YYYY HH:mm:ss')>>",
-        "Modified By: <<author>> <<<authoremail>>>",
-        "-----",
-        "<<copyrightholder>> (c) Copyright <<yeartoyear(<<projectCreationYear>>, now)>>",
+        " <<copyrightholder>> (c) Copyright <<yeartoyear(<<projectCreationYear>>, now)>>",
         "",
         "<<licensetext>>"
       ]
@@ -89,7 +94,7 @@
       "modAuthor": "Modified By:",
       "modDate": "Last Modified:",
       "modDateFormat": "dd-MM-yyyy HH:mm:ss",
-      "prefix": " * ",
+      "prefix": " *",
       "replace": ["File:"],
       "rootDirFileName": "LICENSE",
       "suffix": ""
