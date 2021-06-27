@@ -7,6 +7,12 @@ Please ★ this repo if you found it useful ★ ★ ★
 This operator takes inspiration from [Juju](https://juju.is) [Charm](https://juju.is/docs/sdk)
 [Relations](https://juju.is/docs/sdk/relations) by [Canonical](https://canonical.com).
 
+## Usage
+
+```sh
+docker run --rm siliconhills/integration-operator:0.1.0
+```
+
 ## Terminology
 
 | Term            | Juju Equivalent | Definition                                                                                    |
