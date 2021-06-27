@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 02:28:33
+ * Last Modified: 27-06-2021 05:51:16
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -58,7 +58,7 @@ type PlugSpec struct {
 	// of the instance.  Any appearance of "$(FOO)" in the object
 	// spec will be replaced, after the final
 	// value of the specified field has been determined.
-	Vars []kustomizeTypes.Var `json:"vars,omitempty" yaml:"vars,omitempty"`
+	Vars []*kustomizeTypes.Var `json:"vars,omitempty" yaml:"vars,omitempty"`
 
 	// data
 	Data map[string]string `json:"data,omitempty"`

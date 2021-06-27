@@ -16,6 +16,8 @@ spec:
     namespace: integration-test
   data:
     database: hello
+  configMapper:
+    interfaceName: vars.INTERFACE_NAME
   resources:
     - when: updated
       do: apply
@@ -26,4 +28,12 @@ spec:
           name: hello
         data:
           hello: world
-          yip: yap
+          interfaceName: {{ .plugConfig.interfaceName }}
+  vars:
+    - name: INTERFACE_NAME
+      objref:
+        apiVersion: integration.siliconhills.dev/v1alpha2
+        kind: Interface
+        name: interface-sample
+      fieldref:
+        fieldPath: 'metadata.name'

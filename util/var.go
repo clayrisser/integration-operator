@@ -4,7 +4,7 @@
  * File Created: 24-06-2021 22:10:01
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 05:13:27
+ * Last Modified: 27-06-2021 05:51:56
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -49,7 +49,7 @@ func NewVarUtil(ctx *context.Context) *VarUtil {
 	}
 }
 
-func (u *VarUtil) GetVars(namespace string, vars []kustomizeTypes.Var) (map[string]string, error) {
+func (u *VarUtil) GetVars(namespace string, vars []*kustomizeTypes.Var) (map[string]string, error) {
 	resultMap := make(map[string]string)
 	for _, v := range vars {
 		varResult, err := u.GetVar(namespace, v)
@@ -61,7 +61,7 @@ func (u *VarUtil) GetVars(namespace string, vars []kustomizeTypes.Var) (map[stri
 	return resultMap, nil
 }
 
-func (u *VarUtil) GetVar(namespace string, v kustomizeTypes.Var) (string, error) {
+func (u *VarUtil) GetVar(namespace string, v *kustomizeTypes.Var) (string, error) {
 	resource, err := u.resourceUtil.GetResource(namespace, v.ObjRef)
 	if err != nil {
 		return "", err
