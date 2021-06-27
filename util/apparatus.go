@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-06-2021 10:53:10
+ * Last Modified: 27-06-2021 02:11:19
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -56,6 +56,8 @@ func (u *ApparatusUtil) GetPlugConfig(
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
+	defer close(rCh)
+	defer close(errCh)
 	min := minify.New()
 	min.AddFunc("application/json", minifyJson.Minify)
 	go func() {
@@ -80,7 +82,7 @@ func (u *ApparatusUtil) GetPlugConfig(
 			}
 
 			if plug.Spec.Vars != nil {
-				vars, err := u.varUtil.GetVars(plug.Spec.Vars)
+				vars, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars)
 				if err != nil {
 					errCh <- err
 					return
@@ -120,6 +122,8 @@ func (u *ApparatusUtil) GetSocketConfig(
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
+	defer close(rCh)
+	defer close(errCh)
 	min := minify.New()
 	min.AddFunc("application/json", minifyJson.Minify)
 	go func() {
@@ -144,7 +148,7 @@ func (u *ApparatusUtil) GetSocketConfig(
 			}
 
 			if socket.Spec.Vars != nil {
-				vars, err := u.varUtil.GetVars(socket.Spec.Vars)
+				vars, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars)
 				if err != nil {
 					errCh <- err
 					return
@@ -392,11 +396,13 @@ func (u *ApparatusUtil) processEvent(
 	endpoint string,
 	eventName string,
 ) error {
-	m := minify.New()
-	m.AddFunc("application/json", minifyJson.Minify)
+	min := minify.New()
+	min.AddFunc("application/json", minifyJson.Minify)
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
+	defer close(rCh)
+	defer close(errCh)
 	body := `{"version":"1"}`
 	var err error
 	if plug != nil {
@@ -423,7 +429,7 @@ func (u *ApparatusUtil) processEvent(
 			return err
 		}
 	}
-	body, err = m.String("application/json", body)
+	body, err = min.String("application/json", body)
 	if err != nil {
 		return err
 	}

@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:31
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-06-2021 23:55:54
+ * Last Modified: 27-06-2021 02:24:23
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -28,9 +28,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"text/template"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -52,8 +55,15 @@ func NewResourceUtil(ctx *context.Context) *ResourceUtil {
 }
 
 func (u *ResourceUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
-	resources := u.GetResources(plug.Spec.Resources, integrationv1alpha2.CreatedWhen)
-	if err := u.ProcessResources(plug, nil, nil, nil, resources); err != nil {
+	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.CreatedWhen)
+	if err := u.ProcessResources(
+		plug,
+		nil,
+		nil,
+		nil,
+		plug.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -65,8 +75,15 @@ func (u *ResourceUtil) PlugCoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	resources := u.GetResources(plug.Spec.Resources, integrationv1alpha2.CoupledWhen)
-	if err := u.ProcessResources(plug, socket, plugConfig, socketConfig, resources); err != nil {
+	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.CoupledWhen)
+	if err := u.ProcessResources(
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		plug.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -78,8 +95,15 @@ func (u *ResourceUtil) PlugUpdated(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	resources := u.GetResources(plug.Spec.Resources, integrationv1alpha2.UpdatedWhen)
-	if err := u.ProcessResources(plug, socket, plugConfig, socketConfig, resources); err != nil {
+	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.UpdatedWhen)
+	if err := u.ProcessResources(
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		plug.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -91,8 +115,15 @@ func (u *ResourceUtil) PlugDecoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	resources := u.GetResources(plug.Spec.Resources, integrationv1alpha2.DecoupledWhen)
-	if err := u.ProcessResources(plug, socket, plugConfig, socketConfig, resources); err != nil {
+	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.DecoupledWhen)
+	if err := u.ProcessResources(
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		plug.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -101,8 +132,15 @@ func (u *ResourceUtil) PlugDecoupled(
 func (u *ResourceUtil) PlugDeleted(
 	plug *integrationv1alpha2.Plug,
 ) error {
-	resources := u.GetResources(plug.Spec.Resources, integrationv1alpha2.DeletedWhen)
-	if err := u.ProcessResources(plug, nil, nil, nil, resources); err != nil {
+	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.DeletedWhen)
+	if err := u.ProcessResources(
+		plug,
+		nil,
+		nil,
+		nil,
+		plug.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -111,16 +149,30 @@ func (u *ResourceUtil) PlugDeleted(
 func (u *ResourceUtil) PlugBroken(
 	plug *integrationv1alpha2.Plug,
 ) error {
-	resources := u.GetResources(plug.Spec.Resources, integrationv1alpha2.BrokenWhen)
-	if err := u.ProcessResources(plug, nil, nil, nil, resources); err != nil {
+	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.BrokenWhen)
+	if err := u.ProcessResources(
+		plug,
+		nil,
+		nil,
+		nil,
+		plug.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (u *ResourceUtil) SocketCreated(socket *integrationv1alpha2.Socket) error {
-	resources := u.GetResources(socket.Spec.Resources, integrationv1alpha2.CreatedWhen)
-	if err := u.ProcessResources(nil, socket, nil, nil, resources); err != nil {
+	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.CreatedWhen)
+	if err := u.ProcessResources(
+		nil,
+		socket,
+		nil,
+		nil,
+		socket.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -132,8 +184,15 @@ func (u *ResourceUtil) SocketCoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	resources := u.GetResources(socket.Spec.Resources, integrationv1alpha2.CoupledWhen)
-	if err := u.ProcessResources(plug, socket, plugConfig, socketConfig, resources); err != nil {
+	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.CoupledWhen)
+	if err := u.ProcessResources(
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		socket.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -145,8 +204,15 @@ func (u *ResourceUtil) SocketUpdated(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	resources := u.GetResources(socket.Spec.Resources, integrationv1alpha2.UpdatedWhen)
-	if err := u.ProcessResources(plug, socket, plugConfig, socketConfig, resources); err != nil {
+	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.UpdatedWhen)
+	if err := u.ProcessResources(
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		socket.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -158,8 +224,15 @@ func (u *ResourceUtil) SocketDecoupled(
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
 ) error {
-	resources := u.GetResources(socket.Spec.Resources, integrationv1alpha2.DecoupledWhen)
-	if err := u.ProcessResources(plug, socket, plugConfig, socketConfig, resources); err != nil {
+	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.DecoupledWhen)
+	if err := u.ProcessResources(
+		plug,
+		socket,
+		plugConfig,
+		socketConfig,
+		socket.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -168,8 +241,15 @@ func (u *ResourceUtil) SocketDecoupled(
 func (u *ResourceUtil) SocketDeleted(
 	socket *integrationv1alpha2.Socket,
 ) error {
-	resources := u.GetResources(socket.Spec.Resources, integrationv1alpha2.DeletedWhen)
-	if err := u.ProcessResources(nil, socket, nil, nil, resources); err != nil {
+	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.DeletedWhen)
+	if err := u.ProcessResources(
+		nil,
+		socket,
+		nil,
+		nil,
+		socket.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -178,14 +258,21 @@ func (u *ResourceUtil) SocketDeleted(
 func (u *ResourceUtil) SocketBroken(
 	socket *integrationv1alpha2.Socket,
 ) error {
-	resources := u.GetResources(socket.Spec.Resources, integrationv1alpha2.BrokenWhen)
-	if err := u.ProcessResources(nil, socket, nil, nil, resources); err != nil {
+	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.BrokenWhen)
+	if err := u.ProcessResources(
+		nil,
+		socket,
+		nil,
+		nil,
+		socket.Namespace,
+		resources,
+	); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u *ResourceUtil) GetResource(objRef kustomizeTypes.Target) (*unstructured.Unstructured, error) {
+func (u *ResourceUtil) GetResource(namespace string, objRef kustomizeTypes.Target) (*unstructured.Unstructured, error) {
 	const tpl = `
 apiVersion: {{ .APIVersion }}
 kind: {{ .Kind }}
@@ -195,6 +282,11 @@ meta:
 	t, err := template.New("").Parse(tpl)
 	if err != nil {
 		return nil, err
+	}
+	if objRef.Namespace == "" {
+		objRef.Namespace = namespace
+	} else if objRef.Namespace != namespace {
+		return nil, errors.New("var objRef namespace " + objRef.Namespace + " must be " + namespace)
 	}
 	if objRef.Group != "" && objRef.Version != "" {
 		objRef.APIVersion = objRef.Group + objRef.Version
@@ -208,27 +300,12 @@ meta:
 	return u.kubectlUtil.Get(body)
 }
 
-func (u *ResourceUtil) GetResources(
-	resources []*integrationv1alpha2.Resource,
-	when integrationv1alpha2.When,
-) []*integrationv1alpha2.Resource {
-	filteredResources := []*integrationv1alpha2.Resource{}
-	if resources == nil {
-		return resources
-	}
-	for _, resource := range resources {
-		if resource.When == when {
-			filteredResources = append(filteredResources, resource)
-		}
-	}
-	return filteredResources
-}
-
 func (u *ResourceUtil) ProcessResources(
 	plug *integrationv1alpha2.Plug,
 	socket *integrationv1alpha2.Socket,
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
+	namespace string,
 	resources []*integrationv1alpha2.Resource,
 ) error {
 	for _, resource := range resources {
@@ -237,6 +314,7 @@ func (u *ResourceUtil) ProcessResources(
 			socket,
 			plugConfig,
 			socketConfig,
+			namespace,
 			resource.Resource,
 		)
 		if err != nil {
@@ -255,11 +333,28 @@ func (u *ResourceUtil) ProcessResources(
 	return nil
 }
 
+func (u *ResourceUtil) filterResources(
+	resources []*integrationv1alpha2.Resource,
+	when integrationv1alpha2.When,
+) []*integrationv1alpha2.Resource {
+	filteredResources := []*integrationv1alpha2.Resource{}
+	if resources == nil {
+		return resources
+	}
+	for _, resource := range resources {
+		if resource.When == when {
+			filteredResources = append(filteredResources, resource)
+		}
+	}
+	return filteredResources
+}
+
 func (u *ResourceUtil) templateResource(
 	plug *integrationv1alpha2.Plug,
 	socket *integrationv1alpha2.Socket,
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
+	namespace string,
 	body string,
 ) (string, error) {
 	data, err := u.buildTemplateData(plug, socket, plugConfig, socketConfig)
@@ -275,7 +370,25 @@ func (u *ResourceUtil) templateResource(
 	if err != nil {
 		return "", err
 	}
-	return buff.String(), nil
+	obj := unstructured.Unstructured{}
+	if _, _, err := decUnstructured.Decode([]byte(buff.String()), nil, &obj); err != nil {
+		return "", err
+	}
+	bJson, err := json.Marshal(obj)
+	if err != nil {
+		return "", err
+	}
+	parsedNamespace := gjson.Parse(string(bJson)).Get("meta.namespace").String()
+	result := string(bJson)
+	if parsedNamespace == "" {
+		result, err = sjson.Set(result, "meta.namespace", namespace)
+		if err != nil {
+			return "", err
+		}
+	} else if parsedNamespace != namespace {
+		return "", errors.New("resource namespace " + parsedNamespace + " must be " + namespace)
+	}
+	return result, nil
 }
 
 func (u *ResourceUtil) buildTemplateData(

@@ -76,7 +76,7 @@
         " -----",
         " Last Modified: <<dateformat('DD-MM-YYYY HH:mm:ss')>>",
         " Modified By: <<author>> <<<authoremail>>>",
-        "-----",
+        " -----",
         " <<copyrightholder>> (c) Copyright <<yeartoyear(<<projectCreationYear>>, now)>>",
         "",
         "<<licensetext>>"

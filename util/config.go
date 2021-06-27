@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:27
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 00:01:46
+ * Last Modified: 27-06-2021 02:11:38
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -210,7 +210,7 @@ func (u *ConfigUtil) buildPlugLookup(plug *integrationv1alpha2.Plug) (gjson.Resu
 	result = gjson.Parse(resultStr)
 
 	if plug.Spec.Vars != nil {
-		varsMap, err := u.varUtil.GetVars(plug.Spec.Vars)
+		varsMap, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars)
 		if err != nil {
 			return result, err
 		}
@@ -244,7 +244,7 @@ func (u *ConfigUtil) buildSocketLookup(socket *integrationv1alpha2.Socket) (gjso
 	result = gjson.Parse(resultStr)
 
 	if socket.Spec.Vars != nil {
-		varsMap, err := u.varUtil.GetVars(socket.Spec.Vars)
+		varsMap, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars)
 		if err != nil {
 			return result, err
 		}

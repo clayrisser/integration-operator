@@ -4,9 +4,9 @@
  * File Created: 23-06-2021 22:52:53
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-06-2021 23:06:57
+ * Last Modified: 27-06-2021 01:20:17
  * Modified By: Clay Risser <email@clayrisser.com>
- *-----
+ * -----
  * Silicon Hills LLC (c) Copyright 2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,7 +56,9 @@ func (u *KubectlUtil) Create(body []byte) error {
 	if err != nil {
 		return err
 	}
-	if _, err := dr.Create(*u.ctx, obj, metav1.CreateOptions{}); err != nil {
+	if _, err := dr.Create(*u.ctx, obj, metav1.CreateOptions{
+		FieldManager: "integration-operator",
+	}); err != nil {
 		return err
 	}
 	return nil
@@ -67,7 +69,9 @@ func (u *KubectlUtil) Update(body []byte) error {
 	if err != nil {
 		return err
 	}
-	if _, err := dr.Update(*u.ctx, obj, metav1.UpdateOptions{}); err != nil {
+	if _, err := dr.Update(*u.ctx, obj, metav1.UpdateOptions{
+		FieldManager: "integration-operator",
+	}); err != nil {
 		return err
 	}
 	return nil
