@@ -1380,6 +1380,9 @@ spec:
               ready:
                 description: socket is ready for coupling
                 type: boolean
+              requeued:
+                description: requeued
+                type: boolean
             type: object
         type: object
     served: true

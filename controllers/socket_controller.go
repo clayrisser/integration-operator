@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 05:22:06
+ * Last Modified: 27-06-2021 08:53:20
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -120,7 +120,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if err = coupler.GlobalCoupler.CreatedSocket(socket); err != nil {
 			return socketUtil.Error(err)
 		}
-		return socketUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketCreatedStatusCondition, nil)
+		return socketUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketCreatedStatusCondition, nil, true)
 	}
 
 	socketInterfaceUtil := util.NewInterfaceUtil(&r.Client, &ctx, &req, &log, &socket.Spec.Interface)
@@ -145,13 +145,20 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return socketUtil.Error(err)
 		}
 	}
-	return socketUtil.UpdateStatusSimple(integrationv1alpha2.ReadyPhase, util.SocketCoupledStatusCondition, nil)
+	return socketUtil.UpdateStatusSimple(integrationv1alpha2.ReadyPhase, util.SocketCoupledStatusCondition, nil, false)
 }
 
 func filterSocketPredicate() predicate.Predicate {
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return true
+			newSocket, ok := e.ObjectNew.(*integrationv1alpha2.Socket)
+			if !ok {
+				return false
+			}
+			if newSocket.Status.LastUpdate.IsZero() {
+				return true
+			}
+			return e.ObjectNew.GetGeneration() > e.ObjectOld.GetGeneration() || newSocket.Status.Requeued
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			return !e.DeleteStateUnknown

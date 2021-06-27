@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-06-2021 10:54:59
+ * Last Modified: 27-06-2021 08:42:18
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -63,6 +63,7 @@ func (c *Coupler) Couple(
 			integrationv1alpha2.PendingPhase,
 			util.PlugCreatedStatusCondition,
 			nil,
+			true,
 		)
 	}
 
@@ -76,12 +77,12 @@ func (c *Coupler) Couple(
 	socket, err := socketUtil.Get()
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			return plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketNotCreatedStatusCondition, nil)
+			return plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketNotCreatedStatusCondition, nil, true)
 		}
 		return plugUtil.Error(err)
 	}
 	if !socket.Status.Ready {
-		return plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketNotReadyStatusCondition, nil)
+		return plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketNotReadyStatusCondition, nil, true)
 	}
 
 	socketInterfaceUtil := util.NewInterfaceUtil(client, ctx, req, log, &socket.Spec.Interface)
@@ -120,7 +121,7 @@ func (c *Coupler) Couple(
 		err = GlobalCoupler.CoupledSocket(plug, socket, plugConfig, socketConfig)
 		if err != nil {
 			result, err := plugUtil.Error(err)
-			if _, err := socketUtil.UpdateErrorStatus(err); err != nil {
+			if _, err := socketUtil.UpdateErrorStatus(err, true); err != nil {
 				return plugUtil.Error(err)
 			}
 			return result, err
@@ -133,7 +134,7 @@ func (c *Coupler) Couple(
 		err = GlobalCoupler.UpdatedSocket(plug, socket, plugConfig, socketConfig)
 		if err != nil {
 			result, err := plugUtil.Error(err)
-			if _, err := socketUtil.UpdateErrorStatus(err); err != nil {
+			if _, err := socketUtil.UpdateErrorStatus(err, true); err != nil {
 				return ctrl.Result{}, err
 			}
 			return result, err
@@ -151,7 +152,7 @@ func (c *Coupler) Couple(
 		return ctrl.Result{}, nil
 	}
 	if plug.Status.Phase != integrationv1alpha2.SucceededPhase || coupledCondition.Reason != string(util.CouplingSucceededStatusCondition) {
-		return plugUtil.UpdateStatusSimple(integrationv1alpha2.SucceededPhase, util.CouplingSucceededStatusCondition, socket)
+		return plugUtil.UpdateStatusSimple(integrationv1alpha2.SucceededPhase, util.CouplingSucceededStatusCondition, socket, false)
 	}
 	return ctrl.Result{}, nil
 }

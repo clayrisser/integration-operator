@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 05:25:20
+ * Last Modified: 27-06-2021 08:39:22
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -94,12 +94,13 @@ func (u *SocketUtil) Update(socket *integrationv1alpha2.Socket) error {
 	return nil
 }
 
-func (u *SocketUtil) UpdateStatus(socket *integrationv1alpha2.Socket) error {
+func (u *SocketUtil) UpdateStatus(socket *integrationv1alpha2.Socket, requeue bool) error {
 	client := *u.client
 	ctx := *u.ctx
 	if socket.Status.Phase != integrationv1alpha2.FailedPhase || socket.Status.LastUpdate.IsZero() || config.StartTime.Unix() > socket.Status.LastUpdate.Unix() {
 		socket.Status.LastUpdate = metav1.Now()
 	}
+	socket.Status.Requeued = requeue
 	u.mutex.Lock()
 	if err := client.Status().Update(ctx, socket); err != nil {
 		u.mutex.Unlock()
@@ -144,7 +145,7 @@ func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 		2,
 	)
 	if strings.Index(stashedErr.Error(), registry.OptimisticLockErrorMsg) <= -1 {
-		if _, err := u.UpdateErrorStatus(stashedErr); err != nil {
+		if _, err := u.UpdateErrorStatus(stashedErr, true); err != nil {
 			if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) > -1 {
 				return ctrl.Result{}, nil
 			}
@@ -164,6 +165,7 @@ func (u *SocketUtil) UpdateStatusSimple(
 	phase integrationv1alpha2.Phase,
 	coupledStatusCondition StatusCondition,
 	appendPlug *integrationv1alpha2.Plug,
+	requeue bool,
 ) (ctrl.Result, error) {
 	socket, err := u.Get()
 	if err != nil {
@@ -180,20 +182,20 @@ func (u *SocketUtil) UpdateStatusSimple(
 			return u.Error(err)
 		}
 	}
-	if err := u.UpdateStatus(socket); err != nil {
+	if err := u.UpdateStatus(socket, requeue); err != nil {
 		return u.Error(err)
 	}
 	return ctrl.Result{}, nil
 }
 
-func (u *SocketUtil) UpdateErrorStatus(err error) (ctrl.Result, error) {
+func (u *SocketUtil) UpdateErrorStatus(err error, requeue bool) (ctrl.Result, error) {
 	stashedErr := err
 	socket, err := u.Get()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	u.setErrorStatus(socket, stashedErr)
-	if err := u.UpdateStatus(socket); err != nil {
+	if err := u.UpdateStatus(socket, requeue); err != nil {
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
@@ -209,7 +211,7 @@ func (u *SocketUtil) UpdateStatusRemovePlug(
 	if err := u.removeCoupledPlugStatus(socket, plug); err != nil {
 		return u.Error(err)
 	}
-	if err := u.UpdateStatus(socket); err != nil {
+	if err := u.UpdateStatus(socket, true); err != nil {
 		return u.Error(err)
 	}
 	return ctrl.Result{}, nil
@@ -225,7 +227,7 @@ func (u *SocketUtil) UpdateStatusAppendPlug(
 	if err := u.appendCoupledPlugStatus(socket, plug); err != nil {
 		return u.Error(err)
 	}
-	if err := u.UpdateStatus(socket); err != nil {
+	if err := u.UpdateStatus(socket, true); err != nil {
 		return u.Error(err)
 	}
 	return ctrl.Result{}, nil
@@ -234,7 +236,6 @@ func (u *SocketUtil) UpdateStatusAppendPlug(
 func (u *SocketUtil) setPhaseStatus(
 	socket *integrationv1alpha2.Socket,
 	phase integrationv1alpha2.Phase,
-
 ) {
 	if phase != integrationv1alpha2.FailedPhase {
 		socket.Status.Message = ""

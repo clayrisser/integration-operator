@@ -55,7 +55,6 @@ Below is a UML diagram that shows how **plugs**, **sockets** and **interfaces** 
 
 ## TODO
 
-- [ ] fix infinite reconcile when using kubectl util
 - [ ] prevent double couple from socket
 - [ ] test invalid namespace
 - [ ] autodeploy apparatus

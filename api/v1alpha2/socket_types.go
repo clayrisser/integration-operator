@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 05:51:23
+ * Last Modified: 27-06-2021 08:31:12
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -107,6 +107,9 @@ type SocketStatus struct {
 
 	// plugs coupled to socket
 	CoupledPlugs []CoupledPlug `json:"coupledPlugs,omitempty"`
+
+	// requeued
+	Requeued bool `json:"requeued,omitempty"`
 }
 
 type CoupledPlug struct {

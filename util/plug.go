@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-06-2021 10:53:51
+ * Last Modified: 27-06-2021 08:38:04
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -93,12 +93,13 @@ func (u *PlugUtil) Update(plug *integrationv1alpha2.Plug) error {
 	return nil
 }
 
-func (u *PlugUtil) UpdateStatus(plug *integrationv1alpha2.Plug) error {
+func (u *PlugUtil) UpdateStatus(plug *integrationv1alpha2.Plug, requeue bool) error {
 	client := *u.client
 	ctx := *u.ctx
 	if plug.Status.Phase != integrationv1alpha2.FailedPhase || plug.Status.LastUpdate.IsZero() || config.StartTime.Unix() > plug.Status.LastUpdate.Unix() {
 		plug.Status.LastUpdate = metav1.Now()
 	}
+	plug.Status.Requeued = requeue
 	u.mutex.Lock()
 	if err := client.Status().Update(ctx, plug); err != nil {
 		u.mutex.Unlock()
@@ -133,11 +134,10 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 		2,
 	)
 	if strings.Index(stashedErr.Error(), registry.OptimisticLockErrorMsg) <= -1 {
-		if _, err := u.UpdateErrorStatus(stashedErr); err != nil {
+		if _, err := u.UpdateErrorStatus(stashedErr, true); err != nil {
 			if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) > -1 {
 				return ctrl.Result{}, nil
 			}
-
 			return ctrl.Result{
 				Requeue:      true,
 				RequeueAfter: requeueAfter,
@@ -150,14 +150,14 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 	}, nil
 }
 
-func (u *PlugUtil) UpdateErrorStatus(err error) (ctrl.Result, error) {
+func (u *PlugUtil) UpdateErrorStatus(err error, requeue bool) (ctrl.Result, error) {
 	stashedErr := err
 	plug, err := u.Get()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	u.setErrorStatus(plug, stashedErr)
-	if err := u.UpdateStatus(plug); err != nil {
+	if err := u.UpdateStatus(plug, requeue); err != nil {
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
@@ -167,6 +167,7 @@ func (u *PlugUtil) UpdateStatusSimple(
 	phase integrationv1alpha2.Phase,
 	coupledStatusCondition StatusCondition,
 	socket *integrationv1alpha2.Socket,
+	requeue bool,
 ) (ctrl.Result, error) {
 	plug, err := u.Get()
 	if err != nil {
@@ -181,7 +182,7 @@ func (u *PlugUtil) UpdateStatusSimple(
 	if phase != "" {
 		u.setPhaseStatus(plug, phase)
 	}
-	if err := u.UpdateStatus(plug); err != nil {
+	if err := u.UpdateStatus(plug, requeue); err != nil {
 		return u.Error(err)
 	}
 	return ctrl.Result{}, nil

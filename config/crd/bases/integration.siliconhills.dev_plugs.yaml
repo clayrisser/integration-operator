@@ -1376,6 +1376,9 @@ spec:
               phase:
                 description: integration plug phase (Pending, Succeeded, Failed, Unknown)
                 type: string
+              requeued:
+                description: requeued
+                type: boolean
             type: object
         type: object
     served: true

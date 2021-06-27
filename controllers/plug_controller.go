@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 02:28:02
+ * Last Modified: 27-06-2021 08:57:17
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -111,7 +111,14 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 func filterPlugPredicate() predicate.Predicate {
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return true
+			newPlug, ok := e.ObjectNew.(*integrationv1alpha2.Plug)
+			if !ok {
+				return false
+			}
+			if newPlug.Status.LastUpdate.IsZero() {
+				return true
+			}
+			return e.ObjectNew.GetGeneration() > e.ObjectOld.GetGeneration() || newPlug.Status.Requeued
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			return !e.DeleteStateUnknown
