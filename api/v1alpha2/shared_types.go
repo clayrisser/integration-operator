@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 02:28:38
+ * Last Modified: 27-06-2021 05:35:18
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -73,6 +73,9 @@ type NamespacedName struct {
 type SpecApparatus struct {
 	// endpoint
 	Endpoint string `json:"endpoint,omitempty"`
+
+	// terminate apparatus after idle for timeout in milliseconds
+	IdleTimeout uint `json:"idleTimeout,omitempty"`
 
 	// containers
 	Containers []*v1.Container `json:"containers,omitempty"`

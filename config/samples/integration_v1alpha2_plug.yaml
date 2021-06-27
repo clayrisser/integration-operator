@@ -17,12 +17,13 @@ spec:
   data:
     database: hello
   resources:
-    - resource: |
+    - when: updated
+      do: apply
+      resource: |
         apiVersion: v1
         kind: ConfigMap
         metadata:
           name: hello
         data:
           hello: world
-      when: coupled
-      do: apply
+          yip: yap

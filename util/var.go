@@ -4,7 +4,7 @@
  * File Created: 24-06-2021 22:10:01
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 02:10:42
+ * Last Modified: 27-06-2021 05:13:27
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -30,7 +30,6 @@ import (
 
 	"github.com/tidwall/gjson"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 )
@@ -45,7 +44,7 @@ type VarUtil struct {
 func NewVarUtil(ctx *context.Context) *VarUtil {
 	return &VarUtil{
 		client:       kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
-		kubectlUtil:  NewKubectlUtil(ctx, &rest.Config{}),
+		kubectlUtil:  NewKubectlUtil(ctx),
 		resourceUtil: NewResourceUtil(ctx),
 	}
 }

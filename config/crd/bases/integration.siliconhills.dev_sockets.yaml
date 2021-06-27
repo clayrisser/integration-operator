@@ -1150,6 +1150,9 @@ spec:
                   endpoint:
                     description: endpoint
                     type: string
+                  idleTimeout:
+                    description: terminate apparatus after idle for timeout in milliseconds
+                    type: integer
                 type: object
               config:
                 additionalProperties:

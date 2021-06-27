@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:52:53
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 01:20:17
+ * Last Modified: 27-06-2021 05:28:11
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -37,6 +37,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type KubectlUtil struct {
@@ -44,9 +45,9 @@ type KubectlUtil struct {
 	cfg *rest.Config
 }
 
-func NewKubectlUtil(ctx *context.Context, cfg *rest.Config) *KubectlUtil {
+func NewKubectlUtil(ctx *context.Context) *KubectlUtil {
 	return &KubectlUtil{
-		cfg: cfg,
+		cfg: ctrl.GetConfigOrDie(),
 		ctx: ctx,
 	}
 }

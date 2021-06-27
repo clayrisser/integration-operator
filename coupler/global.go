@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-06-2021 10:55:07
+ * Last Modified: 27-06-2021 05:00:23
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -29,15 +29,10 @@ import (
 	"encoding/json"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var (
-	couplerLog      = ctrl.Log.WithName("coupler")
-	decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-)
+var couplerLog = ctrl.Log.WithName("coupler")
 
 func CreateGlobalCoupler() Coupler {
 	handlers := NewHandlers()

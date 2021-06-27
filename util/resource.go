@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:31
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 03:40:12
+ * Last Modified: 27-06-2021 05:17:56
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -29,7 +29,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"text/template"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
@@ -37,7 +36,6 @@ import (
 	"github.com/tidwall/sjson"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 )
@@ -51,7 +49,7 @@ type ResourceUtil struct {
 func NewResourceUtil(ctx *context.Context) *ResourceUtil {
 	return &ResourceUtil{
 		client:      kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
-		kubectlUtil: NewKubectlUtil(ctx, &rest.Config{}),
+		kubectlUtil: NewKubectlUtil(ctx),
 	}
 }
 
@@ -325,9 +323,6 @@ func (u *ResourceUtil) ProcessResources(
 		if do == "" {
 			do = integrationv1alpha2.ApplyDo
 		}
-		fmt.Println("WHEN", resource.When)
-		fmt.Println("DO", do)
-		fmt.Println(templatedResource)
 		if resource.Do == integrationv1alpha2.ApplyDo {
 			if err := u.kubectlUtil.Apply([]byte(templatedResource)); err != nil {
 				return err
@@ -389,8 +384,9 @@ func (u *ResourceUtil) templateResource(
 	if err != nil {
 		return "", err
 	}
-	parsedNamespace := gjson.Parse(string(bJson)).Get("metadata.namespace").String()
-	result := string(bJson)
+	resultGjson := gjson.Parse(string(bJson)).Get("Object")
+	parsedNamespace := resultGjson.Get("metadata.namespace").String()
+	result := resultGjson.String()
 	if parsedNamespace == "" {
 		result, err = sjson.Set(result, "metadata.namespace", namespace)
 		if err != nil {
