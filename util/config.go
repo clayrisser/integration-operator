@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:27
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-06-2021 10:53:16
+ * Last Modified: 27-06-2021 00:01:46
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -28,6 +28,8 @@ import (
 	"context"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,7 +39,8 @@ type ConfigUtil struct {
 	apparatusUtil *ApparatusUtil
 	client        *kubernetes.Clientset
 	ctx           *context.Context
-	lookupUtil    *LookupUtil
+	dataUtil      *DataUtil
+	varUtil       *VarUtil
 }
 
 func NewConfigUtil(
@@ -46,7 +49,8 @@ func NewConfigUtil(
 	return &ConfigUtil{
 		apparatusUtil: NewApparatusUtil(ctx),
 		client:        kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
-		lookupUtil:    NewLookupUtil(ctx),
+		dataUtil:      NewDataUtil(ctx),
+		varUtil:       NewVarUtil(ctx),
 	}
 }
 
@@ -74,7 +78,7 @@ func (u *ConfigUtil) GetPlugConfig(
 	}
 	if plug.Spec.ConfigMapper != nil {
 		for key, value := range plug.Spec.ConfigMapper {
-			result, err := u.lookupUtil.PlugLookup(plug, value)
+			result, err := u.plugLookup(plug, value)
 			if err != nil {
 				return nil, err
 			}
@@ -134,7 +138,7 @@ func (u *ConfigUtil) GetSocketConfig(
 	}
 	if socket.Spec.ConfigMapper != nil {
 		for key, value := range socket.Spec.ConfigMapper {
-			result, err := u.lookupUtil.SocketLookup(socket, value)
+			result, err := u.socketLookup(socket, value)
 			if err != nil {
 				return nil, err
 			}
@@ -168,4 +172,88 @@ func (u *ConfigUtil) GetSocketConfig(
 		}
 	}
 	return socketConfig, nil
+}
+
+func (u *ConfigUtil) plugLookup(plug *integrationv1alpha2.Plug, path string) (string, error) {
+	plugLookup, err := u.buildPlugLookup(plug)
+	if err != nil {
+		return "", err
+	}
+	return plugLookup.Get(path).String(), nil
+}
+
+func (u *ConfigUtil) socketLookup(socket *integrationv1alpha2.Socket, path string) (string, error) {
+	socketLookup, err := u.buildSocketLookup(socket)
+	if err != nil {
+		return "", err
+	}
+	return socketLookup.Get(path).String(), nil
+}
+
+func (u *ConfigUtil) buildPlugLookup(plug *integrationv1alpha2.Plug) (gjson.Result, error) {
+	result := gjson.Parse("{}")
+
+	resultStr, err := sjson.Set(result.String(), "resource", plug)
+	if err != nil {
+		return result, err
+	}
+	result = gjson.Parse(resultStr)
+
+	dataMap, err := u.dataUtil.GetPlugData(plug)
+	if err != nil {
+		return result, err
+	}
+	resultStr, err = sjson.Set(result.String(), "data", dataMap)
+	if err != nil {
+		return result, err
+	}
+	result = gjson.Parse(resultStr)
+
+	if plug.Spec.Vars != nil {
+		varsMap, err := u.varUtil.GetVars(plug.Spec.Vars)
+		if err != nil {
+			return result, err
+		}
+		resultStr, err = sjson.Set(result.String(), "vars", varsMap)
+		if err != nil {
+			return result, err
+		}
+		result = gjson.Parse(resultStr)
+	}
+
+	return result, nil
+}
+
+func (u *ConfigUtil) buildSocketLookup(socket *integrationv1alpha2.Socket) (gjson.Result, error) {
+	result := gjson.Parse("{}")
+
+	resultStr, err := sjson.Set(result.String(), "resource", socket)
+	if err != nil {
+		return result, err
+	}
+	result = gjson.Parse(resultStr)
+
+	dataMap, err := u.dataUtil.GetSocketData(socket)
+	if err != nil {
+		return result, err
+	}
+	resultStr, err = sjson.Set(result.String(), "data", dataMap)
+	if err != nil {
+		return result, err
+	}
+	result = gjson.Parse(resultStr)
+
+	if socket.Spec.Vars != nil {
+		varsMap, err := u.varUtil.GetVars(socket.Spec.Vars)
+		if err != nil {
+			return result, err
+		}
+		resultStr, err = sjson.Set(result.String(), "vars", varsMap)
+		if err != nil {
+			return result, err
+		}
+		result = gjson.Parse(resultStr)
+	}
+
+	return result, nil
 }
