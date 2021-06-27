@@ -3,7 +3,7 @@
 # File Created: 23-06-2021 09:14:26
 # Author: Clay Risser <email@clayrisser.com>
 # -----
-# Last Modified: 27-06-2021 02:30:51
+# Last Modified: 27-06-2021 09:08:01
 # Modified By: Clay Risser <email@clayrisser.com>
 # -----
 # Silicon Hills LLC (c) Copyright 2021
@@ -21,8 +21,8 @@
 # limitations under the License.
 
 NAME := integration-operator
-REGISTRY := codejamninja
-VERSION := 0.0.1
+REGISTRY := siliconhills
+VERSION := 0.1.0
 IMAGE := $(REGISTRY)/$(NAME)
 
 .PHONY: install

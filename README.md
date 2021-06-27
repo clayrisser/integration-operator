@@ -54,9 +54,3 @@ Below is a UML diagram that shows how **plugs**, **sockets** and **interfaces** 
 ![UML Diagram](images/architecture-diagram.jpg)
 
 ## TODO
-
-- [ ] prevent double couple from socket
-- [ ] test invalid namespace
-- [ ] autodeploy apparatus
-- [ ] autostart apparatus
-- [ ] autoterminate apparatus after idle timeout

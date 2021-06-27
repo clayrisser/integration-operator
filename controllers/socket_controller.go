@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 08:53:20
+ * Last Modified: 27-06-2021 09:17:05
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -141,7 +141,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if _, err := coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 			Name:      plug.Name,
 			Namespace: plug.Namespace,
-		}); err != nil {
+		}, true); err != nil {
 			return socketUtil.Error(err)
 		}
 	}

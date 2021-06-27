@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 08:39:22
+ * Last Modified: 27-06-2021 09:34:57
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -110,7 +110,7 @@ func (u *SocketUtil) UpdateStatus(socket *integrationv1alpha2.Socket, requeue bo
 	return nil
 }
 
-func (u *SocketUtil) CoupledPlugExits(coupledPlugs *[]integrationv1alpha2.CoupledPlug, plug *integrationv1alpha2.Plug) bool {
+func (u *SocketUtil) CoupledPlugExists(coupledPlugs *[]integrationv1alpha2.CoupledPlug, plug *integrationv1alpha2.Plug) bool {
 	coupledPlugExits := false
 	for _, coupledPlug := range *coupledPlugs {
 		if coupledPlug.UID == plug.UID {
@@ -306,7 +306,7 @@ func (u *SocketUtil) appendCoupledPlugStatus(
 	socket *integrationv1alpha2.Socket,
 	plug *integrationv1alpha2.Plug,
 ) error {
-	if !u.CoupledPlugExits(&socket.Status.CoupledPlugs, plug) {
+	if !u.CoupledPlugExists(&socket.Status.CoupledPlugs, plug) {
 		socket.Status.CoupledPlugs = append(socket.Status.CoupledPlugs, integrationv1alpha2.CoupledPlug{
 			APIVersion: plug.APIVersion,
 			Kind:       plug.Kind,
