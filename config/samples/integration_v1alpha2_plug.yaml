@@ -16,3 +16,13 @@ spec:
     namespace: integration-test
   data:
     database: hello
+  resources:
+    - resource: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: hello
+        data:
+          hello: world
+      when: coupled
+      do: apply

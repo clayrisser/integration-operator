@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:31
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 02:24:23
+ * Last Modified: 27-06-2021 03:40:12
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -29,6 +29,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"text/template"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
@@ -276,7 +277,7 @@ func (u *ResourceUtil) GetResource(namespace string, objRef kustomizeTypes.Targe
 	const tpl = `
 apiVersion: {{ .APIVersion }}
 kind: {{ .Kind }}
-meta:
+metadata:
   name: {{ .Name }}
   namespace: {{ .Namespace }}`
 	t, err := template.New("").Parse(tpl)
@@ -320,6 +321,13 @@ func (u *ResourceUtil) ProcessResources(
 		if err != nil {
 			return err
 		}
+		do := resource.Do
+		if do == "" {
+			do = integrationv1alpha2.ApplyDo
+		}
+		fmt.Println("WHEN", resource.When)
+		fmt.Println("DO", do)
+		fmt.Println(templatedResource)
 		if resource.Do == integrationv1alpha2.ApplyDo {
 			if err := u.kubectlUtil.Apply([]byte(templatedResource)); err != nil {
 				return err
@@ -340,6 +348,9 @@ func (u *ResourceUtil) filterResources(
 	filteredResources := []*integrationv1alpha2.Resource{}
 	if resources == nil {
 		return resources
+	}
+	if when == "" {
+		when = integrationv1alpha2.CoupledWhen
 	}
 	for _, resource := range resources {
 		if resource.When == when {
@@ -378,10 +389,10 @@ func (u *ResourceUtil) templateResource(
 	if err != nil {
 		return "", err
 	}
-	parsedNamespace := gjson.Parse(string(bJson)).Get("meta.namespace").String()
+	parsedNamespace := gjson.Parse(string(bJson)).Get("metadata.namespace").String()
 	result := string(bJson)
 	if parsedNamespace == "" {
-		result, err = sjson.Set(result, "meta.namespace", namespace)
+		result, err = sjson.Set(result, "metadata.namespace", namespace)
 		if err != nil {
 			return "", err
 		}
