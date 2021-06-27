@@ -52,5 +52,3 @@ would be like trying to plug a US Type A **plug** into an Indian Type D **socket
 Below is a UML diagram that shows how **plugs**, **sockets** and **interfaces** wire together.
 
 ![UML Diagram](images/architecture-diagram.jpg)
-
-## TODO
