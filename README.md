@@ -23,11 +23,11 @@ make start
 
 3. Create plugs and sockets
 
-  You can start by taking a look at [config/samples](config/samples).
+    You can start by taking a look at [config/samples](config/samples).
   
-  ```sh
-  kubectl apply -f config/samples
-  ```
+    ```sh
+    kubectl apply -f config/samples
+    ```
 
 ## Terminology
 
