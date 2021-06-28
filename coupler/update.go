@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 28-06-2021 17:37:01
+ * Last Modified: 28-06-2021 17:50:40
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -78,17 +78,6 @@ func (c *Coupler) Update(
 	if !socketUtil.CoupledPlugExists(socket.Status.CoupledPlugs, plug.UID) || !plugIsCoupled {
 		return ctrl.Result{}, nil
 	}
-
-	// move to socket
-	// if isNotCoupled {
-	// 	if !socketUtil.CoupledPlugExists(&socket.Status.CoupledPlugs, plug.UID) {
-	// 		return socketUtil.UpdateStatusAppendPlug(plug, true)
-	// 	}
-	// 	if plug.Status.Phase != integrationv1alpha2.SucceededPhase || coupledCondition.Reason != string(util.CouplingSucceededStatusCondition) {
-	// 		return plugUtil.UpdateStatusSimple(integrationv1alpha2.SucceededPhase, util.CouplingSucceededStatusCondition, socket, false)
-	// 	}
-	// 	return ctrl.Result{}, nil
-	// }
 
 	plugInterfaceUtil := util.NewInterfaceUtil(client, ctx, req, log, &plug.Spec.Interface)
 	plugInterface, err := plugInterfaceUtil.Get()

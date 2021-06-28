@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 28-06-2021 15:59:59
+ * Last Modified: 28-06-2021 17:59:40
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -81,9 +81,17 @@ func (c *Coupler) Decouple(
 		return plugUtil.Error(err)
 	}
 
+	socket, err = socketUtil.Get()
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return plugUtil.Error(err)
+		}
+	}
 	if socket != nil {
 		if _, err := socketUtil.UpdateStatusRemovePlug(plug.UID, false); err != nil {
-			return plugUtil.Error(err)
+			if !errors.IsNotFound(err) {
+				return plugUtil.Error(err)
+			}
 		}
 	}
 	return ctrl.Result{}, nil
