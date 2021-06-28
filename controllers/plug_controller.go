@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 09:17:12
+ * Last Modified: 28-06-2021 17:44:28
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -81,19 +81,20 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			result, err := coupler.GlobalCoupler.Decouple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 				Name:      plug.Name,
 				Namespace: plug.Namespace,
-			})
+			}, plug)
 			if err != nil {
 				return result, err
 			}
 			coupler.GlobalCoupler.DeletedPlug(plug)
 			controllerutil.RemoveFinalizer(plug, integrationv1alpha2.PlugFinalizer)
 			if err := plugUtil.Update(plug); err != nil {
-				return ctrl.Result{}, err
+				return plugUtil.Error(err)
 			}
 			return result, nil
 		}
 		return ctrl.Result{}, nil
 	}
+
 	if !controllerutil.ContainsFinalizer(plug, integrationv1alpha2.PlugFinalizer) {
 		controllerutil.AddFinalizer(plug, integrationv1alpha2.PlugFinalizer)
 		if err := plugUtil.Update(plug); err != nil {
@@ -101,11 +102,11 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 		return ctrl.Result{}, nil
 	}
-	result, err := coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
+
+	return coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 		Name:      plug.Name,
 		Namespace: plug.Namespace,
-	}, false)
-	return result, err
+	}, plug)
 }
 
 func filterPlugPredicate() predicate.Predicate {

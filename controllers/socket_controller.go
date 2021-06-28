@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 09:17:05
+ * Last Modified: 28-06-2021 17:15:21
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -103,6 +103,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		return ctrl.Result{}, nil
 	}
+
 	if !controllerutil.ContainsFinalizer(socket, integrationv1alpha2.SocketFinalizer) {
 		controllerutil.AddFinalizer(socket, integrationv1alpha2.SocketFinalizer)
 		if err := r.Update(ctx, socket); err != nil {
@@ -115,7 +116,6 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		return socketUtil.Error(err)
 	}
-
 	if coupledCondition == nil {
 		if err = coupler.GlobalCoupler.CreatedSocket(socket); err != nil {
 			return socketUtil.Error(err)
@@ -124,10 +124,11 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	socketInterfaceUtil := util.NewInterfaceUtil(&r.Client, &ctx, &req, &log, &socket.Spec.Interface)
-	_, err = socketInterfaceUtil.Get()
+	socketInterface, err := socketInterfaceUtil.Get()
 	if err != nil {
 		return socketUtil.Error(err)
 	}
+	// TODO: validate interface
 
 	for _, connectedPlug := range socket.Status.CoupledPlugs {
 		plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
@@ -136,15 +137,26 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}, util.GlobalPlugMutex)
 		plug, err := plugUtil.Get()
 		if err != nil {
+			if errors.IsNotFound(err) {
+				if _, err := socketUtil.UpdateStatusRemovePlug(connectedPlug.UID, true); err != nil {
+					return socketUtil.Error(err)
+				}
+				return ctrl.Result{Requeue: true}, nil
+			}
 			return socketUtil.Error(err)
 		}
-		if _, err := coupler.GlobalCoupler.Couple(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
+
+		if err != nil {
+			return socketUtil.Error(err)
+		}
+		if _, err := coupler.GlobalCoupler.Update(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 			Name:      plug.Name,
 			Namespace: plug.Namespace,
-		}, true); err != nil {
+		}, plug, socket, socketInterface); err != nil {
 			return socketUtil.Error(err)
 		}
 	}
+
 	return socketUtil.UpdateStatusSimple(integrationv1alpha2.ReadyPhase, util.SocketCoupledStatusCondition, nil, false)
 }
 

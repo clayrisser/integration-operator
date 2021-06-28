@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 09:34:57
+ * Last Modified: 28-06-2021 16:59:40
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -110,10 +110,10 @@ func (u *SocketUtil) UpdateStatus(socket *integrationv1alpha2.Socket, requeue bo
 	return nil
 }
 
-func (u *SocketUtil) CoupledPlugExists(coupledPlugs *[]integrationv1alpha2.CoupledPlug, plug *integrationv1alpha2.Plug) bool {
+func (u *SocketUtil) CoupledPlugExists(coupledPlugs []*integrationv1alpha2.CoupledPlug, plugUid types.UID) bool {
 	coupledPlugExits := false
-	for _, coupledPlug := range *coupledPlugs {
-		if coupledPlug.UID == plug.UID {
+	for _, coupledPlug := range coupledPlugs {
+		if coupledPlug.UID == plugUid {
 			coupledPlugExits = true
 		}
 	}
@@ -174,13 +174,13 @@ func (u *SocketUtil) UpdateStatusSimple(
 	if phase != "" {
 		u.setPhaseStatus(socket, phase)
 	}
-	if coupledStatusCondition != "" {
-		u.setCoupledStatusCondition(socket, coupledStatusCondition, "")
-	}
 	if appendPlug != nil {
 		if err := u.appendCoupledPlugStatus(socket, appendPlug); err != nil {
 			return u.Error(err)
 		}
+	}
+	if coupledStatusCondition != "" {
+		u.setCoupledStatusCondition(socket, coupledStatusCondition, "")
 	}
 	if err := u.UpdateStatus(socket, requeue); err != nil {
 		return u.Error(err)
@@ -201,17 +201,15 @@ func (u *SocketUtil) UpdateErrorStatus(err error, requeue bool) (ctrl.Result, er
 	return ctrl.Result{}, nil
 }
 
-func (u *SocketUtil) UpdateStatusRemovePlug(
-	plug *integrationv1alpha2.Plug,
-) (ctrl.Result, error) {
+func (u *SocketUtil) UpdateStatusRemovePlug(plugUid types.UID, requeue bool) (ctrl.Result, error) {
 	socket, err := u.Get()
 	if err != nil {
 		return u.Error(err)
 	}
-	if err := u.removeCoupledPlugStatus(socket, plug); err != nil {
+	if err := u.removeCoupledPlugStatus(socket, plugUid); err != nil {
 		return u.Error(err)
 	}
-	if err := u.UpdateStatus(socket, true); err != nil {
+	if err := u.UpdateStatus(socket, requeue); err != nil {
 		return u.Error(err)
 	}
 	return ctrl.Result{}, nil
@@ -219,6 +217,7 @@ func (u *SocketUtil) UpdateStatusRemovePlug(
 
 func (u *SocketUtil) UpdateStatusAppendPlug(
 	plug *integrationv1alpha2.Plug,
+	requeue bool,
 ) (ctrl.Result, error) {
 	socket, err := u.Get()
 	if err != nil {
@@ -227,20 +226,27 @@ func (u *SocketUtil) UpdateStatusAppendPlug(
 	if err := u.appendCoupledPlugStatus(socket, plug); err != nil {
 		return u.Error(err)
 	}
-	if err := u.UpdateStatus(socket, true); err != nil {
+	if err := u.UpdateStatus(socket, requeue); err != nil {
 		return u.Error(err)
 	}
 	return ctrl.Result{}, nil
 }
 
-func (u *SocketUtil) setPhaseStatus(
+func (u *SocketUtil) appendCoupledPlugStatus(
 	socket *integrationv1alpha2.Socket,
-	phase integrationv1alpha2.Phase,
-) {
-	if phase != integrationv1alpha2.FailedPhase {
-		socket.Status.Message = ""
+	plug *integrationv1alpha2.Plug,
+) error {
+	if !u.CoupledPlugExists(socket.Status.CoupledPlugs, plug.UID) {
+		socket.Status.CoupledPlugs = append(socket.Status.CoupledPlugs, &integrationv1alpha2.CoupledPlug{
+			APIVersion: plug.APIVersion,
+			Kind:       plug.Kind,
+			Name:       plug.Name,
+			Namespace:  plug.Namespace,
+			UID:        plug.UID,
+		})
 	}
-	socket.Status.Phase = phase
+	u.setCoupledStatusCondition(socket, SocketCoupledStatusCondition, "")
+	return nil
 }
 
 func (u *SocketUtil) setCoupledStatusCondition(
@@ -269,7 +275,7 @@ func (u *SocketUtil) setCoupledStatusCondition(
 			coupledStatusCondition = SocketEmptyStatusCondition
 		}
 	}
-	c := metav1.Condition{
+	condition := metav1.Condition{
 		Message:            message,
 		ObservedGeneration: socket.Generation,
 		Reason:             string(coupledStatusCondition),
@@ -277,12 +283,22 @@ func (u *SocketUtil) setCoupledStatusCondition(
 		Type:               "Coupled",
 	}
 	if coupledStatus {
-		c.Status = "True"
+		condition.Status = "True"
 	}
-	meta.SetStatusCondition(&socket.Status.Conditions, c)
+	meta.SetStatusCondition(&socket.Status.Conditions, condition)
 	if coupledStatusCondition == SocketCoupledStatusCondition || coupledStatusCondition == SocketEmptyStatusCondition {
 		u.setReadyStatus(socket, true)
 	}
+}
+
+func (u *SocketUtil) setPhaseStatus(
+	socket *integrationv1alpha2.Socket,
+	phase integrationv1alpha2.Phase,
+) {
+	if phase != integrationv1alpha2.FailedPhase {
+		socket.Status.Message = ""
+	}
+	socket.Status.Phase = phase
 }
 
 func (u *SocketUtil) setReadyStatus(socket *integrationv1alpha2.Socket, ready bool) {
@@ -302,36 +318,13 @@ func (u *SocketUtil) setErrorStatus(socket *integrationv1alpha2.Socket, err erro
 	socket.Status.Message = message
 }
 
-func (u *SocketUtil) appendCoupledPlugStatus(
-	socket *integrationv1alpha2.Socket,
-	plug *integrationv1alpha2.Plug,
-) error {
-	if !u.CoupledPlugExists(&socket.Status.CoupledPlugs, plug) {
-		socket.Status.CoupledPlugs = append(socket.Status.CoupledPlugs, integrationv1alpha2.CoupledPlug{
-			APIVersion: plug.APIVersion,
-			Kind:       plug.Kind,
-			Name:       plug.Name,
-			Namespace:  plug.Namespace,
-			UID:        plug.UID,
-		})
-	}
-	coupledCondition, err := u.GetCoupledCondition()
-	if err != nil {
-		return err
-	}
-	if (*coupledCondition).Reason == string(SocketCoupledStatusCondition) {
-		u.setCoupledStatusCondition(socket, SocketCoupledStatusCondition, "")
-	}
-	return nil
-}
-
 func (u *SocketUtil) removeCoupledPlugStatus(
 	socket *integrationv1alpha2.Socket,
-	plug *integrationv1alpha2.Plug,
+	plugUid types.UID,
 ) error {
-	coupledPlugs := []integrationv1alpha2.CoupledPlug{}
+	coupledPlugs := []*integrationv1alpha2.CoupledPlug{}
 	for _, coupledPlug := range socket.Status.CoupledPlugs {
-		if coupledPlug.UID != plug.UID {
+		if coupledPlug.UID != plugUid {
 			coupledPlugs = append(coupledPlugs, coupledPlug)
 		}
 	}

@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-06-2021 10:55:03
+ * Last Modified: 28-06-2021 15:59:59
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -41,13 +41,17 @@ func (c *Coupler) Decouple(
 	req *ctrl.Request,
 	log *logr.Logger,
 	plugNamespacedName *integrationv1alpha2.NamespacedName,
+	plug *integrationv1alpha2.Plug,
 ) (ctrl.Result, error) {
 	configUtil := util.NewConfigUtil(ctx)
 
 	plugUtil := util.NewPlugUtil(client, ctx, req, log, plugNamespacedName, util.GlobalPlugMutex)
-	plug, err := plugUtil.Get()
-	if err != nil {
-		return ctrl.Result{}, err
+	if plug == nil {
+		var err error
+		plug, err = plugUtil.Get()
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	socketUtil := util.NewSocketUtil(client, ctx, req, log, &plug.Spec.Socket, util.GlobalSocketMutex)
@@ -58,15 +62,12 @@ func (c *Coupler) Decouple(
 		}
 	}
 
-	var plugConfig map[string]string
-	if plug.Spec.Apparatus.Endpoint != "" {
-		plugConfig, err = configUtil.GetPlugConfig(plug)
-		if err != nil {
-			return plugUtil.Error(err)
-		}
+	plugConfig, err := configUtil.GetPlugConfig(plug)
+	if err != nil {
+		return plugUtil.Error(err)
 	}
-	var socketConfig map[string]string
-	if socket != nil && socket.Spec.Apparatus.Endpoint != "" {
+	socketConfig := map[string]string{}
+	if socket != nil {
 		socketConfig, err = configUtil.GetSocketConfig(socket)
 		if err != nil {
 			return plugUtil.Error(err)
@@ -81,10 +82,9 @@ func (c *Coupler) Decouple(
 	}
 
 	if socket != nil {
-		if _, err := socketUtil.UpdateStatusRemovePlug(plug); err != nil {
+		if _, err := socketUtil.UpdateStatusRemovePlug(plug.UID, false); err != nil {
 			return plugUtil.Error(err)
 		}
 	}
-
 	return ctrl.Result{}, nil
 }

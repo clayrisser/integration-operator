@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 08:38:04
+ * Last Modified: 28-06-2021 17:41:39
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -118,6 +118,22 @@ func (u *PlugUtil) GetCoupledCondition() (*metav1.Condition, error) {
 	return coupledCondition, nil
 }
 
+func (u *PlugUtil) IsCoupled(
+	plug *integrationv1alpha2.Plug,
+	coupledCondition *metav1.Condition,
+) (bool, error) {
+	if coupledCondition == nil {
+		var err error
+		coupledCondition, err = u.GetCoupledCondition()
+		if err != nil {
+			return false, err
+
+		}
+	}
+	return coupledCondition != nil && plug.Status.Phase == integrationv1alpha2.SucceededPhase &&
+		coupledCondition.Reason == string(CouplingSucceededStatusCondition), nil
+}
+
 func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 	stashedErr := err
 	log := *u.log
@@ -181,6 +197,17 @@ func (u *PlugUtil) UpdateStatusSimple(
 	}
 	if phase != "" {
 		u.setPhaseStatus(plug, phase)
+	}
+	if coupledStatusCondition == SocketNotCreatedStatusCondition ||
+		coupledStatusCondition == SocketNotReadyStatusCondition {
+		requeueAfter := CalculateExponentialRequireAfter(
+			plug.Status.LastUpdate,
+			2,
+		)
+		if err := u.UpdateStatus(plug, requeue); err != nil {
+			return u.Error(err)
+		}
+		return ctrl.Result{Requeue: true, RequeueAfter: requeueAfter}, nil
 	}
 	if err := u.UpdateStatus(plug, requeue); err != nil {
 		return u.Error(err)
@@ -252,7 +279,7 @@ func (u *PlugUtil) setCoupledSocketStatus(
 	plug *integrationv1alpha2.Plug,
 	socket *integrationv1alpha2.Socket,
 ) {
-	plug.Status.CoupledSocket = integrationv1alpha2.CoupledSocket{
+	plug.Status.CoupledSocket = &integrationv1alpha2.CoupledSocket{
 		APIVersion: socket.APIVersion,
 		Kind:       socket.Kind,
 		Name:       socket.Name,
