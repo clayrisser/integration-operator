@@ -9,9 +9,25 @@ This operator takes inspiration from [Juju](https://juju.is) [Charm](https://juj
 
 ## Usage
 
+1. Install the custom resource definitions
+
 ```sh
-docker run --rm siliconhills/integration-operator:0.1.0
+make install-crds
 ```
+
+2. Start the operator
+
+```sh
+make start
+```
+
+3. Create plugs and sockets
+
+  You can start by taking a look at [config/samples](config/samples).
+  
+  ```sh
+  kubectl apply -f config/samples
+  ```
 
 ## Terminology
 
