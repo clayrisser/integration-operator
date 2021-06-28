@@ -1,10 +1,10 @@
 {
   "cSpell.words": [
-    "apparartus",
     "clientcmdapi",
     "clientgoscheme",
     "controllerutil",
     "corev",
+    "crds",
     "fieldref",
     "finalizers",
     "ghodss",

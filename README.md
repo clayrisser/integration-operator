@@ -21,13 +21,19 @@ make install-crds
 make start
 ```
 
-3. Create plugs and sockets
+3. Start apparatuses
 
-    You can start by taking a look at [config/samples](config/samples).
-  
-    ```sh
-    kubectl apply -f config/samples
-    ```
+   You can find an example apparatus at the link below.
+
+   https://github.com/silicon-hills/example-apparatus
+
+4. Create plugs and sockets
+
+   You can start by taking a look at [config/samples](config/samples).
+
+   ```sh
+   kubectl apply -f config/samples
+   ```
 
 ## Terminology
 
