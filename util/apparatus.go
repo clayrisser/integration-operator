@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 06:08:07
+ * Last Modified: 29-06-2021 08:26:54
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -26,15 +26,23 @@ package util
 
 import (
 	"context"
+	"fmt"
+	"net"
 
 	"github.com/go-resty/resty/v2"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/tdewolff/minify"
 	minifyJson "github.com/tdewolff/minify/json"
 	"github.com/tidwall/sjson"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type ApparatusUtil struct {
+	client   *kubernetes.Clientset
 	ctx      *context.Context
 	dataUtil *DataUtil
 	varUtil  *VarUtil
@@ -44,6 +52,7 @@ func NewApparatusUtil(
 	ctx *context.Context,
 ) *ApparatusUtil {
 	return &ApparatusUtil{
+		client:   kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
 		ctx:      ctx,
 		dataUtil: NewDataUtil(ctx),
 		varUtil:  NewVarUtil(ctx),
@@ -386,6 +395,78 @@ func (u *ApparatusUtil) SocketBroken(
 		socket.Spec.Apparatus.Endpoint,
 		"broken",
 	)
+}
+
+func (u *ApparatusUtil) NotRunning(err error) bool {
+	// TODO: detect if apparatus api call
+	if nerr, ok := err.(net.Error); ok {
+		return !nerr.Timeout() && !nerr.Temporary()
+	}
+	return false
+}
+
+func (u *ApparatusUtil) Start(
+	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
+) (bool, error) {
+	if plug == nil && socket == nil {
+		return false, nil
+	}
+	if plug != nil {
+		if len(plug.Spec.Apparatus.Containers) > 0 {
+			configMap := &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "abc",
+				},
+				Data: map[string]string{
+					"Hello": "world",
+				},
+			}
+			_, err := u.client.CoreV1().ConfigMaps(plug.Namespace).Create(
+				*u.ctx,
+				configMap,
+				metav1.CreateOptions{
+					FieldManager: "integration-operator",
+				},
+			)
+			if err != nil {
+				if errors.IsAlreadyExists(err) {
+					return false, nil
+				} else {
+					return false, err
+				}
+			}
+		} else {
+			fmt.Println("NO APPARATUS TO START")
+		}
+	}
+	if socket != nil {
+		if len(socket.Spec.Apparatus.Containers) > 0 {
+			configMap := &v1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "abc",
+				},
+				Data: map[string]string{
+					"Hello": "world",
+				},
+			}
+			_, err := u.client.CoreV1().ConfigMaps(socket.Namespace).Create(
+				*u.ctx,
+				configMap,
+				metav1.CreateOptions{
+					FieldManager: "integration-operator",
+				},
+			)
+			if err != nil {
+				if errors.IsAlreadyExists(err) {
+					return false, nil
+				} else {
+					return false, err
+				}
+			}
+		}
+	}
+	return true, nil
 }
 
 func (u *ApparatusUtil) processEvent(

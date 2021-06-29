@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 28-06-2021 16:59:40
+ * Last Modified: 29-06-2021 08:25:37
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -42,6 +42,7 @@ import (
 )
 
 type SocketUtil struct {
+	apparatusUtil  *ApparatusUtil
 	client         *client.Client
 	ctx            *context.Context
 	log            *logr.Logger
@@ -63,6 +64,7 @@ func NewSocketUtil(
 		mutex = &sync.Mutex{}
 	}
 	return &SocketUtil{
+		apparatusUtil:  NewApparatusUtil(ctx),
 		client:         client,
 		ctx:            ctx,
 		log:            log,
@@ -132,18 +134,45 @@ func (u *SocketUtil) GetCoupledCondition() (*metav1.Condition, error) {
 func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 	stashedErr := err
 	log := *u.log
-	log.Error(nil, err.Error())
-	plug, err := u.Get()
+	socket, err := u.Get()
 	if err != nil {
+		log.Error(nil, stashedErr.Error())
 		return ctrl.Result{
 			Requeue:      true,
 			RequeueAfter: config.MaxRequeueDuration,
 		}, err
 	}
 	requeueAfter := CalculateExponentialRequireAfter(
-		plug.Status.LastUpdate,
+		socket.Status.LastUpdate,
 		2,
 	)
+	if u.apparatusUtil.NotRunning(stashedErr) {
+		fmt.Println("START APPARATUS")
+		if err := u.UpdateStatus(socket, true); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: requeueAfter,
+		}, nil
+	}
+	if u.apparatusUtil.NotRunning(stashedErr) {
+		started, err := u.apparatusUtil.Start(nil, socket)
+		if err != nil {
+			return u.Error(err)
+		}
+		if started {
+			log.Info("started socket apparatus")
+			if err := u.UpdateStatus(socket, true); err != nil {
+				return u.Error(err)
+			}
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: requeueAfter,
+			}, nil
+		}
+	}
+	log.Error(nil, stashedErr.Error())
 	if strings.Index(stashedErr.Error(), registry.OptimisticLockErrorMsg) <= -1 {
 		if _, err := u.UpdateErrorStatus(stashedErr, true); err != nil {
 			if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) > -1 {

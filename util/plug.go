@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 28-06-2021 17:41:39
+ * Last Modified: 29-06-2021 08:23:49
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -41,6 +41,7 @@ import (
 )
 
 type PlugUtil struct {
+	apparatusUtil  *ApparatusUtil
 	client         *client.Client
 	ctx            *context.Context
 	log            *logr.Logger
@@ -62,6 +63,7 @@ func NewPlugUtil(
 		mutex = &sync.Mutex{}
 	}
 	return &PlugUtil{
+		apparatusUtil:  NewApparatusUtil(ctx),
 		client:         client,
 		ctx:            ctx,
 		log:            log,
@@ -137,9 +139,9 @@ func (u *PlugUtil) IsCoupled(
 func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 	stashedErr := err
 	log := *u.log
-	log.Error(nil, err.Error())
 	plug, err := u.Get()
 	if err != nil {
+		log.Error(nil, stashedErr.Error())
 		return ctrl.Result{
 			Requeue:      true,
 			RequeueAfter: config.MaxRequeueDuration,
@@ -149,6 +151,23 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 		plug.Status.LastUpdate,
 		2,
 	)
+	if u.apparatusUtil.NotRunning(stashedErr) {
+		started, err := u.apparatusUtil.Start(plug, nil)
+		if err != nil {
+			return u.Error(err)
+		}
+		if started {
+			log.Info("started plug apparatus")
+			if err := u.UpdateStatus(plug, true); err != nil {
+				return u.Error(err)
+			}
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: requeueAfter,
+			}, nil
+		}
+	}
+	log.Error(nil, stashedErr.Error())
 	if strings.Index(stashedErr.Error(), registry.OptimisticLockErrorMsg) <= -1 {
 		if _, err := u.UpdateErrorStatus(stashedErr, true); err != nil {
 			if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) > -1 {

@@ -23,6 +23,7 @@
     "kustomize",
     "logr",
     "metav",
+    "nerr",
     "objref",
     "oidc",
     "onsi",

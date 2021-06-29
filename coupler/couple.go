@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 28-06-2021 17:43:02
+ * Last Modified: 29-06-2021 07:40:27
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -112,6 +112,7 @@ func (c *Coupler) Couple(
 	}
 	socketConfig, err := configUtil.GetSocketConfig(socket)
 	if err != nil {
+
 		return plugUtil.Error(err)
 	}
 
