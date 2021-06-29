@@ -11,6 +11,14 @@ spec:
     namespace: integration-test
   apparatus:
     endpoint: localhost:3000/socket
+    containers:
+      - image: siliconhills/example-apparatus:latest
+        imagePullPolicy: Always
+        name: nginx
+        ports:
+          - containerPort: 3000
+            name: container
+            protocol: TCP
   data:
     host: localhost
     password: postgres

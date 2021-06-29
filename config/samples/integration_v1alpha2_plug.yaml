@@ -10,14 +10,14 @@ spec:
     name: interface-sample
     namespace: integration-test
   apparatus:
-    endpoint: localhost:3000/plug
+    # endpoint: localhost:3000/plug
     idleTimeout: 60
     containers:
-      - image: nginx:latest
+      - image: siliconhills/example-apparatus:latest
         imagePullPolicy: Always
         name: nginx
         ports:
-          - containerPort: 80
+          - containerPort: 3000
             name: container
             protocol: TCP
   socket:
