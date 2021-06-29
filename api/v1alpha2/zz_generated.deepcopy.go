@@ -571,12 +571,12 @@ func (in *SpecApparatus) DeepCopyInto(out *SpecApparatus) {
 	*out = *in
 	if in.Containers != nil {
 		in, out := &in.Containers, &out.Containers
-		*out = make([]*corev1.Container, len(*in))
-		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(corev1.Container)
-				(*in).DeepCopyInto(*out)
+		*out = new([]corev1.Container)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make([]corev1.Container, len(*in))
+			for i := range *in {
+				(*in)[i].DeepCopyInto(&(*out)[i])
 			}
 		}
 	}

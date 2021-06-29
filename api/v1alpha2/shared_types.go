@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 05:35:18
+ * Last Modified: 29-06-2021 09:18:45
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -78,5 +78,5 @@ type SpecApparatus struct {
 	IdleTimeout uint `json:"idleTimeout,omitempty"`
 
 	// containers
-	Containers []*v1.Container `json:"containers,omitempty"`
+	Containers *[]v1.Container `json:"containers,omitempty"`
 }

@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 09:15:04
+ * Last Modified: 29-06-2021 09:45:30
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -38,6 +38,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -415,53 +416,77 @@ func (u *ApparatusUtil) Start(
 	namespace string,
 	uid string,
 ) (bool, error) {
-	if apparatus == nil || len(apparatus.Containers) <= 0 {
+	if apparatus == nil || len(*apparatus.Containers) <= 0 {
 		return false, nil
 	}
-	configMap := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Data: map[string]string{
-			"Hello": "world",
-		},
-	}
-	configMap, err := u.client.CoreV1().ConfigMaps(namespace).Create(
-		*u.ctx,
-		configMap,
-		metav1.CreateOptions{
-			FieldManager: "integration-operator",
-		},
-	)
 	idleTimeout := time.Second * 60
 	if apparatus.IdleTimeout != 0 {
 		idleTimeout = time.Second * time.Duration(apparatus.IdleTimeout)
 	}
+	alreadyExists := false
+	pod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Labels: map[string]string{
+				"apparatus": name,
+			},
+		},
+		Spec: v1.PodSpec{
+			Containers: *apparatus.Containers,
+		},
+	}
+	service := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: v1.ServiceSpec{
+			Type: v1.ServiceTypeClusterIP,
+			Ports: []v1.ServicePort{
+				{
+					Name:       "http",
+					Port:       80,
+					Protocol:   v1.ProtocolTCP,
+					TargetPort: intstr.FromString("container"),
+				},
+			},
+			Selector: map[string]string{
+				"apparatus": name,
+			},
+		},
+	}
+	_, err := u.client.CoreV1().Pods(namespace).Create(
+		*u.ctx,
+		pod,
+		metav1.CreateOptions{
+			FieldManager: "integration-operator",
+		},
+	)
 	if err != nil {
 		if errors.IsAlreadyExists(err) {
-			u.registerIdleTimeout(log, name, namespace, idleTimeout, uid)
-			return false, nil
+			alreadyExists = true
 		} else {
 			return false, err
 		}
 	}
-	u.registerIdleTimeout(log, name, namespace, idleTimeout, uid)
-	(*log).Info("started apparatus " + namespace + "." + name)
-	return true, nil
-}
-
-func (u *ApparatusUtil) registerIdleTimeout(
-	log *logr.Logger,
-	name string,
-	namespace string,
-	idleTimeout time.Duration,
-	uid string,
-) {
+	_, err = u.client.CoreV1().Services(namespace).Create(
+		*u.ctx,
+		service,
+		metav1.CreateOptions{
+			FieldManager: "integration-operator",
+		},
+	)
+	if err != nil {
+		if errors.IsAlreadyExists(err) {
+			alreadyExists = true
+		} else {
+			return false, err
+		}
+	}
 	if timer, ok := startedApparatusTimers[uid]; ok {
 		timer.Reset(idleTimeout)
 	} else {
 		startedApparatusTimers[uid] = time.AfterFunc(idleTimeout, func() {
-			if err := u.client.CoreV1().ConfigMaps(namespace).Delete(
+			if err := u.client.CoreV1().Pods(namespace).Delete(
 				*u.ctx,
 				name,
 				metav1.DeleteOptions{},
@@ -475,6 +500,10 @@ func (u *ApparatusUtil) registerIdleTimeout(
 			}
 		})
 	}
+	if !alreadyExists {
+		(*log).Info("started apparatus " + namespace + "." + name)
+	}
+	return true, nil
 }
 
 func (u *ApparatusUtil) processEvent(
