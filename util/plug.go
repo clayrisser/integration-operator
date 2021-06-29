@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 08:23:49
+ * Last Modified: 29-06-2021 08:57:28
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -152,12 +152,16 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 		2,
 	)
 	if u.apparatusUtil.NotRunning(stashedErr) {
-		started, err := u.apparatusUtil.Start(plug, nil)
+		started, err := u.apparatusUtil.Start(
+			&log,
+			plug.Spec.Apparatus,
+			plug.Namespace,
+			string(plug.UID),
+		)
 		if err != nil {
 			return u.Error(err)
 		}
 		if started {
-			log.Info("started plug apparatus")
 			if err := u.UpdateStatus(plug, true); err != nil {
 				return u.Error(err)
 			}

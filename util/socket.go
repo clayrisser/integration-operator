@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 08:25:37
+ * Last Modified: 29-06-2021 08:57:58
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -147,22 +147,16 @@ func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 		2,
 	)
 	if u.apparatusUtil.NotRunning(stashedErr) {
-		fmt.Println("START APPARATUS")
-		if err := u.UpdateStatus(socket, true); err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{
-			Requeue:      true,
-			RequeueAfter: requeueAfter,
-		}, nil
-	}
-	if u.apparatusUtil.NotRunning(stashedErr) {
-		started, err := u.apparatusUtil.Start(nil, socket)
+		started, err := u.apparatusUtil.Start(
+			&log,
+			socket.Spec.Apparatus,
+			socket.Namespace,
+			string(socket.UID),
+		)
 		if err != nil {
 			return u.Error(err)
 		}
 		if started {
-			log.Info("started socket apparatus")
 			if err := u.UpdateStatus(socket, true); err != nil {
 				return u.Error(err)
 			}

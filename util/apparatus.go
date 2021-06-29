@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 08:26:54
+ * Last Modified: 29-06-2021 08:57:18
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -26,9 +26,10 @@ package util
 
 import (
 	"context"
-	"fmt"
 	"net"
+	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/go-resty/resty/v2"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/tdewolff/minify"
@@ -40,6 +41,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+var startedApparatus map[string]*time.Timer = map[string]*time.Timer{}
 
 type ApparatusUtil struct {
 	client   *kubernetes.Clientset
@@ -406,67 +409,62 @@ func (u *ApparatusUtil) NotRunning(err error) bool {
 }
 
 func (u *ApparatusUtil) Start(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
+	log *logr.Logger,
+	apparatus *integrationv1alpha2.SpecApparatus,
+	namespace string,
+	uid string,
 ) (bool, error) {
-	if plug == nil && socket == nil {
+	if apparatus == nil || len(apparatus.Containers) <= 0 {
 		return false, nil
 	}
-	if plug != nil {
-		if len(plug.Spec.Apparatus.Containers) > 0 {
-			configMap := &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "abc",
-				},
-				Data: map[string]string{
-					"Hello": "world",
-				},
-			}
-			_, err := u.client.CoreV1().ConfigMaps(plug.Namespace).Create(
-				*u.ctx,
-				configMap,
-				metav1.CreateOptions{
-					FieldManager: "integration-operator",
-				},
-			)
-			if err != nil {
-				if errors.IsAlreadyExists(err) {
-					return false, nil
-				} else {
-					return false, err
-				}
-			}
+	configMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "abc",
+		},
+		Data: map[string]string{
+			"Hello": "world",
+		},
+	}
+	configMap, err := u.client.CoreV1().ConfigMaps(namespace).Create(
+		*u.ctx,
+		configMap,
+		metav1.CreateOptions{
+			FieldManager: "integration-operator",
+		},
+	)
+	if err != nil {
+		if errors.IsAlreadyExists(err) {
+			u.registerIdleTimeout(log, configMap, namespace, uid)
+			return false, nil
 		} else {
-			fmt.Println("NO APPARATUS TO START")
+			return false, err
 		}
 	}
-	if socket != nil {
-		if len(socket.Spec.Apparatus.Containers) > 0 {
-			configMap := &v1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "abc",
-				},
-				Data: map[string]string{
-					"Hello": "world",
-				},
-			}
-			_, err := u.client.CoreV1().ConfigMaps(socket.Namespace).Create(
-				*u.ctx,
-				configMap,
-				metav1.CreateOptions{
-					FieldManager: "integration-operator",
-				},
-			)
-			if err != nil {
-				if errors.IsAlreadyExists(err) {
-					return false, nil
-				} else {
-					return false, err
-				}
-			}
-		}
-	}
+	u.registerIdleTimeout(log, configMap, namespace, uid)
+	(*log).Info("started apparatus " + configMap.Namespace + "." + configMap.Name)
 	return true, nil
+}
+
+func (u *ApparatusUtil) registerIdleTimeout(
+	log *logr.Logger,
+	configMap *v1.ConfigMap,
+	namespace string,
+	uid string,
+) {
+	startedApparatus[uid] = time.AfterFunc(time.Second*15, func() {
+		if err := u.client.CoreV1().ConfigMaps(namespace).Delete(
+			*u.ctx,
+			configMap.Name,
+			metav1.DeleteOptions{},
+		); err != nil {
+			(*log).Error(
+				err,
+				"failed to terminate idle apparatus "+configMap.Namespace+"."+configMap.Name,
+			)
+		} else {
+			(*log).Info("terminated idle apparatus " + configMap.Namespace + "." + configMap.Name)
+		}
+	})
 }
 
 func (u *ApparatusUtil) processEvent(
