@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-06-2021 10:53:30
+ * Last Modified: 29-06-2021 17:09:44
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -83,19 +83,6 @@ func CalculateExponentialRequireAfter(
 		float64(retryInterval.Nanoseconds()*factor),
 		float64(config.MaxRequeueDuration),
 	))
-}
-
-func GetEndpoint(endpoint string) string {
-	if endpoint == "" {
-		return endpoint
-	}
-	if endpoint[0:8] != "https://" && endpoint[0:7] != "http://" {
-		endpoint = "http://" + endpoint
-	}
-	if endpoint[len(endpoint)-1] == '/' {
-		endpoint = string(endpoint[0 : len(endpoint)-2])
-	}
-	return endpoint
 }
 
 func JsonToHashMap(body []byte) (map[string]string, error) {

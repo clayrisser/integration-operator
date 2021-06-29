@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 09:49:21
+ * Last Modified: 29-06-2021 17:46:36
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -69,8 +69,6 @@ func (u *ApparatusUtil) GetPlugConfig(
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
-	defer close(rCh)
-	defer close(errCh)
 	min := minify.New()
 	min.AddFunc("application/json", minifyJson.Minify)
 	go func() {
@@ -114,7 +112,11 @@ func (u *ApparatusUtil) GetPlugConfig(
 		}
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
-		}).SetBody([]byte(body)).Post(GetEndpoint(plug.Spec.Apparatus.Endpoint) + "/config")
+		}).SetBody([]byte(body)).Post(u.getEndpoint(
+			plug.Name,
+			plug.Namespace,
+			plug.Spec.Apparatus,
+		) + "/config")
 		if err != nil {
 			errCh <- err
 			return
@@ -135,8 +137,6 @@ func (u *ApparatusUtil) GetSocketConfig(
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
-	defer close(rCh)
-	defer close(errCh)
 	min := minify.New()
 	min.AddFunc("application/json", minifyJson.Minify)
 	go func() {
@@ -180,7 +180,11 @@ func (u *ApparatusUtil) GetSocketConfig(
 		}
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
-		}).SetBody([]byte(body)).Post(GetEndpoint(socket.Spec.Apparatus.Endpoint) + "/config")
+		}).SetBody([]byte(body)).Post(u.getEndpoint(
+			socket.Name,
+			socket.Namespace,
+			socket.Spec.Apparatus,
+		) + "/config")
 		if err != nil {
 			errCh <- err
 			return
@@ -204,7 +208,7 @@ func (u *ApparatusUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
 		nil,
 		nil,
 		nil,
-		plug.Spec.Apparatus.Endpoint,
+		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
 		"created",
 	)
 }
@@ -223,7 +227,7 @@ func (u *ApparatusUtil) PlugCoupled(
 		socket,
 		plugConfig,
 		socketConfig,
-		plug.Spec.Apparatus.Endpoint,
+		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
 		"coupled",
 	)
 }
@@ -242,7 +246,7 @@ func (u *ApparatusUtil) PlugUpdated(
 		socket,
 		plugConfig,
 		socketConfig,
-		plug.Spec.Apparatus.Endpoint,
+		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
 		"updated",
 	)
 }
@@ -261,7 +265,7 @@ func (u *ApparatusUtil) PlugDecoupled(
 		socket,
 		plugConfig,
 		socketConfig,
-		plug.Spec.Apparatus.Endpoint,
+		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
 		"decoupled",
 	)
 }
@@ -277,7 +281,7 @@ func (u *ApparatusUtil) PlugDeleted(
 		nil,
 		nil,
 		nil,
-		plug.Spec.Apparatus.Endpoint,
+		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
 		"deleted",
 	)
 }
@@ -293,7 +297,7 @@ func (u *ApparatusUtil) PlugBroken(
 		nil,
 		nil,
 		nil,
-		plug.Spec.Apparatus.Endpoint,
+		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
 		"broken",
 	)
 }
@@ -307,7 +311,7 @@ func (u *ApparatusUtil) SocketCreated(socket *integrationv1alpha2.Socket) error 
 		socket,
 		nil,
 		nil,
-		socket.Spec.Apparatus.Endpoint,
+		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
 		"created",
 	)
 }
@@ -326,7 +330,7 @@ func (u *ApparatusUtil) SocketCoupled(
 		socket,
 		plugConfig,
 		socketConfig,
-		socket.Spec.Apparatus.Endpoint,
+		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
 		"coupled",
 	)
 }
@@ -345,7 +349,7 @@ func (u *ApparatusUtil) SocketUpdated(
 		socket,
 		plugConfig,
 		socketConfig,
-		socket.Spec.Apparatus.Endpoint,
+		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
 		"updated",
 	)
 }
@@ -364,7 +368,7 @@ func (u *ApparatusUtil) SocketDecoupled(
 		socket,
 		plugConfig,
 		socketConfig,
-		socket.Spec.Apparatus.Endpoint,
+		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
 		"decoupled",
 	)
 }
@@ -380,7 +384,7 @@ func (u *ApparatusUtil) SocketDeleted(
 		socket,
 		nil,
 		nil,
-		socket.Spec.Apparatus.Endpoint,
+		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
 		"deleted",
 	)
 }
@@ -396,7 +400,7 @@ func (u *ApparatusUtil) SocketBroken(
 		socket,
 		nil,
 		nil,
-		socket.Spec.Apparatus.Endpoint,
+		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
 		"broken",
 	)
 }
@@ -504,6 +508,29 @@ func (u *ApparatusUtil) Start(
 	return true, nil
 }
 
+func (u *ApparatusUtil) getEndpoint(
+	name string,
+	namespace string,
+	apparatus *integrationv1alpha2.SpecApparatus,
+) string {
+	endpoint := apparatus.Endpoint
+	if endpoint == "" {
+		if apparatus.Containers != nil &&
+			len(*apparatus.Containers) > 0 {
+			endpoint = name + "." + namespace + ".svc.cluster.local"
+		} else {
+			return endpoint
+		}
+	}
+	if endpoint[0:8] != "https://" && endpoint[0:7] != "http://" {
+		endpoint = "http://" + endpoint
+	}
+	if endpoint[len(endpoint)-1] == '/' {
+		endpoint = string(endpoint[0 : len(endpoint)-2])
+	}
+	return endpoint
+}
+
 func (u *ApparatusUtil) processEvent(
 	plug *integrationv1alpha2.Plug,
 	socket *integrationv1alpha2.Socket,
@@ -517,8 +544,6 @@ func (u *ApparatusUtil) processEvent(
 	client := resty.New()
 	rCh := make(chan *resty.Response)
 	errCh := make(chan error)
-	defer close(rCh)
-	defer close(errCh)
 	body := `{"version":"1"}`
 	var err error
 	if plug != nil {
@@ -552,7 +577,7 @@ func (u *ApparatusUtil) processEvent(
 	go func() {
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
-		}).SetBody([]byte(body)).Post(GetEndpoint(endpoint) + "/" + eventName)
+		}).SetBody([]byte(body)).Post(endpoint + "/" + eventName)
 		if err != nil {
 			errCh <- err
 		}
