@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 09:45:30
+ * Last Modified: 29-06-2021 09:49:21
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -454,23 +454,21 @@ func (u *ApparatusUtil) Start(
 			},
 		},
 	}
-	_, err := u.client.CoreV1().Pods(namespace).Create(
+	_, err := u.client.CoreV1().Services(namespace).Create(
 		*u.ctx,
-		pod,
+		service,
 		metav1.CreateOptions{
 			FieldManager: "integration-operator",
 		},
 	)
 	if err != nil {
-		if errors.IsAlreadyExists(err) {
-			alreadyExists = true
-		} else {
+		if !errors.IsAlreadyExists(err) {
 			return false, err
 		}
 	}
-	_, err = u.client.CoreV1().Services(namespace).Create(
+	_, err = u.client.CoreV1().Pods(namespace).Create(
 		*u.ctx,
-		service,
+		pod,
 		metav1.CreateOptions{
 			FieldManager: "integration-operator",
 		},
