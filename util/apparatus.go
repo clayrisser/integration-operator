@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 08:57:18
+ * Last Modified: 29-06-2021 09:15:04
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -42,7 +42,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var startedApparatus map[string]*time.Timer = map[string]*time.Timer{}
+var startedApparatusTimers map[string]*time.Timer = map[string]*time.Timer{}
 
 type ApparatusUtil struct {
 	client   *kubernetes.Clientset
@@ -411,6 +411,7 @@ func (u *ApparatusUtil) NotRunning(err error) bool {
 func (u *ApparatusUtil) Start(
 	log *logr.Logger,
 	apparatus *integrationv1alpha2.SpecApparatus,
+	name string,
 	namespace string,
 	uid string,
 ) (bool, error) {
@@ -419,7 +420,7 @@ func (u *ApparatusUtil) Start(
 	}
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "abc",
+			Name: name,
 		},
 		Data: map[string]string{
 			"Hello": "world",
@@ -432,39 +433,48 @@ func (u *ApparatusUtil) Start(
 			FieldManager: "integration-operator",
 		},
 	)
+	idleTimeout := time.Second * 60
+	if apparatus.IdleTimeout != 0 {
+		idleTimeout = time.Second * time.Duration(apparatus.IdleTimeout)
+	}
 	if err != nil {
 		if errors.IsAlreadyExists(err) {
-			u.registerIdleTimeout(log, configMap, namespace, uid)
+			u.registerIdleTimeout(log, name, namespace, idleTimeout, uid)
 			return false, nil
 		} else {
 			return false, err
 		}
 	}
-	u.registerIdleTimeout(log, configMap, namespace, uid)
-	(*log).Info("started apparatus " + configMap.Namespace + "." + configMap.Name)
+	u.registerIdleTimeout(log, name, namespace, idleTimeout, uid)
+	(*log).Info("started apparatus " + namespace + "." + name)
 	return true, nil
 }
 
 func (u *ApparatusUtil) registerIdleTimeout(
 	log *logr.Logger,
-	configMap *v1.ConfigMap,
+	name string,
 	namespace string,
+	idleTimeout time.Duration,
 	uid string,
 ) {
-	startedApparatus[uid] = time.AfterFunc(time.Second*15, func() {
-		if err := u.client.CoreV1().ConfigMaps(namespace).Delete(
-			*u.ctx,
-			configMap.Name,
-			metav1.DeleteOptions{},
-		); err != nil {
-			(*log).Error(
-				err,
-				"failed to terminate idle apparatus "+configMap.Namespace+"."+configMap.Name,
-			)
-		} else {
-			(*log).Info("terminated idle apparatus " + configMap.Namespace + "." + configMap.Name)
-		}
-	})
+	if timer, ok := startedApparatusTimers[uid]; ok {
+		timer.Reset(idleTimeout)
+	} else {
+		startedApparatusTimers[uid] = time.AfterFunc(idleTimeout, func() {
+			if err := u.client.CoreV1().ConfigMaps(namespace).Delete(
+				*u.ctx,
+				name,
+				metav1.DeleteOptions{},
+			); err != nil {
+				(*log).Error(
+					err,
+					"failed to terminate idle apparatus "+namespace+"."+name,
+				)
+			} else {
+				(*log).Info("terminated idle apparatus " + namespace + "." + name)
+			}
+		})
+	}
 }
 
 func (u *ApparatusUtil) processEvent(

@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 08:57:58
+ * Last Modified: 29-06-2021 09:15:21
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -150,6 +150,7 @@ func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 		started, err := u.apparatusUtil.Start(
 			&log,
 			socket.Spec.Apparatus,
+			socket.Name,
 			socket.Namespace,
 			string(socket.UID),
 		)

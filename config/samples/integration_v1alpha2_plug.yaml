@@ -11,6 +11,7 @@ spec:
     namespace: integration-test
   apparatus:
     endpoint: localhost:3000/plug
+    idleTimeout: 60
     containers:
       - image: nginx:latest
         imagePullPolicy: Always

@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 08:57:28
+ * Last Modified: 29-06-2021 09:15:13
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -155,6 +155,7 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 		started, err := u.apparatusUtil.Start(
 			&log,
 			plug.Spec.Apparatus,
+			plug.Name,
 			plug.Namespace,
 			string(plug.UID),
 		)
