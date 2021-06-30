@@ -1,0 +1,76 @@
+categories:
+  - Server
+questions:
+
+  # Config
+  - variable: config.imagePullPolicy
+    description: ''
+    type: enum
+    options:
+      - IfNotPresent
+      - Always
+    required: true
+    label: 'pull policy'
+    group: Config
+  - variable: config.updateStrategy
+    description: ''
+    type: enum
+    options:
+      - RollingUpdate
+      - Recreate
+      - OnDelete
+    required: true
+    label: 'update strategy'
+    group: Config
+  - variable: config.debug
+    description: ''
+    type: boolean
+    required: true
+    label: debug
+    group: Config
+  - variable: config.integrationOperator.resources.enabled
+    description: ''
+    type: enum
+    options:
+      - defaults
+      - custom
+      - false
+    required: true
+    label: 'integration operator resources enabled'
+    show_subquestion_if: custom
+    group: Config
+    subquestions:
+      - variable: config.integrationOperator.resources.requests.cpu
+        description: ''
+        type: string
+        required: true
+        label: 'integration operator resources requests cpu'
+      - variable: config.integrationOperator.resources.requests.memory
+        description: ''
+        type: string
+        required: true
+        label: 'integration operator resources requests memory'
+      - variable: config.integrationOperator.resources.limits.cpu
+        description: ''
+        type: string
+        required: true
+        label: 'integration operator resources limits cpu'
+      - variable: config.integrationOperator.resources.limits.memory
+        description: ''
+        type: string
+        required: true
+        label: 'integration operator resources limits memory'
+
+  # Images
+  - variable: images.integrationOperator.repository
+    description: ''
+    type: string
+    required: true
+    label: 'integration operator repository'
+    group: Images
+  - variable: images.integrationOperator.tag
+    description: ''
+    type: string
+    required: true
+    label: 'integration operator tag'
+    group: Images

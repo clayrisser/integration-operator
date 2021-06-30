@@ -1,0 +1,16 @@
+name: integration-operator
+apiVersion: v1
+home: https://github.com/silicon-hills/integration-operator
+icon: ""
+version: 0.1.1
+appVersion: 0.1.1
+description: "kubernetes operator to integrate deployments"
+keywords:
+  - controller
+  - integration
+  - operator
+sources:
+  - https://github.com/silicon-hills/integration-operator
+maintainers:
+  - name: "Clay Risser"
+    email: email@clayrisser.com

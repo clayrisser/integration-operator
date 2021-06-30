@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "integration-operator.name" . }}
+  labels:
+    app: {{ template "integration-operator.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "integration-operator.name" . }}
+      release: {{ .Release.Name }}
+  strategy:
+    type: {{ .Values.config.updateStrategy }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "integration-operator.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ template "integration-operator.name" . }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 89
+              preference:
+                matchExpressions:
+                  - key: application/state
+                    operator: In
+                    values:
+                      - stateless
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 90
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - {{ template "integration-operator.name" . }}
+      containers:
+        - name: {{ template "integration-operator.name" . }}
+          image: {{ .Values.images.integrationOperator.repository }}:{{ .Values.images.integrationOperator.tag }}
+          imagePullPolicy: {{ .Values.config.imagePullPolicy }}
+          # resources:
+          #   requests:
+          #     cpu: {{ .Values.config.integrationOperator.resources.requests.cpu }}
+          #     memory: {{ .Values.config.integrationOperator.resources.requests.memory }}
+          #   limits:
+          #     cpu: {{ .Values.config.integrationOperator.resources.limits.cpu }}
+          #     memory: {{ .Values.config.integrationOperator.resources.limits.memory }}
+          {{- if .Values.config.debug }}
+          env:
+            - name: DEBUG_OPERATOR
+              value: 'true'
+          {{- else }}
+          env: []
+          {{- end }}
