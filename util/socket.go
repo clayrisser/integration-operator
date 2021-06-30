@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 09:15:21
+ * Last Modified: 30-06-2021 13:16:41
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -96,10 +96,16 @@ func (u *SocketUtil) Update(socket *integrationv1alpha2.Socket) error {
 	return nil
 }
 
-func (u *SocketUtil) UpdateStatus(socket *integrationv1alpha2.Socket, requeue bool) error {
+func (u *SocketUtil) UpdateStatus(
+	socket *integrationv1alpha2.Socket,
+	requeue bool,
+	exponentialBackoff bool,
+) error {
 	client := *u.client
 	ctx := *u.ctx
-	if socket.Status.Phase != integrationv1alpha2.FailedPhase || socket.Status.LastUpdate.IsZero() || config.StartTime.Unix() > socket.Status.LastUpdate.Unix() {
+	if !exponentialBackoff ||
+		socket.Status.LastUpdate.IsZero() ||
+		config.StartTime.Unix() > socket.Status.LastUpdate.Unix() {
 		socket.Status.LastUpdate = metav1.Now()
 	}
 	socket.Status.Requeued = requeue
@@ -158,7 +164,7 @@ func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 			return u.Error(err)
 		}
 		if started {
-			if err := u.UpdateStatus(socket, true); err != nil {
+			if err := u.UpdateStatus(socket, true, true); err != nil {
 				return u.Error(err)
 			}
 			return ctrl.Result{
@@ -206,7 +212,7 @@ func (u *SocketUtil) UpdateStatusSimple(
 	if coupledStatusCondition != "" {
 		u.setCoupledStatusCondition(socket, coupledStatusCondition, "")
 	}
-	if err := u.UpdateStatus(socket, requeue); err != nil {
+	if err := u.UpdateStatus(socket, requeue, false); err != nil {
 		return u.Error(err)
 	}
 	return ctrl.Result{}, nil
@@ -219,7 +225,7 @@ func (u *SocketUtil) UpdateErrorStatus(err error, requeue bool) (ctrl.Result, er
 		return ctrl.Result{}, err
 	}
 	u.setErrorStatus(socket, stashedErr)
-	if err := u.UpdateStatus(socket, requeue); err != nil {
+	if err := u.UpdateStatus(socket, requeue, true); err != nil {
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
@@ -233,7 +239,7 @@ func (u *SocketUtil) UpdateStatusRemovePlug(plugUid types.UID, requeue bool) (ct
 	if err := u.removeCoupledPlugStatus(socket, plugUid); err != nil {
 		return u.Error(err)
 	}
-	if err := u.UpdateStatus(socket, requeue); err != nil {
+	if err := u.UpdateStatus(socket, requeue, false); err != nil {
 		return u.Error(err)
 	}
 	return ctrl.Result{}, nil
@@ -250,7 +256,7 @@ func (u *SocketUtil) UpdateStatusAppendPlug(
 	if err := u.appendCoupledPlugStatus(socket, plug); err != nil {
 		return u.Error(err)
 	}
-	if err := u.UpdateStatus(socket, requeue); err != nil {
+	if err := u.UpdateStatus(socket, requeue, false); err != nil {
 		return u.Error(err)
 	}
 	return ctrl.Result{}, nil

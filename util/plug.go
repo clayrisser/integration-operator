@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 09:15:13
+ * Last Modified: 30-06-2021 13:16:55
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -95,10 +95,16 @@ func (u *PlugUtil) Update(plug *integrationv1alpha2.Plug) error {
 	return nil
 }
 
-func (u *PlugUtil) UpdateStatus(plug *integrationv1alpha2.Plug, requeue bool) error {
+func (u *PlugUtil) UpdateStatus(
+	plug *integrationv1alpha2.Plug,
+	requeue bool,
+	exponentialBackoff bool,
+) error {
 	client := *u.client
 	ctx := *u.ctx
-	if plug.Status.Phase != integrationv1alpha2.FailedPhase || plug.Status.LastUpdate.IsZero() || config.StartTime.Unix() > plug.Status.LastUpdate.Unix() {
+	if !exponentialBackoff ||
+		plug.Status.LastUpdate.IsZero() ||
+		config.StartTime.Unix() > plug.Status.LastUpdate.Unix() {
 		plug.Status.LastUpdate = metav1.Now()
 	}
 	plug.Status.Requeued = requeue
@@ -163,7 +169,7 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 			return u.Error(err)
 		}
 		if started {
-			if err := u.UpdateStatus(plug, true); err != nil {
+			if err := u.UpdateStatus(plug, true, true); err != nil {
 				return u.Error(err)
 			}
 			return ctrl.Result{
@@ -197,7 +203,7 @@ func (u *PlugUtil) UpdateErrorStatus(err error, requeue bool) (ctrl.Result, erro
 		return ctrl.Result{}, err
 	}
 	u.setErrorStatus(plug, stashedErr)
-	if err := u.UpdateStatus(plug, requeue); err != nil {
+	if err := u.UpdateStatus(plug, requeue, true); err != nil {
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
@@ -228,12 +234,12 @@ func (u *PlugUtil) UpdateStatusSimple(
 			plug.Status.LastUpdate,
 			2,
 		)
-		if err := u.UpdateStatus(plug, requeue); err != nil {
+		if err := u.UpdateStatus(plug, requeue, false); err != nil {
 			return u.Error(err)
 		}
 		return ctrl.Result{Requeue: true, RequeueAfter: requeueAfter}, nil
 	}
-	if err := u.UpdateStatus(plug, requeue); err != nil {
+	if err := u.UpdateStatus(plug, requeue, false); err != nil {
 		return u.Error(err)
 	}
 	return ctrl.Result{}, nil
