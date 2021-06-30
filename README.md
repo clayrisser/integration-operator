@@ -7,7 +7,17 @@ Please ★ this repo if you found it useful ★ ★ ★
 This operator takes inspiration from [Juju](https://juju.is) [Charm](https://juju.is/docs/sdk)
 [Relations](https://juju.is/docs/sdk/relations) by [Canonical](https://canonical.com).
 
-## Usage
+## Install
+
+```sh
+git clone -b tag/v0.1.1 https://github.com/silicon-hills/integration-operator.git
+helm install \
+   --set name=integration-operator \
+   --create-namespace=integration-operator \
+   charts/integration-operator
+```
+
+## Develop
 
 1. Install the custom resource definitions
 
