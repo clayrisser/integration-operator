@@ -3,7 +3,7 @@
 # File Created: 23-06-2021 09:14:26
 # Author: Clay Risser <email@clayrisser.com>
 # -----
-# Last Modified: 27-06-2021 09:08:01
+# Last Modified: 30-06-2021 14:02:33
 # Modified By: Clay Risser <email@clayrisser.com>
 # -----
 # Silicon Hills LLC (c) Copyright 2021
@@ -22,7 +22,7 @@
 
 NAME := integration-operator
 REGISTRY := siliconhills
-VERSION := 0.1.0
+VERSION := $(shell echo $(shell git describe --tags) | sed 's| .*$$||g' | sed 's|^v||g')
 IMAGE := $(REGISTRY)/$(NAME)
 
 .PHONY: install

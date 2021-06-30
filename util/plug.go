@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 30-06-2021 13:16:55
+ * Last Modified: 30-06-2021 13:40:14
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -159,7 +159,6 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 	)
 	if u.apparatusUtil.NotRunning(stashedErr) {
 		started, err := u.apparatusUtil.Start(
-			&log,
 			plug.Spec.Apparatus,
 			plug.Name,
 			plug.Namespace,
@@ -170,6 +169,12 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 		}
 		if started {
 			if err := u.UpdateStatus(plug, true, true); err != nil {
+				if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) > -1 {
+					return ctrl.Result{
+						Requeue:      true,
+						RequeueAfter: requeueAfter,
+					}, nil
+				}
 				return u.Error(err)
 			}
 			return ctrl.Result{
@@ -182,7 +187,10 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 	if strings.Index(stashedErr.Error(), registry.OptimisticLockErrorMsg) <= -1 {
 		if _, err := u.UpdateErrorStatus(stashedErr, true); err != nil {
 			if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) > -1 {
-				return ctrl.Result{}, nil
+				return ctrl.Result{
+					Requeue:      true,
+					RequeueAfter: requeueAfter,
+				}, nil
 			}
 			return ctrl.Result{
 				Requeue:      true,

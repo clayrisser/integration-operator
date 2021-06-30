@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 30-06-2021 12:48:02
+ * Last Modified: 30-06-2021 13:54:02
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -207,6 +207,10 @@ func (u *ApparatusUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
 		nil,
 		nil,
 		nil,
+		plug.Spec.Apparatus,
+		plug.Name,
+		plug.Namespace,
+		string(plug.UID),
 		u.getPlugEndpoint(plug),
 		"created",
 	)
@@ -226,6 +230,10 @@ func (u *ApparatusUtil) PlugCoupled(
 		socket,
 		plugConfig,
 		socketConfig,
+		plug.Spec.Apparatus,
+		plug.Name,
+		plug.Namespace,
+		string(plug.UID),
 		u.getPlugEndpoint(plug),
 		"coupled",
 	)
@@ -245,6 +253,10 @@ func (u *ApparatusUtil) PlugUpdated(
 		socket,
 		plugConfig,
 		socketConfig,
+		plug.Spec.Apparatus,
+		plug.Name,
+		plug.Namespace,
+		string(plug.UID),
 		u.getPlugEndpoint(plug),
 		"updated",
 	)
@@ -264,6 +276,10 @@ func (u *ApparatusUtil) PlugDecoupled(
 		socket,
 		plugConfig,
 		socketConfig,
+		plug.Spec.Apparatus,
+		plug.Name,
+		plug.Namespace,
+		string(plug.UID),
 		u.getPlugEndpoint(plug),
 		"decoupled",
 	)
@@ -280,6 +296,10 @@ func (u *ApparatusUtil) PlugDeleted(
 		nil,
 		nil,
 		nil,
+		plug.Spec.Apparatus,
+		plug.Name,
+		plug.Namespace,
+		string(plug.UID),
 		u.getPlugEndpoint(plug),
 		"deleted",
 	)
@@ -296,6 +316,10 @@ func (u *ApparatusUtil) PlugBroken(
 		nil,
 		nil,
 		nil,
+		plug.Spec.Apparatus,
+		plug.Name,
+		plug.Namespace,
+		string(plug.UID),
 		u.getPlugEndpoint(plug),
 		"broken",
 	)
@@ -310,6 +334,10 @@ func (u *ApparatusUtil) SocketCreated(socket *integrationv1alpha2.Socket) error 
 		socket,
 		nil,
 		nil,
+		socket.Spec.Apparatus,
+		socket.Name,
+		socket.Namespace,
+		string(socket.UID),
 		u.getSocketEndpoint(socket),
 		"created",
 	)
@@ -329,6 +357,10 @@ func (u *ApparatusUtil) SocketCoupled(
 		socket,
 		plugConfig,
 		socketConfig,
+		socket.Spec.Apparatus,
+		socket.Name,
+		socket.Namespace,
+		string(socket.UID),
 		u.getSocketEndpoint(socket),
 		"coupled",
 	)
@@ -348,6 +380,10 @@ func (u *ApparatusUtil) SocketUpdated(
 		socket,
 		plugConfig,
 		socketConfig,
+		socket.Spec.Apparatus,
+		socket.Name,
+		socket.Namespace,
+		string(socket.UID),
 		u.getSocketEndpoint(socket),
 		"updated",
 	)
@@ -367,6 +403,10 @@ func (u *ApparatusUtil) SocketDecoupled(
 		socket,
 		plugConfig,
 		socketConfig,
+		socket.Spec.Apparatus,
+		socket.Name,
+		socket.Namespace,
+		string(socket.UID),
 		u.getSocketEndpoint(socket),
 		"decoupled",
 	)
@@ -383,6 +423,10 @@ func (u *ApparatusUtil) SocketDeleted(
 		socket,
 		nil,
 		nil,
+		socket.Spec.Apparatus,
+		socket.Name,
+		socket.Namespace,
+		string(socket.UID),
 		u.getSocketEndpoint(socket),
 		"deleted",
 	)
@@ -399,6 +443,10 @@ func (u *ApparatusUtil) SocketBroken(
 		socket,
 		nil,
 		nil,
+		socket.Spec.Apparatus,
+		socket.Name,
+		socket.Namespace,
+		string(socket.UID),
 		u.getSocketEndpoint(socket),
 		"broken",
 	)
@@ -412,8 +460,40 @@ func (u *ApparatusUtil) NotRunning(err error) bool {
 	return false
 }
 
+func (u *ApparatusUtil) RenewIdleTimeout(
+	apparatus *integrationv1alpha2.SpecApparatus,
+	name string,
+	namespace string,
+	uid string,
+) {
+	if apparatus == nil {
+		return
+	}
+	idleTimeout := time.Second * 60
+	if apparatus.IdleTimeout != 0 {
+		idleTimeout = time.Second * time.Duration(apparatus.IdleTimeout)
+	}
+	if timer, ok := startedApparatusTimers[uid]; ok {
+		timer.Reset(idleTimeout)
+	} else {
+		startedApparatusTimers[uid] = time.AfterFunc(idleTimeout, func() {
+			if err := u.client.CoreV1().Pods(namespace).Delete(
+				*u.ctx,
+				name,
+				metav1.DeleteOptions{},
+			); err != nil {
+				u.log.Error(
+					err,
+					"failed to terminate idle apparatus "+namespace+"."+name,
+				)
+			} else {
+				u.log.Info("terminated idle apparatus " + namespace + "." + name)
+			}
+		})
+	}
+}
+
 func (u *ApparatusUtil) Start(
-	log *logr.Logger,
 	apparatus *integrationv1alpha2.SpecApparatus,
 	name string,
 	namespace string,
@@ -492,17 +572,17 @@ func (u *ApparatusUtil) Start(
 				name,
 				metav1.DeleteOptions{},
 			); err != nil {
-				(*log).Error(
+				u.log.Error(
 					err,
 					"failed to terminate idle apparatus "+namespace+"."+name,
 				)
 			} else {
-				(*log).Info("terminated idle apparatus " + namespace + "." + name)
+				u.log.Info("terminated idle apparatus " + namespace + "." + name)
 			}
 		})
 	}
 	if !alreadyExists {
-		(*log).Info("started apparatus " + namespace + "." + name)
+		u.log.Info("started apparatus " + namespace + "." + name)
 	}
 	return true, nil
 }
@@ -547,9 +627,14 @@ func (u *ApparatusUtil) processEvent(
 	socket *integrationv1alpha2.Socket,
 	plugConfig *map[string]string,
 	socketConfig *map[string]string,
+	apparatus *integrationv1alpha2.SpecApparatus,
+	name string,
+	namespace string,
+	uid string,
 	endpoint string,
 	eventName string,
 ) error {
+	u.RenewIdleTimeout(apparatus, name, namespace, uid)
 	min := minify.New()
 	min.AddFunc("application/json", minifyJson.Minify)
 	client := resty.New()
