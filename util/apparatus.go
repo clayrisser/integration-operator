@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 30-06-2021 14:24:45
+ * Last Modified: 30-06-2021 15:22:38
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -476,6 +476,15 @@ func (u *ApparatusUtil) RenewIdleTimeout(
 	if timer, ok := startedApparatusTimers[uid]; ok {
 		timer.Reset(idleTimeout)
 	} else {
+		if _, err := u.client.CoreV1().Pods(namespace).Get(
+			*u.ctx,
+			name,
+			metav1.GetOptions{},
+		); err != nil {
+			if errors.IsNotFound(err) {
+				return
+			}
+		}
 		startedApparatusTimers[uid] = time.AfterFunc(idleTimeout, func() {
 			if err := u.client.CoreV1().Pods(namespace).Delete(
 				*u.ctx,
@@ -539,6 +548,23 @@ func (u *ApparatusUtil) start(
 			},
 		},
 		Spec: v1.PodSpec{
+			Affinity: &v1.Affinity{
+				NodeAffinity: &v1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+						NodeSelectorTerms: []v1.NodeSelectorTerm{
+							{
+								MatchExpressions: []v1.NodeSelectorRequirement{
+									{
+										Key:      "kubernetes.io/arch",
+										Operator: v1.NodeSelectorOpIn,
+										Values:   []string{"amd64"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 			Containers: *apparatus.Containers,
 		},
 	}

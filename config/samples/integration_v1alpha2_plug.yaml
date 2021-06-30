@@ -15,7 +15,7 @@ spec:
     containers:
       - image: siliconhills/example-apparatus:latest
         imagePullPolicy: Always
-        name: nginx
+        name: apparatus
         ports:
           - containerPort: 3000
             name: container
