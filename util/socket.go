@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 30-06-2021 13:40:19
+ * Last Modified: 30-06-2021 14:25:33
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -153,12 +153,7 @@ func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 		2,
 	)
 	if u.apparatusUtil.NotRunning(stashedErr) {
-		started, err := u.apparatusUtil.Start(
-			socket.Spec.Apparatus,
-			socket.Name,
-			socket.Namespace,
-			string(socket.UID),
-		)
+		started, err := u.apparatusUtil.StartFromSocket(socket)
 		if err != nil {
 			return u.Error(err)
 		}

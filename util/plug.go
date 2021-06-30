@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 30-06-2021 13:40:14
+ * Last Modified: 30-06-2021 14:25:15
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -158,12 +158,7 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 		2,
 	)
 	if u.apparatusUtil.NotRunning(stashedErr) {
-		started, err := u.apparatusUtil.Start(
-			plug.Spec.Apparatus,
-			plug.Name,
-			plug.Namespace,
-			string(plug.UID),
-		)
+		started, err := u.apparatusUtil.StartFromPlug(plug)
 		if err != nil {
 			return u.Error(err)
 		}

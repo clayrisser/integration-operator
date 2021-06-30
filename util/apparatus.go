@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 30-06-2021 13:54:02
+ * Last Modified: 30-06-2021 14:24:45
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -493,11 +493,32 @@ func (u *ApparatusUtil) RenewIdleTimeout(
 	}
 }
 
-func (u *ApparatusUtil) Start(
+func (u *ApparatusUtil) StartFromPlug(plug *integrationv1alpha2.Plug) (bool, error) {
+	return u.start(
+		plug.Spec.Apparatus,
+		plug.Name,
+		plug.Namespace,
+		string(plug.UID),
+		u.createPlugOwnerReference(plug),
+	)
+}
+
+func (u *ApparatusUtil) StartFromSocket(socket *integrationv1alpha2.Socket) (bool, error) {
+	return u.start(
+		socket.Spec.Apparatus,
+		socket.Name,
+		socket.Namespace,
+		string(socket.UID),
+		u.createSocketOwnerReference(socket),
+	)
+}
+
+func (u *ApparatusUtil) start(
 	apparatus *integrationv1alpha2.SpecApparatus,
 	name string,
 	namespace string,
 	uid string,
+	ownerReference metav1.OwnerReference,
 ) (bool, error) {
 	if apparatus == nil || len(*apparatus.Containers) <= 0 {
 		return false, nil
@@ -510,6 +531,9 @@ func (u *ApparatusUtil) Start(
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+			OwnerReferences: []metav1.OwnerReference{
+				ownerReference,
+			},
 			Labels: map[string]string{
 				"apparatus": name,
 			},
@@ -521,6 +545,9 @@ func (u *ApparatusUtil) Start(
 	service := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+			OwnerReferences: []metav1.OwnerReference{
+				ownerReference,
+			},
 		},
 		Spec: v1.ServiceSpec{
 			Type: v1.ServiceTypeClusterIP,
@@ -585,6 +612,24 @@ func (u *ApparatusUtil) Start(
 		u.log.Info("started apparatus " + namespace + "." + name)
 	}
 	return true, nil
+}
+
+func (u *ApparatusUtil) createPlugOwnerReference(plug *integrationv1alpha2.Plug) metav1.OwnerReference {
+	return metav1.OwnerReference{
+		APIVersion: plug.APIVersion,
+		Kind:       plug.Kind,
+		Name:       plug.Name,
+		UID:        plug.UID,
+	}
+}
+
+func (u *ApparatusUtil) createSocketOwnerReference(socket *integrationv1alpha2.Socket) metav1.OwnerReference {
+	return metav1.OwnerReference{
+		APIVersion: socket.APIVersion,
+		Kind:       socket.Kind,
+		Name:       socket.Name,
+		UID:        socket.UID,
+	}
 }
 
 func (u *ApparatusUtil) getPlugEndpoint(plug *integrationv1alpha2.Plug) string {
