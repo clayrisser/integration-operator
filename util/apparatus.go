@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 17:46:36
+ * Last Modified: 30-06-2021 12:48:02
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -32,6 +32,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/go-resty/resty/v2"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
+	"github.com/silicon-hills/integration-operator/config"
 	"github.com/tdewolff/minify"
 	minifyJson "github.com/tdewolff/minify/json"
 	"github.com/tidwall/sjson"
@@ -49,6 +50,7 @@ type ApparatusUtil struct {
 	client   *kubernetes.Clientset
 	ctx      *context.Context
 	dataUtil *DataUtil
+	log      logr.Logger
 	varUtil  *VarUtil
 }
 
@@ -59,6 +61,7 @@ func NewApparatusUtil(
 		client:   kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
 		ctx:      ctx,
 		dataUtil: NewDataUtil(ctx),
+		log:      ctrl.Log.WithName("util.ApparatusUtil"),
 		varUtil:  NewVarUtil(ctx),
 	}
 }
@@ -110,13 +113,11 @@ func (u *ApparatusUtil) GetPlugConfig(
 			errCh <- err
 			return
 		}
+		url := u.getPlugEndpoint(plug) + "/config"
+		u.log.Info("getting plug config", "method", "POST", "url", url)
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
-		}).SetBody([]byte(body)).Post(u.getEndpoint(
-			plug.Name,
-			plug.Namespace,
-			plug.Spec.Apparatus,
-		) + "/config")
+		}).SetBody([]byte(body)).Post(url)
 		if err != nil {
 			errCh <- err
 			return
@@ -178,13 +179,11 @@ func (u *ApparatusUtil) GetSocketConfig(
 			errCh <- err
 			return
 		}
+		url := u.getSocketEndpoint(socket) + "/config"
+		u.log.Info("getting socket config", "method", "POST", "url", url)
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
-		}).SetBody([]byte(body)).Post(u.getEndpoint(
-			socket.Name,
-			socket.Namespace,
-			socket.Spec.Apparatus,
-		) + "/config")
+		}).SetBody([]byte(body)).Post(url)
 		if err != nil {
 			errCh <- err
 			return
@@ -208,7 +207,7 @@ func (u *ApparatusUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
 		nil,
 		nil,
 		nil,
-		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
+		u.getPlugEndpoint(plug),
 		"created",
 	)
 }
@@ -227,7 +226,7 @@ func (u *ApparatusUtil) PlugCoupled(
 		socket,
 		plugConfig,
 		socketConfig,
-		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
+		u.getPlugEndpoint(plug),
 		"coupled",
 	)
 }
@@ -246,7 +245,7 @@ func (u *ApparatusUtil) PlugUpdated(
 		socket,
 		plugConfig,
 		socketConfig,
-		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
+		u.getPlugEndpoint(plug),
 		"updated",
 	)
 }
@@ -265,7 +264,7 @@ func (u *ApparatusUtil) PlugDecoupled(
 		socket,
 		plugConfig,
 		socketConfig,
-		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
+		u.getPlugEndpoint(plug),
 		"decoupled",
 	)
 }
@@ -281,7 +280,7 @@ func (u *ApparatusUtil) PlugDeleted(
 		nil,
 		nil,
 		nil,
-		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
+		u.getPlugEndpoint(plug),
 		"deleted",
 	)
 }
@@ -297,7 +296,7 @@ func (u *ApparatusUtil) PlugBroken(
 		nil,
 		nil,
 		nil,
-		u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus),
+		u.getPlugEndpoint(plug),
 		"broken",
 	)
 }
@@ -311,7 +310,7 @@ func (u *ApparatusUtil) SocketCreated(socket *integrationv1alpha2.Socket) error 
 		socket,
 		nil,
 		nil,
-		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
+		u.getSocketEndpoint(socket),
 		"created",
 	)
 }
@@ -330,7 +329,7 @@ func (u *ApparatusUtil) SocketCoupled(
 		socket,
 		plugConfig,
 		socketConfig,
-		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
+		u.getSocketEndpoint(socket),
 		"coupled",
 	)
 }
@@ -349,7 +348,7 @@ func (u *ApparatusUtil) SocketUpdated(
 		socket,
 		plugConfig,
 		socketConfig,
-		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
+		u.getSocketEndpoint(socket),
 		"updated",
 	)
 }
@@ -368,7 +367,7 @@ func (u *ApparatusUtil) SocketDecoupled(
 		socket,
 		plugConfig,
 		socketConfig,
-		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
+		u.getSocketEndpoint(socket),
 		"decoupled",
 	)
 }
@@ -384,7 +383,7 @@ func (u *ApparatusUtil) SocketDeleted(
 		socket,
 		nil,
 		nil,
-		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
+		u.getSocketEndpoint(socket),
 		"deleted",
 	)
 }
@@ -400,7 +399,7 @@ func (u *ApparatusUtil) SocketBroken(
 		socket,
 		nil,
 		nil,
-		u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus),
+		u.getSocketEndpoint(socket),
 		"broken",
 	)
 }
@@ -508,21 +507,33 @@ func (u *ApparatusUtil) Start(
 	return true, nil
 }
 
+func (u *ApparatusUtil) getPlugEndpoint(plug *integrationv1alpha2.Plug) string {
+	return u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus, config.DebugPlugEndpoint)
+}
+
+func (u *ApparatusUtil) getSocketEndpoint(socket *integrationv1alpha2.Socket) string {
+	return u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus, config.DebugSocketEndpoint)
+}
+
 func (u *ApparatusUtil) getEndpoint(
 	name string,
 	namespace string,
 	apparatus *integrationv1alpha2.SpecApparatus,
+	debugEndpoint string,
 ) string {
-	endpoint := apparatus.Endpoint
+	endpoint := debugEndpoint
 	if endpoint == "" {
-		if apparatus.Containers != nil &&
-			len(*apparatus.Containers) > 0 {
-			endpoint = name + "." + namespace + ".svc.cluster.local"
-		} else {
-			return endpoint
+		endpoint := apparatus.Endpoint
+		if endpoint == "" || endpoint[0] == '/' {
+			if apparatus.Containers != nil &&
+				len(*apparatus.Containers) > 0 {
+				endpoint = name + "." + namespace + ".svc.cluster.local" + endpoint
+			} else {
+				return "http://localhost" + endpoint
+			}
 		}
 	}
-	if endpoint[0:8] != "https://" && endpoint[0:7] != "http://" {
+	if len(endpoint) < 7 || (endpoint[0:8] != "https://" && endpoint[0:7] != "http://") {
 		endpoint = "http://" + endpoint
 	}
 	if endpoint[len(endpoint)-1] == '/' {
@@ -575,9 +586,11 @@ func (u *ApparatusUtil) processEvent(
 		return err
 	}
 	go func() {
+		url := endpoint + "/" + eventName
+		u.log.Info("triggered event "+eventName, "method", "POST", "url", url)
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
-		}).SetBody([]byte(body)).Post(endpoint + "/" + eventName)
+		}).SetBody([]byte(body)).Post(url)
 		if err != nil {
 			errCh <- err
 		}

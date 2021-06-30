@@ -10,7 +10,7 @@ spec:
     name: interface-sample
     namespace: integration-test
   apparatus:
-    # endpoint: localhost:3000/plug
+    endpoint: /plug
     idleTimeout: 60
     containers:
       - image: siliconhills/example-apparatus:latest
