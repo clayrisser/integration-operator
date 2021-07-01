@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 30-06-2021 14:25:33
+ * Last Modified: 01-07-2021 16:37:38
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -159,7 +159,7 @@ func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 		}
 		if started {
 			if err := u.UpdateStatus(socket, true, true); err != nil {
-				if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) > -1 {
+				if strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
 					return ctrl.Result{
 						Requeue:      true,
 						RequeueAfter: requeueAfter,
@@ -176,7 +176,7 @@ func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 	log.Error(nil, stashedErr.Error())
 	if strings.Index(stashedErr.Error(), registry.OptimisticLockErrorMsg) <= -1 {
 		if _, err := u.UpdateErrorStatus(stashedErr, true); err != nil {
-			if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) > -1 {
+			if strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
 				return ctrl.Result{
 					Requeue:      true,
 					RequeueAfter: requeueAfter,

@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 30-06-2021 15:22:38
+ * Last Modified: 01-07-2021 16:40:56
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -674,7 +674,7 @@ func (u *ApparatusUtil) getEndpoint(
 ) string {
 	endpoint := debugEndpoint
 	if endpoint == "" {
-		endpoint := apparatus.Endpoint
+		endpoint = apparatus.Endpoint
 		if endpoint == "" || endpoint[0] == '/' {
 			if apparatus.Containers != nil &&
 				len(*apparatus.Containers) > 0 {
@@ -753,7 +753,7 @@ func (u *ApparatusUtil) processEvent(
 		rCh <- r
 	}()
 	select {
-	case _ = <-rCh:
+	case <-rCh:
 		return nil
 	case err := <-errCh:
 		return err

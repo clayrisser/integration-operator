@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:31
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 05:17:56
+ * Last Modified: 01-07-2021 16:39:44
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -42,7 +42,6 @@ import (
 
 type ResourceUtil struct {
 	client      *kubernetes.Clientset
-	ctx         *context.Context
 	kubectlUtil *KubectlUtil
 }
 
@@ -295,7 +294,7 @@ metadata:
 	if err != nil {
 		return nil, err
 	}
-	body := []byte(buff.String())
+	body := buff.Bytes()
 	return u.kubectlUtil.Get(body)
 }
 
@@ -377,7 +376,7 @@ func (u *ResourceUtil) templateResource(
 		return "", err
 	}
 	obj := unstructured.Unstructured{}
-	if _, _, err := decUnstructured.Decode([]byte(buff.String()), nil, &obj); err != nil {
+	if _, _, err := decUnstructured.Decode(buff.Bytes(), nil, &obj); err != nil {
 		return "", err
 	}
 	bJson, err := json.Marshal(obj)

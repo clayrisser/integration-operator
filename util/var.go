@@ -4,7 +4,7 @@
  * File Created: 24-06-2021 22:10:01
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 05:51:56
+ * Last Modified: 01-07-2021 16:37:45
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -36,7 +36,6 @@ import (
 
 type VarUtil struct {
 	client       *kubernetes.Clientset
-	ctx          *context.Context
 	resourceUtil *ResourceUtil
 	kubectlUtil  *KubectlUtil
 }
