@@ -2,13 +2,12 @@ apiVersion: integration.siliconhills.dev/v1alpha2
 kind: Plug
 metadata:
   name: plug-sample
-  namespace: integration-test
+  namespace: integration-test1
 spec: 
-  namespaceScope: '*'
   interfaceVersions: '*'
   interface:
     name: interface-sample
-    namespace: integration-test
+    namespace: integration-test1
   apparatus:
     endpoint: /plug
     idleTimeout: 60
@@ -22,7 +21,7 @@ spec:
             protocol: TCP
   socket:
     name: socket-sample
-    namespace: integration-test
+    namespace: integration-test1
   data:
     database: hello
   configMapper:

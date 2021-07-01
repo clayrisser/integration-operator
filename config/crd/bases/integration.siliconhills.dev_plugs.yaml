@@ -1196,9 +1196,6 @@ spec:
               interfaceVersions:
                 description: interface versions
                 type: string
-              namespaceScope:
-                description: namspace scope
-                type: string
               resources:
                 description: Resources
                 items:

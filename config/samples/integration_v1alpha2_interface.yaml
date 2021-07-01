@@ -2,7 +2,7 @@ apiVersion: integration.siliconhills.dev/v1alpha2
 kind: Interface
 metadata:
   name: interface-sample
-  namespace: integration-test
+  namespace: integration-test1
 spec:
   schemas:
     - version: v0.0.1

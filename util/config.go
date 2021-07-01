@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:27
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 27-06-2021 02:11:38
+ * Last Modified: 01-07-2021 16:26:39
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -26,6 +26,7 @@ package util
 
 import (
 	"context"
+	"errors"
 
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/tidwall/gjson"
@@ -49,6 +50,7 @@ func NewConfigUtil(
 	return &ConfigUtil{
 		apparatusUtil: NewApparatusUtil(ctx),
 		client:        kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
+		ctx:           ctx,
 		dataUtil:      NewDataUtil(ctx),
 		varUtil:       NewVarUtil(ctx),
 	}
@@ -56,6 +58,7 @@ func NewConfigUtil(
 
 func (u *ConfigUtil) GetPlugConfig(
 	plug *integrationv1alpha2.Plug,
+	plugInterface *integrationv1alpha2.Interface,
 ) (map[string]string, error) {
 	plugConfig := make(map[string]string)
 	if plug.Spec.ConfigSecretName != "" {
@@ -111,11 +114,16 @@ func (u *ConfigUtil) GetPlugConfig(
 			plugConfig[key] = value
 		}
 	}
+	plugConfig, err := u.ValidatePlugConfig(plug, plugInterface, plugConfig)
+	if err != nil {
+		return nil, err
+	}
 	return plugConfig, nil
 }
 
 func (u *ConfigUtil) GetSocketConfig(
 	socket *integrationv1alpha2.Socket,
+	socketInterface *integrationv1alpha2.Interface,
 ) (map[string]string, error) {
 	socketConfig := make(map[string]string)
 	if socket.Spec.ConfigSecretName != "" {
@@ -171,7 +179,76 @@ func (u *ConfigUtil) GetSocketConfig(
 			socketConfig[key] = value
 		}
 	}
+	socketConfig, err := u.ValidateSocketConfig(socket, socketInterface, socketConfig)
+	if err != nil {
+		return nil, err
+	}
 	return socketConfig, nil
+}
+
+func (u *ConfigUtil) ValidatePlugConfig(
+	plug *integrationv1alpha2.Plug,
+	plugInterface *integrationv1alpha2.Interface,
+	plugConfig map[string]string,
+) (map[string]string, error) {
+	if plugInterface == nil {
+		return plugConfig, nil
+	}
+	var schema *integrationv1alpha2.InterfaceSpecSchema
+	for _, s := range plugInterface.Spec.Schemas {
+		if u.validVersion(plug.Spec.InterfaceVersions, s.Version) {
+			schema = s
+		}
+	}
+	if schema == nil {
+		return plugConfig, errors.New("schema version " + schema.Version + " not supported for plug " + plug.Name)
+	}
+	for propertyName, property := range schema.PlugDefinition.Properties {
+		if _, found := plugConfig[propertyName]; !found {
+			if property.Required {
+				return plugConfig, errors.New("config property " + propertyName + " is required for plug " + plug.Name)
+			} else if property.Default != "" {
+				plugConfig[propertyName] = property.Default
+			}
+		}
+	}
+	return plugConfig, nil
+}
+
+func (u *ConfigUtil) ValidateSocketConfig(
+	socket *integrationv1alpha2.Socket,
+	socketInterface *integrationv1alpha2.Interface,
+	socketConfig map[string]string,
+) (map[string]string, error) {
+	if socketInterface == nil {
+		return socketConfig, nil
+	}
+	var schema *integrationv1alpha2.InterfaceSpecSchema
+	for _, s := range socketInterface.Spec.Schemas {
+		if u.validVersion(socket.Spec.InterfaceVersions, s.Version) {
+			schema = s
+		}
+	}
+	if schema == nil {
+		return socketConfig, errors.New("schema version " + schema.Version + " not supported for socket " + socket.Name)
+	}
+	for propertyName, property := range schema.SocketDefinition.Properties {
+		if _, found := socketConfig[propertyName]; !found {
+			if property.Required {
+				return socketConfig, errors.New("config property " + propertyName + " is required for socket " + socket.Name)
+			} else if property.Default != "" {
+				socketConfig[propertyName] = property.Default
+			}
+		}
+	}
+	return socketConfig, nil
+}
+
+func (u *ConfigUtil) validVersion(versions string, version string) bool {
+	if versions == "*" {
+		return true
+	}
+	return versions == version
 }
 
 func (u *ConfigUtil) plugLookup(plug *integrationv1alpha2.Plug, path string) (string, error) {

@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 28-06-2021 16:49:17
+ * Last Modified: 01-07-2021 12:51:38
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -48,9 +48,6 @@ type PlugSpec struct {
 
 	// interface versions
 	InterfaceVersions string `json:"interfaceVersions,omitempty"`
-
-	// namspace scope
-	NamespaceScope string `json:"namespaceScope,omitempty"`
 
 	// A var is a name (e.g. FOO) associated
 	// with a field in a specific resource instance.  The field must

@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 07:40:27
+ * Last Modified: 01-07-2021 16:01:44
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -91,12 +91,12 @@ func (c *Coupler) Couple(
 		return c.Update(client, ctx, req, log, plugNamespacedName, plug, socket, nil)
 	}
 
-	plugInterfaceUtil := util.NewInterfaceUtil(client, ctx, req, log, &plug.Spec.Interface)
+	plugInterfaceUtil := util.NewInterfaceUtil(client, ctx, &plug.Spec.Interface)
 	plugInterface, err := plugInterfaceUtil.Get()
 	if err != nil {
 		return plugUtil.Error(err)
 	}
-	socketInterfaceUtil := util.NewInterfaceUtil(client, ctx, req, log, &socket.Spec.Interface)
+	socketInterfaceUtil := util.NewInterfaceUtil(client, ctx, &socket.Spec.Interface)
 	socketInterface, err := socketInterfaceUtil.Get()
 	if err != nil {
 		return plugUtil.Error(err)
@@ -104,15 +104,13 @@ func (c *Coupler) Couple(
 	if plugInterface.UID != socketInterface.UID {
 		return plugUtil.Error(errors.New("plug and socket interface do not match"))
 	}
-	// TODO: validate interface
 
-	plugConfig, err := configUtil.GetPlugConfig(plug)
+	plugConfig, err := configUtil.GetPlugConfig(plug, plugInterface)
 	if err != nil {
 		return plugUtil.Error(err)
 	}
-	socketConfig, err := configUtil.GetSocketConfig(socket)
+	socketConfig, err := configUtil.GetSocketConfig(socket, socketInterface)
 	if err != nil {
-
 		return plugUtil.Error(err)
 	}
 

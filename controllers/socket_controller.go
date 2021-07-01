@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 28-06-2021 17:15:21
+ * Last Modified: 01-07-2021 14:51:58
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -123,12 +123,11 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return socketUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketCreatedStatusCondition, nil, true)
 	}
 
-	socketInterfaceUtil := util.NewInterfaceUtil(&r.Client, &ctx, &req, &log, &socket.Spec.Interface)
+	socketInterfaceUtil := util.NewInterfaceUtil(&r.Client, &ctx, &socket.Spec.Interface)
 	socketInterface, err := socketInterfaceUtil.Get()
 	if err != nil {
 		return socketUtil.Error(err)
 	}
-	// TODO: validate interface
 
 	for _, connectedPlug := range socket.Status.CoupledPlugs {
 		plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{

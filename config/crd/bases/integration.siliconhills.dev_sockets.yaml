@@ -1200,9 +1200,6 @@ spec:
                 description: limit
                 format: int32
                 type: integer
-              namespaceScope:
-                description: namspace scope
-                type: string
               resources:
                 description: Resources
                 items:

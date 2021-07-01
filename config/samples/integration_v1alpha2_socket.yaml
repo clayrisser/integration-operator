@@ -2,13 +2,12 @@ apiVersion: integration.siliconhills.dev/v1alpha2
 kind: Socket
 metadata:
   name: socket-sample
-  namespace: integration-test
+  namespace: integration-test1
 spec: 
-  namespaceScope: '*'
   interfaceVersions: '*'
   interface:
     name: interface-sample
-    namespace: integration-test
+    namespace: integration-test1
   apparatus:
     endpoint: /socket
     containers:
