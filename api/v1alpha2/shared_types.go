@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 09:18:45
+ * Last Modified: 26-07-2021 18:38:02
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -57,9 +57,9 @@ const (
 )
 
 type Resource struct {
-	Do       Do     `json:"do,omitempty"`
-	Resource string `json:"resource,omitempty"`
-	When     When   `json:"when,omitempty"`
+	Do       Do      `json:"do,omitempty"`
+	Resource string  `json:"resource,omitempty"`
+	When     *[]When `json:"when,omitempty"`
 }
 
 type NamespacedName struct {

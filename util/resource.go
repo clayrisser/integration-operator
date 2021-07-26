@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:31
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 01-07-2021 16:39:44
+ * Last Modified: 26-07-2021 18:38:40
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -347,7 +347,7 @@ func (u *ResourceUtil) filterResources(
 		when = integrationv1alpha2.CoupledWhen
 	}
 	for _, resource := range resources {
-		if resource.When == when {
+		if WhenInWhenSlice(when, resource.When) {
 			filteredResources = append(filteredResources, resource)
 		}
 	}

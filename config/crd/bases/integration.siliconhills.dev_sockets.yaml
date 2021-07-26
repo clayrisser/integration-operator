@@ -1209,7 +1209,9 @@ spec:
                     resource:
                       type: string
                     when:
-                      type: string
+                      items:
+                        type: string
+                      type: array
                   type: object
                 type: array
               vars:

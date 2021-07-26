@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 29-06-2021 17:09:44
+ * Last Modified: 26-07-2021 18:38:36
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -95,4 +95,13 @@ func JsonToHashMap(body []byte) (map[string]string, error) {
 		hashMap[key] = fmt.Sprintf("%v", value)
 	}
 	return hashMap, nil
+}
+
+func WhenInWhenSlice(when integrationv1alpha2.When, whenSlice *[]integrationv1alpha2.When) bool {
+	for _, whenItem := range *whenSlice {
+		if when == whenItem {
+			return true
+		}
+	}
+	return false
 }
