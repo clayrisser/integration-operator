@@ -1,4 +1,4 @@
-/*
+/**
  * File: /util/var.go
  * Project: integration-operator
  * File Created: 24-06-2021 22:10:01

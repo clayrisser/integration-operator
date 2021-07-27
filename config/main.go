@@ -1,4 +1,4 @@
-/*
+/**
  * File: /config/main.go
  * Project: integration-operator
  * File Created: 27-06-2021 02:53:17

@@ -1,10 +1,10 @@
-/*
+/**
  * File: /util/resource.go
  * Project: integration-operator
- * File Created: 23-06-2021 22:09:31
+ * File Created: 23-07-2021 17:13:09
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-07-2021 23:24:04
+ * Last Modified: 26-07-2021 23:53:24
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -374,6 +374,9 @@ func (u *ResourceUtil) templateResource(
 	err = t.Execute(&buff, data)
 	if err != nil {
 		return "", err
+	}
+	if buff.String() == "" {
+		return "", errors.New("failed to parse template in namespace '" + namespace + "'")
 	}
 	obj := unstructured.Unstructured{}
 	if _, _, err := decUnstructured.Decode(buff.Bytes(), nil, &obj); err != nil {

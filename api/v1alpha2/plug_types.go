@@ -1,4 +1,4 @@
-/*
+/**
  * File: /api/v1alpha2/plug_types.go
  * Project: integration-operator
  * File Created: 23-06-2021 09:14:26

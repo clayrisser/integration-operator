@@ -1,4 +1,4 @@
-/*
+/**
  * File: /util/event.go
  * Project: integration-operator
  * File Created: 26-06-2021 04:17:51

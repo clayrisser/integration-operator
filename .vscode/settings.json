@@ -90,7 +90,7 @@
   "psi-header.lang-config": [
     {
       "language": "*",
-      "begin": "/*",
+      "begin": "/**",
       "blankLinesAfter": 1,
       "end": " */",
       "forceToTop": true,
