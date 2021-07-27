@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:31
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-07-2021 18:38:40
+ * Last Modified: 26-07-2021 23:24:04
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -366,7 +366,7 @@ func (u *ResourceUtil) templateResource(
 	if err != nil {
 		return "", err
 	}
-	t, err := template.New("").Parse(body)
+	t, err := template.New("").Delims("{%", "%}").Parse(body)
 	if err != nil {
 		return "", err
 	}
