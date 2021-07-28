@@ -4,7 +4,7 @@
  * File Created: 23-07-2021 17:13:09
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 26-07-2021 23:53:24
+ * Last Modified: 27-07-2021 23:41:52
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -328,6 +328,13 @@ func (u *ResourceUtil) ProcessResources(
 			}
 		} else if resource.Do == integrationv1alpha2.DeleteDo {
 			if err := u.kubectlUtil.Delete([]byte(templatedResource)); err != nil {
+				return err
+			}
+		} else if resource.Do == integrationv1alpha2.RecreateDo {
+			if err := u.kubectlUtil.Delete([]byte(templatedResource)); err != nil {
+				return err
+			}
+			if err := u.kubectlUtil.Apply([]byte(templatedResource)); err != nil {
 				return err
 			}
 		}
