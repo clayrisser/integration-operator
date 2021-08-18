@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 13-08-2021 14:13:06
+ * Last Modified: 17-08-2021 22:40:26
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -32,14 +32,12 @@ import (
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/silicon-hills/integration-operator/util"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (c *Coupler) Couple(
 	client *client.Client,
-	scheme *runtime.Scheme,
 	ctx *context.Context,
 	req *ctrl.Request,
 	log *logr.Logger,
@@ -114,11 +112,6 @@ func (c *Coupler) Couple(
 	socketConfig, err := configUtil.GetSocketConfig(socket, socketInterface)
 	if err != nil {
 		return plugUtil.Error(err)
-	}
-
-	if len(plug.GetOwnerReferences()) <= 0 {
-		ctrl.SetControllerReference(socket, plug, scheme)
-		return ctrl.Result{}, nil
 	}
 
 	err = GlobalCoupler.CoupledPlug(plug, socket, plugConfig, socketConfig)
