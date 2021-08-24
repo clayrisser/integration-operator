@@ -1181,6 +1181,9 @@ spec:
               dataSecretName:
                 description: data secret name
                 type: string
+              epoch:
+                description: change epoch to force an update
+                type: integer
               interface:
                 description: interface
                 properties:
@@ -1201,7 +1204,7 @@ spec:
                 format: int32
                 type: integer
               resources:
-                description: Resources
+                description: resources
                 items:
                   properties:
                     do:

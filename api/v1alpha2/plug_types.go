@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 01-07-2021 12:51:38
+ * Last Modified: 23-08-2021 20:55:29
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -81,8 +81,11 @@ type PlugSpec struct {
 	// apparatus
 	Apparatus *SpecApparatus `json:"apparatus,omitempty"`
 
-	// Resources
+	// resources
 	Resources []*Resource `json:"resources,omitempty"`
+
+	// change epoch to force an update
+	Epoch int `json:"epoch,omitempty"`
 }
 
 // PlugStatus defines the observed state of Plug
