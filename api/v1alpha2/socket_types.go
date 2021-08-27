@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 23-08-2021 20:55:40
+ * Last Modified: 27-08-2021 16:39:04
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -85,7 +85,7 @@ type SocketSpec struct {
 	Resources []*Resource `json:"resources,omitempty"`
 
 	// change epoch to force an update
-	Epoch int `json:"epoch,omitempty"`
+	Epoch string `json:"epoch,omitempty"`
 }
 
 // SocketStatus defines the observed state of Socket

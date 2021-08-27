@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 23-08-2021 20:55:29
+ * Last Modified: 27-08-2021 16:38:55
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -85,7 +85,7 @@ type PlugSpec struct {
 	Resources []*Resource `json:"resources,omitempty"`
 
 	// change epoch to force an update
-	Epoch int `json:"epoch,omitempty"`
+	Epoch string `json:"epoch,omitempty"`
 }
 
 // PlugStatus defines the observed state of Plug

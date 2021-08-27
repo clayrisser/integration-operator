@@ -1183,7 +1183,7 @@ spec:
                 type: string
               epoch:
                 description: change epoch to force an update
-                type: integer
+                type: string
               interface:
                 description: interface
                 properties:
