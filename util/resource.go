@@ -4,7 +4,7 @@
  * File Created: 23-07-2021 17:13:09
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 17-08-2021 23:03:00
+ * Last Modified: 27-08-2021 17:09:15
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -31,6 +31,7 @@ import (
 	"errors"
 	"text/template"
 
+	"github.com/Masterminds/sprig"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -371,7 +372,7 @@ func (u *ResourceUtil) templateResource(
 	if err != nil {
 		return "", err
 	}
-	t, err := template.New("").Delims("{%", "%}").Parse(body)
+	t, err := template.New("").Funcs(sprig.TxtFuncMap()).Delims("{%", "%}").Parse(body)
 	if err != nil {
 		return "", err
 	}
