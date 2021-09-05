@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 01-07-2021 16:40:56
+ * Last Modified: 05-09-2021 01:30:58
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -505,7 +505,7 @@ func (u *ApparatusUtil) RenewIdleTimeout(
 func (u *ApparatusUtil) StartFromPlug(plug *integrationv1alpha2.Plug) (bool, error) {
 	return u.start(
 		plug.Spec.Apparatus,
-		plug.Name,
+		plug.Name+"-apparatus",
 		plug.Namespace,
 		string(plug.UID),
 		u.createPlugOwnerReference(plug),
@@ -515,7 +515,7 @@ func (u *ApparatusUtil) StartFromPlug(plug *integrationv1alpha2.Plug) (bool, err
 func (u *ApparatusUtil) StartFromSocket(socket *integrationv1alpha2.Socket) (bool, error) {
 	return u.start(
 		socket.Spec.Apparatus,
-		socket.Name,
+		socket.Name+"-apparatus",
 		socket.Namespace,
 		string(socket.UID),
 		u.createSocketOwnerReference(socket),
@@ -659,11 +659,11 @@ func (u *ApparatusUtil) createSocketOwnerReference(socket *integrationv1alpha2.S
 }
 
 func (u *ApparatusUtil) getPlugEndpoint(plug *integrationv1alpha2.Plug) string {
-	return u.getEndpoint(plug.Name, plug.Namespace, plug.Spec.Apparatus, config.DebugPlugEndpoint)
+	return u.getEndpoint(plug.Name+"-apparatus", plug.Namespace, plug.Spec.Apparatus, config.DebugPlugEndpoint)
 }
 
 func (u *ApparatusUtil) getSocketEndpoint(socket *integrationv1alpha2.Socket) string {
-	return u.getEndpoint(socket.Name, socket.Namespace, socket.Spec.Apparatus, config.DebugSocketEndpoint)
+	return u.getEndpoint(socket.Name+"-apparatus", socket.Namespace, socket.Spec.Apparatus, config.DebugSocketEndpoint)
 }
 
 func (u *ApparatusUtil) getEndpoint(
