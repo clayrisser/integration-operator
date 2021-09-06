@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 17-08-2021 23:01:51
+ * Last Modified: 06-09-2021 03:51:24
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -144,14 +144,14 @@ func (c *Coupler) Start() {
 					if event.Kind == PlugKind {
 						if c.events.OnPlugCoupled != nil {
 							if err := c.events.OnPlugCoupled(event.Data); err != nil {
-								*event.ErrCh <- nil
+								*event.ErrCh <- err
 								continue
 							}
 						}
 					} else if event.Kind == SocketKind {
 						if c.events.OnSocketCoupled != nil {
 							if err := c.events.OnSocketCoupled(event.Data); err != nil {
-								*event.ErrCh <- nil
+								*event.ErrCh <- err
 								continue
 							}
 						}
@@ -162,14 +162,14 @@ func (c *Coupler) Start() {
 					if event.Kind == PlugKind {
 						if c.events.OnPlugUpdated != nil {
 							if err := c.events.OnPlugUpdated(event.Data); err != nil {
-								*event.ErrCh <- nil
+								*event.ErrCh <- err
 								continue
 							}
 						}
 					} else if event.Kind == SocketKind {
 						if c.events.OnSocketUpdated != nil {
 							if err := c.events.OnSocketUpdated(event.Data); err != nil {
-								*event.ErrCh <- nil
+								*event.ErrCh <- err
 								continue
 							}
 						}
@@ -180,14 +180,14 @@ func (c *Coupler) Start() {
 					if event.Kind == PlugKind {
 						if c.events.OnPlugDecoupled != nil {
 							if err := c.events.OnPlugDecoupled(event.Data); err != nil {
-								*event.ErrCh <- nil
+								*event.ErrCh <- err
 								continue
 							}
 						}
 					} else if event.Kind == SocketKind {
 						if c.events.OnSocketDecoupled != nil {
 							if err := c.events.OnSocketDecoupled(event.Data); err != nil {
-								*event.ErrCh <- nil
+								*event.ErrCh <- err
 								continue
 							}
 						}
@@ -198,14 +198,14 @@ func (c *Coupler) Start() {
 					if event.Kind == PlugKind {
 						if c.events.OnPlugDeleted != nil {
 							if err := c.events.OnPlugDeleted(event.Data); err != nil {
-								*event.ErrCh <- nil
+								*event.ErrCh <- err
 								continue
 							}
 						}
 					} else if event.Kind == SocketKind {
 						if c.events.OnSocketDeleted != nil {
 							if err := c.events.OnSocketDeleted(event.Data); err != nil {
-								*event.ErrCh <- nil
+								*event.ErrCh <- err
 								continue
 							}
 						}
@@ -216,14 +216,14 @@ func (c *Coupler) Start() {
 					if event.Kind == PlugKind {
 						if c.events.OnPlugBroken != nil {
 							if err := c.events.OnPlugBroken(event.Data); err != nil {
-								*event.ErrCh <- nil
+								*event.ErrCh <- err
 								continue
 							}
 						}
 					} else if event.Kind == SocketKind {
 						if c.events.OnSocketBroken != nil {
 							if err := c.events.OnSocketBroken(event.Data); err != nil {
-								*event.ErrCh <- nil
+								*event.ErrCh <- err
 								continue
 							}
 						}

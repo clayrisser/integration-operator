@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 05-09-2021 23:08:14
+ * Last Modified: 06-09-2021 06:42:16
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -111,7 +111,7 @@ func (c *Coupler) Couple(
 	}
 	socketConfig, err := configUtil.GetSocketConfig(socket, socketInterface)
 	if err != nil {
-		return plugUtil.SocketError(socketUtil, err)
+		return socketUtil.Error(err)
 	}
 
 	err = GlobalCoupler.CoupledPlug(plug, socket, plugConfig, socketConfig)
@@ -120,11 +120,10 @@ func (c *Coupler) Couple(
 	}
 	err = GlobalCoupler.CoupledSocket(plug, socket, plugConfig, socketConfig)
 	if err != nil {
-		result, err := plugUtil.Error(err)
-		if _, err := socketUtil.UpdateErrorStatus(err, true); err != nil {
+		if err := plugUtil.SocketError(err); err != nil {
 			return plugUtil.Error(err)
 		}
-		return result, err
+		return socketUtil.Error(err)
 	}
 
 	if !socketUtil.CoupledPlugExists(socket.Status.CoupledPlugs, plug.UID) {

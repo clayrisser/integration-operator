@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 05-09-2021 22:22:49
+ * Last Modified: 06-09-2021 06:47:39
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -26,7 +26,9 @@ package util
 
 import (
 	"context"
+	"errors"
 	"net"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -37,7 +39,7 @@ import (
 	minifyJson "github.com/tdewolff/minify/json"
 	"github.com/tidwall/sjson"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
@@ -74,6 +76,7 @@ func (u *ApparatusUtil) GetPlugConfig(
 	errCh := make(chan error)
 	min := minify.New()
 	min.AddFunc("application/json", minifyJson.Minify)
+	url := u.getPlugEndpoint(plug) + "/config"
 	go func() {
 		body := `{"version":1}`
 		var err error
@@ -113,7 +116,6 @@ func (u *ApparatusUtil) GetPlugConfig(
 			errCh <- err
 			return
 		}
-		url := u.getPlugEndpoint(plug) + "/config"
 		u.log.Info("getting plug config", "method", "POST", "url", url)
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
@@ -126,6 +128,9 @@ func (u *ApparatusUtil) GetPlugConfig(
 	}()
 	select {
 	case r := <-rCh:
+		if r.IsError() {
+			return r.Body(), errors.New("config failed with " + strconv.Itoa(r.StatusCode()) + " status from POST " + url)
+		}
 		return r.Body(), nil
 	case err := <-errCh:
 		return nil, err
@@ -140,6 +145,7 @@ func (u *ApparatusUtil) GetSocketConfig(
 	errCh := make(chan error)
 	min := minify.New()
 	min.AddFunc("application/json", minifyJson.Minify)
+	url := u.getSocketEndpoint(socket) + "/config"
 	go func() {
 		body := `{"version":1}`
 		var err error
@@ -179,7 +185,6 @@ func (u *ApparatusUtil) GetSocketConfig(
 			errCh <- err
 			return
 		}
-		url := u.getSocketEndpoint(socket) + "/config"
 		u.log.Info("getting socket config", "method", "POST", "url", url)
 		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
@@ -192,6 +197,9 @@ func (u *ApparatusUtil) GetSocketConfig(
 	}()
 	select {
 	case r := <-rCh:
+		if r.IsError() {
+			return r.Body(), errors.New("config failed with " + strconv.Itoa(r.StatusCode()) + " status from POST " + url)
+		}
 		return r.Body(), nil
 	case err := <-errCh:
 		return nil, err
@@ -481,7 +489,7 @@ func (u *ApparatusUtil) RenewIdleTimeout(
 			name,
 			metav1.GetOptions{},
 		); err != nil {
-			if errors.IsNotFound(err) {
+			if k8serrors.IsNotFound(err) {
 				return
 			}
 		}
@@ -604,7 +612,7 @@ func (u *ApparatusUtil) start(
 		},
 	)
 	if err != nil {
-		if !errors.IsAlreadyExists(err) {
+		if !k8serrors.IsAlreadyExists(err) {
 			return false, err
 		}
 	}
@@ -616,7 +624,7 @@ func (u *ApparatusUtil) start(
 		},
 	)
 	if err != nil {
-		if errors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			alreadyExists = true
 		} else {
 			return false, err
@@ -747,10 +755,10 @@ func (u *ApparatusUtil) processEvent(
 	if err != nil {
 		return err
 	}
+	url := endpoint + "/" + eventName
 	go func() {
-		url := endpoint + "/" + eventName
 		u.log.Info("triggered event "+eventName, "method", "POST", "url", url)
-		r, err := client.R().EnableTrace().SetHeaders(map[string]string{
+		r, err := client.SetRetryCount(3).R().EnableTrace().SetHeaders(map[string]string{
 			"Content-Type": "application/json",
 		}).SetBody([]byte(body)).Post(url)
 		if err != nil {
@@ -759,7 +767,10 @@ func (u *ApparatusUtil) processEvent(
 		rCh <- r
 	}()
 	select {
-	case <-rCh:
+	case r := <-rCh:
+		if r.IsError() {
+			return errors.New("event " + eventName + " failed with " + strconv.Itoa(r.StatusCode()) + " status from POST " + url)
+		}
 		return nil
 	case err := <-errCh:
 		return err

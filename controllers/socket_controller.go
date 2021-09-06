@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 05-09-2021 23:30:21
+ * Last Modified: 06-09-2021 06:23:50
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -156,7 +156,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			Namespace: plug.Namespace,
 		}, plug, socket, socketInterface)
 		if err != nil {
-			return socketUtil.PlugError(plugUtil, err)
+			return socketUtil.Error(err)
 		}
 		if result.Requeue {
 			requeueAfter = time.Duration(math.Min(

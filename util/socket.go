@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 05-09-2021 23:30:47
+ * Last Modified: 06-09-2021 06:40:30
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -138,47 +138,47 @@ func (u *SocketUtil) GetCoupledCondition() (*metav1.Condition, error) {
 	return coupledCondition, nil
 }
 
-func (u *SocketUtil) PlugError(plugUtil *PlugUtil, err error) (ctrl.Result, error) {
-	result, err := plugUtil.Error(err)
-	if err != nil {
-		return u.Error(err)
+func (u *SocketUtil) PlugError(err error) error {
+	if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) <= -1 {
+		if _, _err := u.UpdateErrorStatus(err, true); _err != nil {
+			if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
+				return nil
+			}
+			return _err
+		}
 	}
-	return ctrl.Result{
-		Requeue:      true,
-		RequeueAfter: result.RequeueAfter,
-	}, nil
+	return nil
 }
 
 func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
-	stashedErr := err
 	log := *u.log
-	socket, err := u.Get()
-	if err != nil {
-		log.Error(nil, stashedErr.Error())
+	socket, _err := u.Get()
+	if _err != nil {
+		log.Error(nil, err.Error())
 		return ctrl.Result{
 			Requeue:      true,
 			RequeueAfter: config.MaxRequeueDuration,
-		}, err
+		}, _err
 	}
 	requeueAfter := CalculateExponentialRequireAfter(
 		socket.Status.LastUpdate,
 		2,
 	)
-	if u.apparatusUtil.NotRunning(stashedErr) {
+	if u.apparatusUtil.NotRunning(err) {
 		successRequeueAfter := time.Duration(time.Second.Nanoseconds() * 10)
-		started, err := u.apparatusUtil.StartFromSocket(socket, &successRequeueAfter)
-		if err != nil {
-			return u.Error(err)
+		started, _err := u.apparatusUtil.StartFromSocket(socket, &successRequeueAfter)
+		if _err != nil {
+			return u.Error(_err)
 		}
 		if started {
-			if err := u.UpdateStatus(socket, true, true); err != nil {
-				if strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
+			if _err := u.UpdateStatus(socket, true, true); _err != nil {
+				if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
 					return ctrl.Result{
 						Requeue:      true,
 						RequeueAfter: requeueAfter,
 					}, nil
 				}
-				return u.Error(err)
+				return u.Error(_err)
 			}
 			return ctrl.Result{
 				Requeue:      true,
@@ -186,10 +186,10 @@ func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 			}, nil
 		}
 	}
-	log.Error(nil, stashedErr.Error())
-	if strings.Index(stashedErr.Error(), registry.OptimisticLockErrorMsg) <= -1 {
-		if _, err := u.UpdateErrorStatus(stashedErr, true); err != nil {
-			if strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
+	log.Error(nil, err.Error())
+	if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) <= -1 {
+		if _, _err := u.UpdateErrorStatus(err, true); _err != nil {
+			if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
 				return ctrl.Result{
 					Requeue:      true,
 					RequeueAfter: requeueAfter,
@@ -198,7 +198,7 @@ func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
 			return ctrl.Result{
 				Requeue:      true,
 				RequeueAfter: requeueAfter,
-			}, err
+			}, _err
 		}
 	}
 	return ctrl.Result{
@@ -235,14 +235,13 @@ func (u *SocketUtil) UpdateStatusSimple(
 }
 
 func (u *SocketUtil) UpdateErrorStatus(err error, requeue bool) (ctrl.Result, error) {
-	stashedErr := err
-	socket, err := u.Get()
-	if err != nil {
-		return ctrl.Result{}, err
+	socket, _err := u.Get()
+	if _err != nil {
+		return ctrl.Result{}, _err
 	}
-	u.setErrorStatus(socket, stashedErr)
-	if err := u.UpdateStatus(socket, requeue, true); err != nil {
-		return ctrl.Result{}, err
+	u.setErrorStatus(socket, err)
+	if _err := u.UpdateStatus(socket, requeue, true); _err != nil {
+		return ctrl.Result{}, _err
 	}
 	return ctrl.Result{}, nil
 }
@@ -353,8 +352,8 @@ func (u *SocketUtil) setReadyStatus(socket *integrationv1alpha2.Socket, ready bo
 
 func (u *SocketUtil) setErrorStatus(socket *integrationv1alpha2.Socket, err error) {
 	message := err.Error()
-	coupledCondition, err := u.GetCoupledCondition()
-	if err == nil {
+	coupledCondition, _err := u.GetCoupledCondition()
+	if _err == nil {
 		coupledCondition = nil
 	}
 	if coupledCondition != nil {

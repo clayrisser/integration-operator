@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 05-09-2021 23:20:04
+ * Last Modified: 06-09-2021 06:39:17
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -143,47 +143,47 @@ func (u *PlugUtil) IsCoupled(
 		coupledCondition.Reason == string(CouplingSucceededStatusCondition), nil
 }
 
-func (u *PlugUtil) SocketError(socketUtil *SocketUtil, err error) (ctrl.Result, error) {
-	result, err := socketUtil.Error(err)
-	if err != nil {
-		return u.Error(err)
+func (u *PlugUtil) SocketError(err error) error {
+	if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) <= -1 {
+		if _, _err := u.UpdateErrorStatus(err, true); _err != nil {
+			if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
+				return nil
+			}
+			return _err
+		}
 	}
-	return ctrl.Result{
-		Requeue:      true,
-		RequeueAfter: result.RequeueAfter,
-	}, nil
+	return nil
 }
 
 func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
-	stashedErr := err
 	log := *u.log
-	plug, err := u.Get()
-	if err != nil {
-		log.Error(nil, stashedErr.Error())
+	plug, _err := u.Get()
+	if _err != nil {
+		log.Error(nil, err.Error())
 		return ctrl.Result{
 			Requeue:      true,
 			RequeueAfter: config.MaxRequeueDuration,
-		}, err
+		}, _err
 	}
 	requeueAfter := CalculateExponentialRequireAfter(
 		plug.Status.LastUpdate,
 		2,
 	)
-	if u.apparatusUtil.NotRunning(stashedErr) {
+	if u.apparatusUtil.NotRunning(err) {
 		successRequeueAfter := time.Duration(time.Second.Nanoseconds() * 10)
-		started, err := u.apparatusUtil.StartFromPlug(plug, &successRequeueAfter)
-		if err != nil {
-			return u.Error(err)
+		started, _err := u.apparatusUtil.StartFromPlug(plug, &successRequeueAfter)
+		if _err != nil {
+			return u.Error(_err)
 		}
 		if started {
-			if err := u.UpdateStatus(plug, true, true); err != nil {
-				if strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
+			if _err := u.UpdateStatus(plug, true, true); _err != nil {
+				if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
 					return ctrl.Result{
 						Requeue:      true,
 						RequeueAfter: requeueAfter,
 					}, nil
 				}
-				return u.Error(err)
+				return u.Error(_err)
 			}
 			return ctrl.Result{
 				Requeue:      true,
@@ -191,10 +191,10 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 			}, nil
 		}
 	}
-	log.Error(nil, stashedErr.Error())
-	if strings.Index(stashedErr.Error(), registry.OptimisticLockErrorMsg) <= -1 {
-		if _, err := u.UpdateErrorStatus(stashedErr, true); err != nil {
-			if strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
+	log.Error(nil, err.Error())
+	if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) <= -1 {
+		if _, _err := u.UpdateErrorStatus(err, true); _err != nil {
+			if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
 				return ctrl.Result{
 					Requeue:      true,
 					RequeueAfter: requeueAfter,
@@ -203,7 +203,7 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 			return ctrl.Result{
 				Requeue:      true,
 				RequeueAfter: requeueAfter,
-			}, err
+			}, _err
 		}
 	}
 	return ctrl.Result{
@@ -213,14 +213,13 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 }
 
 func (u *PlugUtil) UpdateErrorStatus(err error, requeue bool) (ctrl.Result, error) {
-	stashedErr := err
-	plug, err := u.Get()
-	if err != nil {
-		return ctrl.Result{}, err
+	plug, _err := u.Get()
+	if _err != nil {
+		return ctrl.Result{}, _err
 	}
-	u.setErrorStatus(plug, stashedErr)
-	if err := u.UpdateStatus(plug, requeue, true); err != nil {
-		return ctrl.Result{}, err
+	u.setErrorStatus(plug, err)
+	if _err := u.UpdateStatus(plug, requeue, true); _err != nil {
+		return ctrl.Result{}, _err
 	}
 	return ctrl.Result{}, nil
 }
@@ -310,8 +309,8 @@ func (u *PlugUtil) setCoupledStatusCondition(
 
 func (u *PlugUtil) setErrorStatus(plug *integrationv1alpha2.Plug, err error) {
 	message := err.Error()
-	coupledCondition, err := u.GetCoupledCondition()
-	if err == nil {
+	coupledCondition, _err := u.GetCoupledCondition()
+	if _err == nil {
 		coupledCondition = nil
 	}
 	if coupledCondition != nil {
