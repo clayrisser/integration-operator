@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 01-07-2021 14:51:58
+ * Last Modified: 05-09-2021 23:30:21
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -26,6 +26,8 @@ package controllers
 
 import (
 	"context"
+	"math"
+	"time"
 
 	"github.com/go-logr/logr"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
@@ -129,6 +131,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return socketUtil.Error(err)
 	}
 
+	var requeueAfter time.Duration = 0
 	for _, connectedPlug := range socket.Status.CoupledPlugs {
 		plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 			Name:      connectedPlug.Name,
@@ -148,15 +151,27 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if err != nil {
 			return socketUtil.Error(err)
 		}
-		if _, err := coupler.GlobalCoupler.Update(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
+		result, err := coupler.GlobalCoupler.Update(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 			Name:      plug.Name,
 			Namespace: plug.Namespace,
-		}, plug, socket, socketInterface); err != nil {
-			return socketUtil.Error(err)
+		}, plug, socket, socketInterface)
+		if err != nil {
+			return socketUtil.PlugError(plugUtil, err)
+		}
+		if result.Requeue {
+			requeueAfter = time.Duration(math.Min(
+				float64(requeueAfter.Nanoseconds()),
+				float64(result.RequeueAfter.Nanoseconds()),
+			))
 		}
 	}
 
-	return socketUtil.UpdateStatusSimple(integrationv1alpha2.ReadyPhase, util.SocketCoupledStatusCondition, nil, false)
+	result, err := socketUtil.UpdateStatusSimple(integrationv1alpha2.ReadyPhase, util.SocketCoupledStatusCondition, nil, false)
+	if requeueAfter > 0 {
+		result.Requeue = true
+		result.RequeueAfter = requeueAfter
+	}
+	return result, err
 }
 
 func filterSocketPredicate() predicate.Predicate {

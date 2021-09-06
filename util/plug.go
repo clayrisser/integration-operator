@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 17-08-2021 22:33:45
+ * Last Modified: 05-09-2021 23:20:04
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -28,6 +28,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-logr/logr"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
@@ -142,6 +143,17 @@ func (u *PlugUtil) IsCoupled(
 		coupledCondition.Reason == string(CouplingSucceededStatusCondition), nil
 }
 
+func (u *PlugUtil) SocketError(socketUtil *SocketUtil, err error) (ctrl.Result, error) {
+	result, err := socketUtil.Error(err)
+	if err != nil {
+		return u.Error(err)
+	}
+	return ctrl.Result{
+		Requeue:      true,
+		RequeueAfter: result.RequeueAfter,
+	}, nil
+}
+
 func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 	stashedErr := err
 	log := *u.log
@@ -158,7 +170,8 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 		2,
 	)
 	if u.apparatusUtil.NotRunning(stashedErr) {
-		started, err := u.apparatusUtil.StartFromPlug(plug)
+		successRequeueAfter := time.Duration(time.Second.Nanoseconds() * 10)
+		started, err := u.apparatusUtil.StartFromPlug(plug, &successRequeueAfter)
 		if err != nil {
 			return u.Error(err)
 		}
@@ -174,7 +187,7 @@ func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
 			}
 			return ctrl.Result{
 				Requeue:      true,
-				RequeueAfter: requeueAfter,
+				RequeueAfter: successRequeueAfter,
 			}, nil
 		}
 	}

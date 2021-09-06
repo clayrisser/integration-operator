@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 01-07-2021 16:25:55
+ * Last Modified: 05-09-2021 23:15:36
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -101,7 +101,7 @@ func (c *Coupler) Update(
 	}
 	socketConfig, err := configUtil.GetSocketConfig(socket, socketInterface)
 	if err != nil {
-		return plugUtil.Error(err)
+		return plugUtil.SocketError(socketUtil, err)
 	}
 
 	err = GlobalCoupler.UpdatedPlug(plug, socket, plugConfig, socketConfig)

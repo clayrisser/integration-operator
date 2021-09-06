@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 17-08-2021 22:40:42
+ * Last Modified: 05-09-2021 23:13:19
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -107,7 +107,6 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		Name:      plug.Name,
 		Namespace: plug.Namespace,
 	}, plug)
-
 }
 
 func filterPlugPredicate() predicate.Predicate {

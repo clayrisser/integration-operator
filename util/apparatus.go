@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 05-09-2021 01:30:58
+ * Last Modified: 05-09-2021 22:22:49
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -502,23 +502,25 @@ func (u *ApparatusUtil) RenewIdleTimeout(
 	}
 }
 
-func (u *ApparatusUtil) StartFromPlug(plug *integrationv1alpha2.Plug) (bool, error) {
+func (u *ApparatusUtil) StartFromPlug(plug *integrationv1alpha2.Plug, requeueAfter *time.Duration) (bool, error) {
 	return u.start(
 		plug.Spec.Apparatus,
 		plug.Name+"-apparatus",
 		plug.Namespace,
 		string(plug.UID),
 		u.createPlugOwnerReference(plug),
+		requeueAfter,
 	)
 }
 
-func (u *ApparatusUtil) StartFromSocket(socket *integrationv1alpha2.Socket) (bool, error) {
+func (u *ApparatusUtil) StartFromSocket(socket *integrationv1alpha2.Socket, requeueAfter *time.Duration) (bool, error) {
 	return u.start(
 		socket.Spec.Apparatus,
 		socket.Name+"-apparatus",
 		socket.Namespace,
 		string(socket.UID),
 		u.createSocketOwnerReference(socket),
+		requeueAfter,
 	)
 }
 
@@ -528,6 +530,7 @@ func (u *ApparatusUtil) start(
 	namespace string,
 	uid string,
 	ownerReference metav1.OwnerReference,
+	requeueAfter *time.Duration,
 ) (bool, error) {
 	if apparatus == nil || len(*apparatus.Containers) <= 0 {
 		return false, nil
@@ -535,6 +538,9 @@ func (u *ApparatusUtil) start(
 	idleTimeout := time.Second * 60
 	if apparatus.IdleTimeout != 0 {
 		idleTimeout = time.Second * time.Duration(apparatus.IdleTimeout)
+	}
+	if requeueAfter != nil {
+		idleTimeout = idleTimeout + *requeueAfter
 	}
 	alreadyExists := false
 	pod := &v1.Pod{
