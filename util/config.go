@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:27
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 01-07-2021 16:26:39
+ * Last Modified: 13-09-2021 21:17:18
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Silicon Hills LLC (c) Copyright 2021
@@ -25,12 +25,14 @@
 package util
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"text/template"
 
+	"github.com/Masterminds/sprig"
 	integrationv1alpha2 "github.com/silicon-hills/integration-operator/api/v1alpha2"
-	"github.com/tidwall/gjson"
-	"github.com/tidwall/sjson"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -251,86 +253,96 @@ func (u *ConfigUtil) validVersion(versions string, version string) bool {
 	return versions == version
 }
 
-func (u *ConfigUtil) plugLookup(plug *integrationv1alpha2.Plug, path string) (string, error) {
-	plugLookup, err := u.buildPlugLookup(plug)
+func (u *ConfigUtil) plugLookup(plug *integrationv1alpha2.Plug, mapper string) (string, error) {
+	data, err := u.buildPlugTemplateData(plug)
 	if err != nil {
 		return "", err
 	}
-	return plugLookup.Get(path).String(), nil
+	return u.templateConfigMapper(&data, mapper)
 }
 
-func (u *ConfigUtil) socketLookup(socket *integrationv1alpha2.Socket, path string) (string, error) {
-	socketLookup, err := u.buildSocketLookup(socket)
+func (u *ConfigUtil) socketLookup(socket *integrationv1alpha2.Socket, mapper string) (string, error) {
+	data, err := u.buildSocketTemplateData(socket)
 	if err != nil {
 		return "", err
 	}
-	return socketLookup.Get(path).String(), nil
+	return u.templateConfigMapper(&data, mapper)
 }
 
-func (u *ConfigUtil) buildPlugLookup(plug *integrationv1alpha2.Plug) (gjson.Result, error) {
-	result := gjson.Parse("{}")
-
-	resultStr, err := sjson.Set(result.String(), "resource", plug)
-	if err != nil {
-		return result, err
+func (u *ConfigUtil) buildPlugTemplateData(plug *integrationv1alpha2.Plug) (map[string]interface{}, error) {
+	dataMap := map[string]interface{}{}
+	if plug != nil {
+		dataMap["resource"] = plug
 	}
-	result = gjson.Parse(resultStr)
-
-	dataMap, err := u.dataUtil.GetPlugData(plug)
+	plugData, err := u.dataUtil.GetPlugData(plug)
 	if err != nil {
-		return result, err
+		return dataMap, err
 	}
-	resultStr, err = sjson.Set(result.String(), "data", dataMap)
-	if err != nil {
-		return result, err
+	if dataMap != nil {
+		dataMap["data"] = plugData
 	}
-	result = gjson.Parse(resultStr)
-
 	if plug.Spec.Vars != nil {
 		varsMap, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars)
 		if err != nil {
-			return result, err
+			return dataMap, err
 		}
-		resultStr, err = sjson.Set(result.String(), "vars", varsMap)
-		if err != nil {
-			return result, err
-		}
-		result = gjson.Parse(resultStr)
+		dataMap["vars"] = varsMap
 	}
 
-	return result, nil
+	bData, err := json.Marshal(dataMap)
+	if err != nil {
+		return nil, err
+	}
+	var data map[string]interface{}
+	if err := json.Unmarshal(bData, &data); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
-func (u *ConfigUtil) buildSocketLookup(socket *integrationv1alpha2.Socket) (gjson.Result, error) {
-	result := gjson.Parse("{}")
-
-	resultStr, err := sjson.Set(result.String(), "resource", socket)
-	if err != nil {
-		return result, err
+func (u *ConfigUtil) buildSocketTemplateData(socket *integrationv1alpha2.Socket) (map[string]interface{}, error) {
+	dataMap := map[string]interface{}{}
+	if socket != nil {
+		dataMap["resource"] = socket
 	}
-	result = gjson.Parse(resultStr)
-
-	dataMap, err := u.dataUtil.GetSocketData(socket)
+	socketData, err := u.dataUtil.GetSocketData(socket)
 	if err != nil {
-		return result, err
+		return dataMap, err
 	}
-	resultStr, err = sjson.Set(result.String(), "data", dataMap)
-	if err != nil {
-		return result, err
+	if dataMap != nil {
+		dataMap["data"] = socketData
 	}
-	result = gjson.Parse(resultStr)
-
 	if socket.Spec.Vars != nil {
 		varsMap, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars)
 		if err != nil {
-			return result, err
+			return dataMap, err
 		}
-		resultStr, err = sjson.Set(result.String(), "vars", varsMap)
-		if err != nil {
-			return result, err
-		}
-		result = gjson.Parse(resultStr)
+		dataMap["vars"] = varsMap
 	}
 
-	return result, nil
+	bData, err := json.Marshal(dataMap)
+	if err != nil {
+		return nil, err
+	}
+	var data map[string]interface{}
+	if err := json.Unmarshal(bData, &data); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (u *ConfigUtil) templateConfigMapper(
+	data *map[string]interface{},
+	mapper string,
+) (string, error) {
+	t, err := template.New("").Funcs(sprig.TxtFuncMap()).Delims("{%", "%}").Parse(mapper)
+	if err != nil {
+		return "", err
+	}
+	var buff bytes.Buffer
+	err = t.Execute(&buff, data)
+	if err != nil {
+		return "", err
+	}
+	return buff.String(), nil
 }
