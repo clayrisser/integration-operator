@@ -3,7 +3,7 @@
 # File Created: 23-06-2021 09:14:26
 # Author: Clay Risser <email@clayrisser.com>
 # -----
-# Last Modified: 30-06-2021 14:59:11
+# Last Modified: 12-08-2022 09:43:06
 # Modified By: Clay Risser <email@clayrisser.com>
 # -----
 # Silicon Hills LLC (c) Copyright 2021
@@ -26,7 +26,7 @@ export PARENT := true
 include blackmagic.mk
 
 NAME := integration-operator
-REGISTRY := siliconhills
+REGISTRY := registry.gitlab.com/risserlabs/internal/integration-operator
 VERSION := $(shell echo $(shell $(GIT) describe --abbrev=0 --tags 2>/dev/null || $(GIT) describe --tags) | sed 's| .*$$||g' | sed 's|^v||g')
 IMAGE := $(REGISTRY)/$(NAME)
 
