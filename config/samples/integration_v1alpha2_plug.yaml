@@ -1,10 +1,10 @@
-apiVersion: integration.siliconhills.dev/v1alpha2
+apiVersion: integration.risserlabs.com/v1alpha2
 kind: Plug
 metadata:
   name: plug-sample
   namespace: integration-test1
-spec: 
-  interfaceVersions: '*'
+spec:
+  interfaceVersions: "*"
   interface:
     name: interface-sample
     namespace: integration-test1
@@ -12,7 +12,7 @@ spec:
     endpoint: /plug
     idleTimeout: 60
     containers:
-      - image: siliconhills/example-apparatus:latest
+      - image: risserlabs/example-apparatus:latest
         imagePullPolicy: Always
         name: apparatus
         ports:
@@ -40,8 +40,8 @@ spec:
   vars:
     - name: INTERFACE_NAME
       objref:
-        apiVersion: integration.siliconhills.dev/v1alpha2
+        apiVersion: integration.risserlabs.com/v1alpha2
         kind: Interface
         name: interface-sample
       fieldref:
-        fieldPath: 'metadata.name'
+        fieldPath: "metadata.name"

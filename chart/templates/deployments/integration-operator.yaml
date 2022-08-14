@@ -3,22 +3,22 @@ kind: Deployment
 metadata:
   name: {{ template "integration-operator.name" . }}
   labels:
-    app: {{ template "integration-operator.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "integration-operator.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   selector:
     matchLabels:
       app: {{ template "integration-operator.name" . }}
-      release: {{ .Release.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   strategy:
     type: {{ .Values.config.updateStrategy }}
   template:
     metadata:
       labels:
         app: {{ template "integration-operator.name" . }}
-        release: {{ .Release.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ template "integration-operator.name" . }}
       affinity:
@@ -49,17 +49,24 @@ spec:
                       operator: In
                       values:
                         - {{ template "integration-operator.name" . }}
+                    - key: release
+                      operator: In
+                      values:
+                        - {{ .Release.Name }}
       containers:
         - name: {{ template "integration-operator.name" . }}
           image: {{ .Values.images.integrationOperator.repository }}:{{ .Values.images.integrationOperator.tag }}
           imagePullPolicy: {{ .Values.config.imagePullPolicy }}
-          # resources:
-          #   requests:
-          #     cpu: {{ .Values.config.integrationOperator.resources.requests.cpu }}
-          #     memory: {{ .Values.config.integrationOperator.resources.requests.memory }}
-          #   limits:
-          #     cpu: {{ .Values.config.integrationOperator.resources.limits.cpu }}
-          #     memory: {{ .Values.config.integrationOperator.resources.limits.memory }}
+          resources:
+{{- if (and .Values.config.integrationOperator.resources.enabled (not (eq .Values.config.integrationOperator.resources.enabled "false"))) }}
+            requests:
+{{ toYaml .Values.config.integrationOperator.resources.requests | indent 14 }}
+            limits:
+{{ toYaml .Values.config.integrationOperator.resources.limits | indent 14 }}
+{{- else }}
+            requests: {}
+            limits: {}
+{{- end }}
           {{- if .Values.config.debug }}
           env:
             - name: DEBUG_OPERATOR

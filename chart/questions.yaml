@@ -1,5 +1,5 @@
 categories:
-  - Server
+  - Operators
 questions:
 
   # Config
@@ -34,7 +34,7 @@ questions:
     options:
       - defaults
       - custom
-      - false
+      - 'false'
     required: true
     label: 'integration operator resources enabled'
     show_subquestion_if: custom

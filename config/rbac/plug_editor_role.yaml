@@ -4,21 +4,21 @@ kind: ClusterRole
 metadata:
   name: plug-editor-role
 rules:
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - plugs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - plugs/status
-  verbs:
-  - get
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - plugs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - plugs/status
+    verbs:
+      - get

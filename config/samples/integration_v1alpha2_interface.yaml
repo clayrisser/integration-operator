@@ -1,4 +1,4 @@
-apiVersion: integration.siliconhills.dev/v1alpha2
+apiVersion: integration.risserlabs.com/v1alpha2
 kind: Interface
 metadata:
   name: interface-sample
@@ -23,7 +23,7 @@ spec:
             default: postgres
           port:
             description: postgres port
-            default: '5432'
+            default: "5432"
           host:
             description: postgres password
             default: localhost

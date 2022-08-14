@@ -15,5 +15,10 @@ bin
 testbin/*
 
 # custom
+/.make
 /integration-operator
 /main
+.mkpm/*
+**/.mkpm/*
+!/.mkpm/.cache.tar.gz
+!/.mkpm/.bootstrap.mk

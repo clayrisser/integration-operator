@@ -1,37 +1,37 @@
-domain: siliconhills.dev
+domain: risserlabs.com
 layout:
 - go.kubebuilder.io/v3
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: integration-operator
-repo: github.com/silicon-hills/integration-operator
+repo: gitlab.com/risserlabs/internal/integration-operator
 resources:
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: siliconhills.dev
+  domain: risserlabs.com
   group: integration
   kind: Plug
-  path: github.com/silicon-hills/integration-operator/api/v1alpha2
+  path: gitlab.com/risserlabs/internal/integration-operator/api/v1alpha2
   version: v1alpha2
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: siliconhills.dev
+  domain: risserlabs.com
   group: integration
   kind: Socket
-  path: github.com/silicon-hills/integration-operator/api/v1alpha2
+  path: gitlab.com/risserlabs/internal/integration-operator/api/v1alpha2
   version: v1alpha2
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: siliconhills.dev
+  domain: risserlabs.com
   group: integration
   kind: Interface
-  path: github.com/silicon-hills/integration-operator/api/v1alpha2
+  path: gitlab.com/risserlabs/internal/integration-operator/api/v1alpha2
   version: v1alpha2
 version: "3"

@@ -1,17 +1,17 @@
-apiVersion: integration.siliconhills.dev/v1alpha2
+apiVersion: integration.risserlabs.com/v1alpha2
 kind: Socket
 metadata:
   name: socket-sample
   namespace: integration-test1
-spec: 
-  interfaceVersions: '*'
+spec:
+  interfaceVersions: "*"
   interface:
     name: interface-sample
     namespace: integration-test1
   apparatus:
     endpoint: /socket
     containers:
-      - image: siliconhills/example-apparatus:latest
+      - image: risserlabs/example-apparatus:latest
         imagePullPolicy: Always
         name: apparatus
         ports:
@@ -21,7 +21,7 @@ spec:
   data:
     host: localhost
     password: postgres
-    port: '5432'
+    port: "5432"
     username: postgres
   config:
     protocol: psql

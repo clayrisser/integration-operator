@@ -4,17 +4,17 @@ kind: ClusterRole
 metadata:
   name: interface-viewer-role
 rules:
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - interfaces
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - interfaces/status
-  verbs:
-  - get
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - interfaces
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - interfaces/status
+    verbs:
+      - get

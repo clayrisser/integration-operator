@@ -1,0 +1,19 @@
+name: integration-operator
+apiVersion: v1
+home: https://gitlab.com/risserlabs/internal/integration-operator
+icon: ""
+version: 0.1.2
+appVersion: 0.1.2
+description: "kubernetes operator to integrate deployments"
+keywords:
+  - controller
+  - integration
+  - operator
+sources:
+  - https://github.com/risserlabs/internal/integration-operator
+maintainers:
+  - name: "Clay Risser"
+    email: email@clayrisser.com
+annotations:
+  catalog.cattle.io/namespace: kube-system
+  catalog.cattle.io/release-name: integration-operator

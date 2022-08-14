@@ -3,10 +3,10 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ template "integration-operator.name" . }}
   labels:
-    app: {{ template "integration-operator.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "integration-operator.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
   annotations:
     helm.sh/hook: pre-install
     helm.sh/hook-weight: '0'
@@ -25,10 +25,10 @@ kind: ServiceAccount
 metadata:
   name: {{ template "integration-operator.name" . }}
   labels:
-    app: {{ template "integration-operator.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "integration-operator.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
   annotations:
     helm.sh/hook: pre-install
     helm.sh/hook-weight: '-1'

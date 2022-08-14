@@ -1,4 +1,4 @@
-module github.com/silicon-hills/integration-operator
+module gitlab.com/risserlabs/internal/integration-operator
 
 go 1.15
 

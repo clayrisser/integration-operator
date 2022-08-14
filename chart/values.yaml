@@ -1,16 +1,15 @@
 images:
   integrationOperator:
-    repository: siliconhills/integration-operator
-    tag: 0.1.1
+    repository: registry.gitlab.com/risserlabs/internal/integration-operator/integration-operator
+    tag: 0.1.2
 
 config:
-  clusterProvider: infrastructure
   imagePullPolicy: IfNotPresent
   updateStrategy: RollingUpdate
+  debug: false
   integrationOperator:
-    baseUrl: ''
-    hostname: ''
     resources:
+      enabled: defaults
       requests:
         cpu: 100m
         memory: 128Mi

@@ -1,4 +1,3 @@
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -6,81 +5,81 @@ metadata:
   creationTimestamp: null
   name: manager-role
 rules:
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - interfaces
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - interfaces/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - interfaces/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - plugs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - plugs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - plugs/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - sockets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - sockets/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - sockets/status
-  verbs:
-  - get
-  - patch
-  - update
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - interfaces
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - interfaces/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - interfaces/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - plugs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - plugs/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - plugs/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - sockets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - sockets/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - sockets/status
+    verbs:
+      - get
+      - patch
+      - update

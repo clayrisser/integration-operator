@@ -4,17 +4,17 @@ kind: ClusterRole
 metadata:
   name: socket-viewer-role
 rules:
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - sockets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - integration.siliconhills.dev
-  resources:
-  - sockets/status
-  verbs:
-  - get
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - sockets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - integration.risserlabs.com
+    resources:
+      - sockets/status
+    verbs:
+      - get

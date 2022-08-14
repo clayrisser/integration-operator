@@ -34,9 +34,9 @@
     "readyz",
     "resty",
     "risser",
+    "risserlabs",
     "serrors",
     "sigs",
-    "siliconhills",
     "sjson",
     "tdewolff",
     "tidwall",
@@ -49,8 +49,8 @@
     "author": "Clay Risser",
     "authorEmail": "email@clayrisser.com",
     "blankLinesAfter": 1,
-    "company": "Silicon Hills LLC",
-    "copyrightHolder": "Silicon Hills LLC",
+    "company": "Risser Labs LLC",
+    "copyrightHolder": "Risser Labs LLC",
     "creationDateZero": "asIs",
     "forceToTop": true,
     "initials": "CR",
@@ -81,9 +81,7 @@
         " Last Modified: <<dateformat('DD-MM-YYYY HH:mm:ss')>>",
         " Modified By: <<author>> <<<authoremail>>>",
         " -----",
-        " <<copyrightholder>> (c) Copyright <<yeartoyear(<<projectCreationYear>>, now)>>",
-        "",
-        "<<licensetext>>"
+        " <<copyrightholder>> (c) Copyright <<yeartoyear(<<projectCreationYear>>, now)>>"
       ]
     }
   ],
