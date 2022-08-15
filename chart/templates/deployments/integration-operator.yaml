@@ -21,6 +21,8 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ template "integration-operator.name" . }}
+      imagePullSecrets:
+        - name: registry
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
