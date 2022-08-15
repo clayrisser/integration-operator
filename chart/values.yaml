@@ -1,6 +1,6 @@
 images:
   integrationOperator:
-    repository: registry.gitlab.com/risserlabs/internal/integration-operator/integration-operator
+    repository: registry.gitlab.com/risserlabs/internal/integration-operator
     tag: 0.1.2
 
 config:
