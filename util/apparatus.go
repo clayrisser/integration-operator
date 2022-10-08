@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 14-08-2022 14:34:43
+ * Last Modified: 08-10-2022 04:54:36
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -21,11 +21,11 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/go-resty/resty/v2"
-	integrationv1alpha2 "gitlab.com/risserlabs/internal/integration-operator/api/v1alpha2"
-	"gitlab.com/risserlabs/internal/integration-operator/config"
 	"github.com/tdewolff/minify"
 	minifyJson "github.com/tdewolff/minify/json"
 	"github.com/tidwall/sjson"
+	integrationv1alpha2 "gitlab.com/risserlabs/internal/integration-operator/api/v1alpha2"
+	"gitlab.com/risserlabs/internal/integration-operator/config"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -539,6 +539,7 @@ func (u *ApparatusUtil) start(
 		idleTimeout = idleTimeout + *requeueAfter
 	}
 	alreadyExists := false
+	automountServiceAccountToken := true
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -550,6 +551,7 @@ func (u *ApparatusUtil) start(
 			},
 		},
 		Spec: v1.PodSpec{
+			AutomountServiceAccountToken: &automountServiceAccountToken,
 			Affinity: &v1.Affinity{
 				NodeAffinity: &v1.NodeAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
