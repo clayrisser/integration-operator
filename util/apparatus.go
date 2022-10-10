@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 08-10-2022 04:54:36
+ * Last Modified: 10-10-2022 04:02:34
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -548,6 +548,9 @@ func (u *ApparatusUtil) start(
 			},
 			Labels: map[string]string{
 				"apparatus": name,
+			},
+			Annotations: map[string]string{
+				"sidecar.istio.io/inject": "false",
 			},
 		},
 		Spec: v1.PodSpec{
