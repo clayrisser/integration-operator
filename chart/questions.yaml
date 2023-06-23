@@ -27,6 +27,12 @@ questions:
     required: true
     label: debug
     group: Config
+  - variable: config.replicas
+    description: ""
+    type: int
+    required: true
+    label: "replicas"
+    group: Config
   - variable: config.maxConcurrentReconciles
     description: ""
     type: int

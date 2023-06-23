@@ -1,12 +1,22 @@
+# File: /mkpm.mk
+# Project: integration-operator
+# File Created: 23-06-2023 14:39:03
+# Author: Clay Risser <email@clayrisser.com>
+# -----
+# Last Modified: 23-06-2023 15:26:51
+# Modified By: Clay Risser <email@clayrisser.com>
+# -----
+# Risser Labs LLC (c) Copyright 2021 - 2023
+
 export MKPM_PACKAGES_DEFAULT := \
-	docker=0.0.9 \
-	gnu=0.0.3
+	gnu=0.0.3 \
+	docker=0.1.7
 
 export MKPM_REPO_DEFAULT := \
-	https://gitlab.com/risserlabs/internal/mkpm-stable.git
+	https://gitlab.com/risserlabs/community/mkpm-stable.git
 
 ############# MKPM BOOTSTRAP SCRIPT BEGIN #############
-MKPM_BOOTSTRAP := https://gitlab.com/api/v4/projects/29276259/packages/generic/mkpm/0.2.0/bootstrap.mk
+MKPM_BOOTSTRAP := https://gitlab.com/api/v4/projects/29276259/packages/generic/mkpm/0.3.0/bootstrap.mk
 export PROJECT_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 NULL := /dev/null
 TRUE := true

@@ -7,13 +7,14 @@ config:
   imagePullPolicy: IfNotPresent
   updateStrategy: RollingUpdate
   debug: false
+  replicas: 1
   maxConcurrentReconciles: 3
   integrationOperator:
     resources:
       enabled: defaults
       requests:
         cpu: 100m
-        memory: 128Mi
+        memory: 20Mi
       limits:
-        cpu: 500m
-        memory: 256Mi
+        cpu: 200m
+        memory: 60Mi
