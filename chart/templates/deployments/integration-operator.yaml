@@ -73,6 +73,8 @@ spec:
           env:
             - name: DEBUG_OPERATOR
               value: 'true'
+            - name: MAX_CONCURRENT_RECONCILES
+              value: {{ .Values.config.maxConcurrentReconciles | quote }}
           {{- else }}
           env: []
           {{- end }}

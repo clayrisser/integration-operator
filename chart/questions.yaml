@@ -1,76 +1,81 @@
 categories:
   - Operators
 questions:
-
   # Config
   - variable: config.imagePullPolicy
-    description: ''
+    description: ""
     type: enum
     options:
       - IfNotPresent
       - Always
     required: true
-    label: 'pull policy'
+    label: "pull policy"
     group: Config
   - variable: config.updateStrategy
-    description: ''
+    description: ""
     type: enum
     options:
       - RollingUpdate
       - Recreate
       - OnDelete
     required: true
-    label: 'update strategy'
+    label: "update strategy"
     group: Config
   - variable: config.debug
-    description: ''
+    description: ""
     type: boolean
     required: true
     label: debug
     group: Config
+  - variable: config.maxConcurrentReconciles
+    description: ""
+    type: int
+    required: true
+    label: "max concurrent reconciles"
+    group: Config
   - variable: config.integrationOperator.resources.enabled
-    description: ''
+    description: ""
     type: enum
     options:
       - defaults
       - custom
-      - 'false'
+      - "false"
     required: true
-    label: 'integration operator resources enabled'
+    label: "integration operator resources enabled"
     show_subquestion_if: custom
     group: Config
     subquestions:
       - variable: config.integrationOperator.resources.requests.cpu
-        description: ''
+        description: ""
         type: string
         required: true
-        label: 'integration operator resources requests cpu'
+        label: "integration operator resources requests cpu"
       - variable: config.integrationOperator.resources.requests.memory
-        description: ''
+        description: ""
         type: string
         required: true
-        label: 'integration operator resources requests memory'
+        label: "integration operator resources requests memory"
       - variable: config.integrationOperator.resources.limits.cpu
-        description: ''
+        description: ""
         type: string
         required: true
-        label: 'integration operator resources limits cpu'
+        label: "integration operator resources limits cpu"
       - variable: config.integrationOperator.resources.limits.memory
-        description: ''
+        description: ""
         type: string
         required: true
-        label: 'integration operator resources limits memory'
+        label: "integration operator resources limits memory"
 
   # Images
   - variable: images.integrationOperator.repository
-    description: ''
+    description: ""
     type: string
     required: true
-    label: 'integration operator repository'
+    label: "integration operator repository"
     group: Images
   - variable: images.integrationOperator.tag
-    description: ''
+    description: ""
     type: string
     required: true
-    label: 'integration operator tag'
+    label: "integration operator tag"
     group: Images

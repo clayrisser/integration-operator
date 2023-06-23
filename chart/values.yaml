@@ -7,6 +7,7 @@ config:
   imagePullPolicy: IfNotPresent
   updateStrategy: RollingUpdate
   debug: false
+  maxConcurrentReconciles: 3
   integrationOperator:
     resources:
       enabled: defaults

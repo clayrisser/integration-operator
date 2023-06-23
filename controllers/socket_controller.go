@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 14-08-2022 14:34:43
+ * Last Modified: 23-06-2023 15:12:38
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -15,6 +15,8 @@ package controllers
 import (
 	"context"
 	"math"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -182,9 +184,15 @@ func filterSocketPredicate() predicate.Predicate {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SocketReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	maxConcurrentReconciles := 3
+	if value := os.Getenv("MAX_CONCURRENT_RECONCILES"); value != "" {
+		if val, err := strconv.Atoi(value); err == nil {
+			maxConcurrentReconciles = val
+		}
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&integrationv1alpha2.Socket{}).
-		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: maxConcurrentReconciles}).
 		WithEventFilter(filterSocketPredicate()).
 		Complete(r)
 }
