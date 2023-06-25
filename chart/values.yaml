@@ -1,7 +1,7 @@
 images:
   integrationOperator:
     repository: registry.gitlab.com/bitspur/internal/integration-operator
-    tag: 0.1.2
+    tag: 0.2.0
 
 config:
   imagePullPolicy: IfNotPresent
