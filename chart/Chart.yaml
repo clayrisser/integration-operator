@@ -2,8 +2,8 @@ name: integration-operator
 apiVersion: v1
 home: https://gitlab.com/bitspur/internal/integration-operator
 icon: ""
-version: 0.1.2
-appVersion: 0.1.2
+version: 0.2.0
+appVersion: 0.2.0
 description: "kubernetes operator to integrate deployments"
 keywords:
   - controller
