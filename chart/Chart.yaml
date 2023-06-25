@@ -1,6 +1,6 @@
 name: integration-operator
 apiVersion: v1
-home: https://gitlab.com/bitspur/internal/integration-operator
+home: https://gitlab.com/bitspur/rock8s/integration-operator
 icon: ""
 version: 0.2.0
 appVersion: 0.2.0
@@ -10,7 +10,7 @@ keywords:
   - integration
   - operator
 sources:
-  - https://gitlab.com/bitspur/internal/integration-operator.git
+  - https://gitlab.com/bitspur/rock8s/integration-operator.git
 maintainers:
   - name: "Clay Risser"
     email: email@clayrisser.com

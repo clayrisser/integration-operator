@@ -4,7 +4,7 @@
  * File Created: 23-07-2021 17:13:09
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 25-06-2023 10:15:43
+ * Last Modified: 25-06-2023 14:21:54
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -22,7 +22,7 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	integrationv1alpha2 "gitlab.com/bitspur/internal/integration-operator/api/v1alpha2"
+	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"

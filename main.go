@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 25-06-2023 10:15:43
+ * Last Modified: 25-06-2023 14:21:54
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -27,9 +27,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	integrationv1alpha2 "gitlab.com/bitspur/internal/integration-operator/api/v1alpha2"
-	"gitlab.com/bitspur/internal/integration-operator/controllers"
-	"gitlab.com/bitspur/internal/integration-operator/coupler"
+	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
+	"gitlab.com/bitspur/rock8s/integration-operator/controllers"
+	"gitlab.com/bitspur/rock8s/integration-operator/coupler"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -44,6 +44,8 @@ func init() {
 	utilruntime.Must(integrationv1alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
+
+//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 func main() {
 	var metricsAddr string
@@ -68,7 +70,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "f30c7c36.bitspur.com",
+		LeaderElectionID:       "f30c7c36.rock8s.com",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

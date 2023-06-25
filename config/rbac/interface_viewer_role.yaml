@@ -5,7 +5,7 @@ metadata:
   name: interface-viewer-role
 rules:
   - apiGroups:
-      - integration.bitspur.com
+      - integration.rock8s.com
     resources:
       - interfaces
     verbs:
@@ -13,7 +13,7 @@ rules:
       - list
       - watch
   - apiGroups:
-      - integration.bitspur.com
+      - integration.rock8s.com
     resources:
       - interfaces/status
     verbs:

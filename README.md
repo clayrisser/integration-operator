@@ -10,7 +10,7 @@ This operator takes inspiration from [Juju](https://juju.is) [Charm](https://juj
 ## Install
 
 ```sh
-git clone -b tag/v0.1.1 https://gitlab.com/bitspur/internal/integration-operator.git
+git clone -b tag/v0.1.1 https://gitlab.com/bitspur/rock8s/integration-operator.git
 helm install \
    --set name=integration-operator \
    --create-namespace=integration-operator \
@@ -35,7 +35,7 @@ make start
 
    You can find an example apparatus at the link below.
 
-   https://gitlab.com/bitspur/internal/example-apparatus
+   https://gitlab.com/bitspur/rock8s/example-apparatus
 
 4. Create plugs and sockets
 

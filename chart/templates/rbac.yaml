@@ -45,7 +45,19 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 rules:
 - apiGroups:
-  - integration.bitspur.com
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - integration.rock8s.com
   resources:
   - interfaces
   verbs:
@@ -57,13 +69,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - integration.bitspur.com
+  - integration.rock8s.com
   resources:
   - interfaces/finalizers
   verbs:
   - update
 - apiGroups:
-  - integration.bitspur.com
+  - integration.rock8s.com
   resources:
   - interfaces/status
   verbs:
@@ -71,7 +83,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - integration.bitspur.com
+  - integration.rock8s.com
   resources:
   - plugs
   verbs:
@@ -83,13 +95,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - integration.bitspur.com
+  - integration.rock8s.com
   resources:
   - plugs/finalizers
   verbs:
   - update
 - apiGroups:
-  - integration.bitspur.com
+  - integration.rock8s.com
   resources:
   - plugs/status
   verbs:
@@ -97,7 +109,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - integration.bitspur.com
+  - integration.rock8s.com
   resources:
   - sockets
   verbs:
@@ -109,13 +121,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - integration.bitspur.com
+  - integration.rock8s.com
   resources:
   - sockets/finalizers
   verbs:
   - update
 - apiGroups:
-  - integration.bitspur.com
+  - integration.rock8s.com
   resources:
   - sockets/status
   verbs:

@@ -2,7 +2,7 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: sockets.integration.bitspur.com
+  name: sockets.integration.rock8s.com
 spec:
   conversion:
     strategy: Webhook

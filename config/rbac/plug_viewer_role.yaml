@@ -5,7 +5,7 @@ metadata:
   name: plug-viewer-role
 rules:
   - apiGroups:
-      - integration.bitspur.com
+      - integration.rock8s.com
     resources:
       - plugs
     verbs:
@@ -13,7 +13,7 @@ rules:
       - list
       - watch
   - apiGroups:
-      - integration.bitspur.com
+      - integration.rock8s.com
     resources:
       - plugs/status
     verbs:

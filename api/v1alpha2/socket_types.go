@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 25-06-2023 10:15:43
+ * Last Modified: 25-06-2023 14:21:23
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -21,7 +21,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-const SocketFinalizer = "integration.bitspur.com/finalizer"
+const SocketFinalizer = "integration.rock8s.com/finalizer"
 
 // SocketSpec defines the desired state of Socket
 type SocketSpec struct {

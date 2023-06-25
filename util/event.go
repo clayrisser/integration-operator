@@ -4,7 +4,7 @@
  * File Created: 26-06-2021 04:17:51
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 25-06-2023 10:15:43
+ * Last Modified: 25-06-2023 14:21:54
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -15,7 +15,7 @@ package util
 import (
 	"context"
 
-	integrationv1alpha2 "gitlab.com/bitspur/internal/integration-operator/api/v1alpha2"
+	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
 )
 
 type EventUtil struct {

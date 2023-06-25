@@ -1,37 +1,37 @@
-domain: bitspur.com
+domain: rock8s.com
 layout:
 - go.kubebuilder.io/v3
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: integration-operator
-repo: gitlab.com/bitspur/internal/integration-operator
+repo: gitlab.com/bitspur/rock8s/integration-operator
 resources:
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: bitspur.com
+  domain: rock8s.com
   group: integration
   kind: Plug
-  path: gitlab.com/bitspur/internal/integration-operator/api/v1alpha2
+  path: gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2
   version: v1alpha2
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: bitspur.com
+  domain: rock8s.com
   group: integration
   kind: Socket
-  path: gitlab.com/bitspur/internal/integration-operator/api/v1alpha2
+  path: gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2
   version: v1alpha2
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: bitspur.com
+  domain: rock8s.com
   group: integration
   kind: Interface
-  path: gitlab.com/bitspur/internal/integration-operator/api/v1alpha2
+  path: gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2
   version: v1alpha2
 version: "3"

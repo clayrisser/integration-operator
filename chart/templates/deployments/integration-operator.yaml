@@ -73,15 +73,11 @@ spec:
             requests: {}
             limits: {}
 {{- end }}
-          {{- if .Values.config.debug }}
           env:
             - name: DEBUG_OPERATOR
               value: 'true'
             - name: MAX_CONCURRENT_RECONCILES
               value: {{ .Values.config.maxConcurrentReconciles | quote }}
-          {{- else }}
-          env: []
-          {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz

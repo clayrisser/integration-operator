@@ -1,4 +1,4 @@
-apiVersion: integration.bitspur.com/v1alpha2
+apiVersion: integration.rock8s.com/v1alpha2
 kind: Socket
 metadata:
   name: socket-sample

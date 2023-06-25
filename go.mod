@@ -1,4 +1,4 @@
-module gitlab.com/bitspur/internal/integration-operator
+module gitlab.com/bitspur/rock8s/integration-operator
 
 go 1.15
 

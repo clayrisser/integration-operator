@@ -6,20 +6,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: plugs.integration.bitspur.com
+  name: sockets.integration.rock8s.com
 spec:
-  group: integration.bitspur.com
+  group: integration.rock8s.com
   names:
-    kind: Plug
-    listKind: PlugList
-    plural: plugs
-    singular: plug
+    kind: Socket
+    listKind: SocketList
+    plural: sockets
+    singular: socket
   scope: Namespaced
   versions:
   - name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: Plug is the Schema for the plugs API
+        description: Socket is the Schema for the sockets API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,7 +34,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: PlugSpec defines the desired state of Plug
+            description: SocketSpec defines the desired state of Socket
             properties:
               apparatus:
                 description: apparatus
@@ -1199,6 +1199,10 @@ spec:
               interfaceVersions:
                 description: interface versions
                 type: string
+              limit:
+                description: limit
+                format: int32
+                type: integer
               resources:
                 description: resources
                 items:
@@ -1213,18 +1217,6 @@ spec:
                       type: array
                   type: object
                 type: array
-              socket:
-                description: socket
-                properties:
-                  name:
-                    description: name
-                    type: string
-                  namespace:
-                    description: namespace
-                    type: string
-                required:
-                - name
-                type: object
               vars:
                 description: A var is a name (e.g. FOO) associated with a field in
                   a specific resource instance.  The field must contain a value of
@@ -1276,7 +1268,7 @@ spec:
                 type: array
             type: object
           status:
-            description: PlugStatus defines the observed state of Plug
+            description: SocketStatus defines the observed state of Socket
             properties:
               conditions:
                 description: Conditions represent the latest available observations
@@ -1349,25 +1341,33 @@ spec:
                   - type
                   type: object
                 type: array
-              coupledSocket:
-                description: socket coupled to plug
-                properties:
-                  apiVersion:
-                    description: API version of the socket
-                    type: string
-                  kind:
-                    description: Kind of the socket
-                    type: string
-                  name:
-                    description: Name of the socket
-                    type: string
-                  namespace:
-                    description: Namespace of the socket
-                    type: string
-                  uid:
-                    description: UID of the socket
-                    type: string
-                type: object
+              coupledPlugs:
+                description: plugs coupled to socket
+                items:
+                  properties:
+                    apiVersion:
+                      description: API version of the plug
+                      type: string
+                    kind:
+                      description: Kind of the plug
+                      type: string
+                    name:
+                      description: Name of the plug
+                      type: string
+                    namespace:
+                      description: Namespace of the plug
+                      type: string
+                    uid:
+                      description: UID of the plug
+                      type: string
+                  required:
+                  - apiVersion
+                  - kind
+                  - name
+                  - namespace
+                  - uid
+                  type: object
+                type: array
               lastUpdate:
                 description: last update time
                 format: date-time
@@ -1376,8 +1376,12 @@ spec:
                 description: status message
                 type: string
               phase:
-                description: integration plug phase (Pending, Succeeded, Failed, Unknown)
+                description: integration socket phase (Pending, Succeeded, Failed,
+                  Unknown)
                 type: string
+              ready:
+                description: socket is ready for coupling
+                type: boolean
               requeued:
                 description: requeued
                 type: boolean

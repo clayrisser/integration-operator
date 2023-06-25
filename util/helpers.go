@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 25-06-2023 10:15:43
+ * Last Modified: 25-06-2023 14:21:54
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -19,8 +19,8 @@ import (
 	"os"
 	"time"
 
-	integrationv1alpha2 "gitlab.com/bitspur/internal/integration-operator/api/v1alpha2"
-	"gitlab.com/bitspur/internal/integration-operator/config"
+	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
+	"gitlab.com/bitspur/rock8s/integration-operator/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )

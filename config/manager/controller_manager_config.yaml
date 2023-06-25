@@ -8,4 +8,4 @@ webhook:
   port: 9443
 leaderElection:
   leaderElect: true
-  resourceName: f30c7c36.bitspur.com
+  resourceName: f30c7c36.rock8s.com
