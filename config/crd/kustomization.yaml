@@ -2,9 +2,9 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-  - bases/integration.risserlabs.com_plugs.yaml
-  - bases/integration.risserlabs.com_sockets.yaml
-  - bases/integration.risserlabs.com_interfaces.yaml
+  - bases/integration.bitspur.com_plugs.yaml
+  - bases/integration.bitspur.com_sockets.yaml
+  - bases/integration.bitspur.com_interfaces.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

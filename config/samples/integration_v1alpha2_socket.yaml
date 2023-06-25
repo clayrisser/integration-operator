@@ -1,4 +1,4 @@
-apiVersion: integration.risserlabs.com/v1alpha2
+apiVersion: integration.bitspur.com/v1alpha2
 kind: Socket
 metadata:
   name: socket-sample
@@ -11,7 +11,7 @@ spec:
   apparatus:
     endpoint: /socket
     containers:
-      - image: risserlabs/example-apparatus:latest
+      - image: bitspur/example-apparatus:latest
         imagePullPolicy: Always
         name: apparatus
         ports:

@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 23-06-2023 15:13:02
+ * Last Modified: 25-06-2023 10:15:43
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -18,9 +18,9 @@ import (
 	"strconv"
 
 	"github.com/go-logr/logr"
-	integrationv1alpha2 "gitlab.com/risserlabs/internal/integration-operator/api/v1alpha2"
-	"gitlab.com/risserlabs/internal/integration-operator/coupler"
-	"gitlab.com/risserlabs/internal/integration-operator/util"
+	integrationv1alpha2 "gitlab.com/bitspur/internal/integration-operator/api/v1alpha2"
+	"gitlab.com/bitspur/internal/integration-operator/coupler"
+	"gitlab.com/bitspur/internal/integration-operator/util"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -38,9 +38,9 @@ type PlugReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=integration.risserlabs.com,resources=plugs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=integration.risserlabs.com,resources=plugs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=integration.risserlabs.com,resources=plugs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=integration.bitspur.com,resources=plugs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=integration.bitspur.com,resources=plugs/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=integration.bitspur.com,resources=plugs/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

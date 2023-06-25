@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 10-10-2022 04:02:34
+ * Last Modified: 25-06-2023 10:15:43
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -24,8 +24,8 @@ import (
 	"github.com/tdewolff/minify"
 	minifyJson "github.com/tdewolff/minify/json"
 	"github.com/tidwall/sjson"
-	integrationv1alpha2 "gitlab.com/risserlabs/internal/integration-operator/api/v1alpha2"
-	"gitlab.com/risserlabs/internal/integration-operator/config"
+	integrationv1alpha2 "gitlab.com/bitspur/internal/integration-operator/api/v1alpha2"
+	"gitlab.com/bitspur/internal/integration-operator/config"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

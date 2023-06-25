@@ -5,7 +5,7 @@ metadata:
   name: socket-viewer-role
 rules:
   - apiGroups:
-      - integration.risserlabs.com
+      - integration.bitspur.com
     resources:
       - sockets
     verbs:
@@ -13,7 +13,7 @@ rules:
       - list
       - watch
   - apiGroups:
-      - integration.risserlabs.com
+      - integration.bitspur.com
     resources:
       - sockets/status
     verbs:

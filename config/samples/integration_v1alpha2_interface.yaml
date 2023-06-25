@@ -1,4 +1,4 @@
-apiVersion: integration.risserlabs.com/v1alpha2
+apiVersion: integration.bitspur.com/v1alpha2
 kind: Interface
 metadata:
   name: interface-sample

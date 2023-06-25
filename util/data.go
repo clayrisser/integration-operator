@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:11:01
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 14-08-2022 14:34:43
+ * Last Modified: 25-06-2023 10:15:43
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -15,7 +15,7 @@ package util
 import (
 	"context"
 
-	integrationv1alpha2 "gitlab.com/risserlabs/internal/integration-operator/api/v1alpha2"
+	integrationv1alpha2 "gitlab.com/bitspur/internal/integration-operator/api/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"

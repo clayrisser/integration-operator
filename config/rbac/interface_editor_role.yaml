@@ -5,7 +5,7 @@ metadata:
   name: interface-editor-role
 rules:
   - apiGroups:
-      - integration.risserlabs.com
+      - integration.bitspur.com
     resources:
       - interfaces
     verbs:
@@ -17,7 +17,7 @@ rules:
       - update
       - watch
   - apiGroups:
-      - integration.risserlabs.com
+      - integration.bitspur.com
     resources:
       - interfaces/status
     verbs:
