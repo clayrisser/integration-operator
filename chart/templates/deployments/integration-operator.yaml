@@ -75,7 +75,7 @@ spec:
 {{- end }}
           env:
             - name: DEBUG_OPERATOR
-              value: 'true'
+              value: {{ .Values.config.debug | ternary "1" "0" | quote }}
             - name: MAX_CONCURRENT_RECONCILES
               value: {{ .Values.config.maxConcurrentReconciles | quote }}
           livenessProbe:
