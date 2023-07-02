@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:14:06
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 02-07-2023 11:49:19
+ * Last Modified: 02-07-2023 12:16:39
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -58,6 +58,7 @@ func NewApparatusUtil(
 
 func (u *ApparatusUtil) GetPlugConfig(
 	plug *integrationv1alpha2.Plug,
+	socket *integrationv1alpha2.Socket,
 ) ([]byte, error) {
 	client := resty.New()
 	rCh := make(chan *resty.Response)
@@ -75,12 +76,29 @@ func (u *ApparatusUtil) GetPlugConfig(
 				return
 			}
 
-			data, err := u.dataUtil.GetPlugData(plug)
+			body, err = sjson.Set(body, "socket", socket)
 			if err != nil {
 				errCh <- err
 				return
 			}
-			body, err = sjson.Set(body, "data", data)
+
+			plugData, err := u.dataUtil.GetPlugData(plug)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			body, err = sjson.Set(body, "plugData", plugData)
+			if err != nil {
+				errCh <- err
+				return
+			}
+
+			socketData, err := u.dataUtil.GetSocketData(socket)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			body, err = sjson.Set(body, "socketData", socketData)
 			if err != nil {
 				errCh <- err
 				return
@@ -127,6 +145,7 @@ func (u *ApparatusUtil) GetPlugConfig(
 
 func (u *ApparatusUtil) GetSocketConfig(
 	socket *integrationv1alpha2.Socket,
+	plug *integrationv1alpha2.Plug,
 ) ([]byte, error) {
 	client := resty.New()
 	rCh := make(chan *resty.Response)
@@ -144,12 +163,29 @@ func (u *ApparatusUtil) GetSocketConfig(
 				return
 			}
 
-			data, err := u.dataUtil.GetSocketData(socket)
+			body, err = sjson.Set(body, "plug", plug)
 			if err != nil {
 				errCh <- err
 				return
 			}
-			body, err = sjson.Set(body, "data", data)
+
+			socketData, err := u.dataUtil.GetSocketData(socket)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			body, err = sjson.Set(body, "socketData", socketData)
+			if err != nil {
+				errCh <- err
+				return
+			}
+
+			plugData, err := u.dataUtil.GetPlugData(plug)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			body, err = sjson.Set(body, "plugData", plugData)
 			if err != nil {
 				errCh <- err
 				return

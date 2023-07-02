@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:27
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 02-07-2023 11:49:19
+ * Last Modified: 02-07-2023 12:17:19
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -93,7 +93,7 @@ func (u *ConfigUtil) GetPlugConfig(
 		}
 	}
 	if plug.Spec.Apparatus != nil {
-		body, err := u.apparatusUtil.GetPlugConfig(plug)
+		body, err := u.apparatusUtil.GetPlugConfig(plug, socket)
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func (u *ConfigUtil) GetSocketConfig(
 		}
 	}
 	if socket.Spec.Apparatus != nil {
-		body, err := u.apparatusUtil.GetSocketConfig(socket)
+		body, err := u.apparatusUtil.GetSocketConfig(socket, plug)
 		if err != nil {
 			return nil, err
 		}
