@@ -1217,6 +1217,20 @@ spec:
                       type: array
                   type: object
                 type: array
+              validation:
+                description: validation
+                properties:
+                  namespaceBlacklist:
+                    description: namespace blacklist
+                    items:
+                      type: string
+                    type: array
+                  namespaceWhitelist:
+                    description: namespace whitelist
+                    items:
+                      type: string
+                    type: array
+                type: object
               vars:
                 description: A var is a name (e.g. FOO) associated with a field in
                   a specific resource instance.  The field must contain a value of

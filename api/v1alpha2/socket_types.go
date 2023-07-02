@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 02-07-2023 11:49:19
+ * Last Modified: 02-07-2023 11:58:32
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -18,16 +18,10 @@ import (
 	kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 const SocketFinalizer = "integration.rock8s.com/finalizer"
 
 // SocketSpec defines the desired state of Socket
 type SocketSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// interface
 	Interface NamespacedName `json:"interface,omitempty"`
 
@@ -74,6 +68,17 @@ type SocketSpec struct {
 
 	// change epoch to force an update
 	Epoch string `json:"epoch,omitempty"`
+
+	// validation
+	Validation *SocketSpecValidation `json:"validation,omitempty"`
+}
+
+type SocketSpecValidation struct {
+	// namespace whitelist
+	NamespaceWhitelist []string `json:"namespaceWhitelist,omitempty"`
+
+	// namespace blacklist
+	NamespaceBlacklist []string `json:"namespaceBlacklist,omitempty"`
 }
 
 // SocketStatus defines the observed state of Socket

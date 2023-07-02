@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 02-07-2023 11:49:19
+ * Last Modified: 02-07-2023 12:07:35
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -91,6 +91,10 @@ func (c *Coupler) Couple(
 	}
 	if plugInterface.UID != socketInterface.UID {
 		return plugUtil.Error(errors.New("plug and socket interface do not match"))
+	}
+
+	if err := util.Validate(plug, socket); err != nil {
+		return plugUtil.Error(err)
 	}
 
 	plugConfig, err := configUtil.GetPlugConfig(plug, plugInterface, socket)

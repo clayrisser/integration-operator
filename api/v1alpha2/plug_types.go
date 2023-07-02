@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 02-07-2023 11:49:19
+ * Last Modified: 02-07-2023 11:50:50
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -18,16 +18,10 @@ import (
 	kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 const PlugFinalizer = "integration.rock8s.com/finalizer"
 
 // PlugSpec defines the desired state of Plug
 type PlugSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// socket
 	Socket NamespacedName `json:"socket,omitempty"`
 

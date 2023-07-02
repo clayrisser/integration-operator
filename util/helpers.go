@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 02-07-2023 11:49:19
+ * Last Modified: 02-07-2023 12:04:55
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"regexp"
 	"time"
 
 	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
@@ -92,4 +93,25 @@ func WhenInWhenSlice(when integrationv1alpha2.When, whenSlice *[]integrationv1al
 		}
 	}
 	return false
+}
+
+func Validate(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket) error {
+	if socket.Spec.Validation.NamespaceBlacklist != nil {
+		for _, namespace := range socket.Spec.Validation.NamespaceBlacklist {
+			match, _ := regexp.MatchString(namespace, plug.Namespace)
+			if match {
+				return fmt.Errorf("namespace %s is blacklisted", plug.Namespace)
+			}
+		}
+	}
+	if socket.Spec.Validation.NamespaceWhitelist != nil {
+		for _, namespace := range socket.Spec.Validation.NamespaceWhitelist {
+			match, _ := regexp.MatchString(namespace, plug.Namespace)
+			if match {
+				return nil
+			}
+		}
+		return fmt.Errorf("namespace %s is not whitelisted", plug.Namespace)
+	}
+	return nil
 }
