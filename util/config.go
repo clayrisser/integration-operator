@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 22:09:27
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 25-06-2023 14:21:54
+ * Last Modified: 02-07-2023 11:47:54
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -49,6 +49,7 @@ func NewConfigUtil(
 func (u *ConfigUtil) GetPlugConfig(
 	plug *integrationv1alpha2.Plug,
 	plugInterface *integrationv1alpha2.Interface,
+	socket *integrationv1alpha2.Socket,
 ) (map[string]string, error) {
 	plugConfig := make(map[string]string)
 	if plug.Spec.ConfigSecretName != "" {
@@ -71,7 +72,7 @@ func (u *ConfigUtil) GetPlugConfig(
 	}
 	if plug.Spec.ConfigMapper != nil {
 		for key, value := range plug.Spec.ConfigMapper {
-			result, err := u.plugLookup(plug, value)
+			result, err := u.plugLookup(plug, value, socket)
 			if err != nil {
 				return nil, err
 			}
@@ -114,6 +115,7 @@ func (u *ConfigUtil) GetPlugConfig(
 func (u *ConfigUtil) GetSocketConfig(
 	socket *integrationv1alpha2.Socket,
 	socketInterface *integrationv1alpha2.Interface,
+	plug *integrationv1alpha2.Plug,
 ) (map[string]string, error) {
 	socketConfig := make(map[string]string)
 	if socket.Spec.ConfigSecretName != "" {
@@ -136,7 +138,7 @@ func (u *ConfigUtil) GetSocketConfig(
 	}
 	if socket.Spec.ConfigMapper != nil {
 		for key, value := range socket.Spec.ConfigMapper {
-			result, err := u.socketLookup(socket, value)
+			result, err := u.socketLookup(socket, value, plug)
 			if err != nil {
 				return nil, err
 			}
@@ -241,33 +243,43 @@ func (u *ConfigUtil) validVersion(versions string, version string) bool {
 	return versions == version
 }
 
-func (u *ConfigUtil) plugLookup(plug *integrationv1alpha2.Plug, mapper string) (string, error) {
-	data, err := u.buildPlugTemplateData(plug)
+func (u *ConfigUtil) plugLookup(plug *integrationv1alpha2.Plug, mapper string, socket *integrationv1alpha2.Socket) (string, error) {
+	data, err := u.buildPlugTemplateData(plug, socket)
 	if err != nil {
 		return "", err
 	}
 	return u.templateConfigMapper(&data, mapper)
 }
 
-func (u *ConfigUtil) socketLookup(socket *integrationv1alpha2.Socket, mapper string) (string, error) {
-	data, err := u.buildSocketTemplateData(socket)
+func (u *ConfigUtil) socketLookup(socket *integrationv1alpha2.Socket, mapper string, plug *integrationv1alpha2.Plug) (string, error) {
+	data, err := u.buildSocketTemplateData(socket, plug)
 	if err != nil {
 		return "", err
 	}
 	return u.templateConfigMapper(&data, mapper)
 }
 
-func (u *ConfigUtil) buildPlugTemplateData(plug *integrationv1alpha2.Plug) (map[string]interface{}, error) {
+func (u *ConfigUtil) buildPlugTemplateData(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket) (map[string]interface{}, error) {
 	dataMap := map[string]interface{}{}
 	if plug != nil {
-		dataMap["resource"] = plug
+		dataMap["plug"] = plug
+	}
+	if socket != nil {
+		dataMap["socket"] = socket
 	}
 	plugData, err := u.dataUtil.GetPlugData(plug)
 	if err != nil {
 		return dataMap, err
 	}
 	if dataMap != nil {
-		dataMap["data"] = plugData
+		dataMap["plugData"] = plugData
+	}
+	socketData, err := u.dataUtil.GetSocketData(socket)
+	if err != nil {
+		return dataMap, err
+	}
+	if dataMap != nil {
+		dataMap["socketData"] = socketData
 	}
 	if plug.Spec.Vars != nil {
 		varsMap, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars)
@@ -276,7 +288,6 @@ func (u *ConfigUtil) buildPlugTemplateData(plug *integrationv1alpha2.Plug) (map[
 		}
 		dataMap["vars"] = varsMap
 	}
-
 	bData, err := json.Marshal(dataMap)
 	if err != nil {
 		return nil, err
@@ -288,17 +299,27 @@ func (u *ConfigUtil) buildPlugTemplateData(plug *integrationv1alpha2.Plug) (map[
 	return data, nil
 }
 
-func (u *ConfigUtil) buildSocketTemplateData(socket *integrationv1alpha2.Socket) (map[string]interface{}, error) {
+func (u *ConfigUtil) buildSocketTemplateData(socket *integrationv1alpha2.Socket, plug *integrationv1alpha2.Plug) (map[string]interface{}, error) {
 	dataMap := map[string]interface{}{}
 	if socket != nil {
-		dataMap["resource"] = socket
+		dataMap["socket"] = socket
+	}
+	if plug != nil {
+		dataMap["plug"] = plug
 	}
 	socketData, err := u.dataUtil.GetSocketData(socket)
 	if err != nil {
 		return dataMap, err
 	}
 	if dataMap != nil {
-		dataMap["data"] = socketData
+		dataMap["socketData"] = socketData
+	}
+	plugData, err := u.dataUtil.GetPlugData(plug)
+	if err != nil {
+		return dataMap, err
+	}
+	if dataMap != nil {
+		dataMap["plugData"] = plugData
 	}
 	if socket.Spec.Vars != nil {
 		varsMap, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars)
@@ -307,7 +328,6 @@ func (u *ConfigUtil) buildSocketTemplateData(socket *integrationv1alpha2.Socket)
 		}
 		dataMap["vars"] = varsMap
 	}
-
 	bData, err := json.Marshal(dataMap)
 	if err != nil {
 		return nil, err

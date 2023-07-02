@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 25-06-2023 14:21:54
+ * Last Modified: 02-07-2023 11:43:27
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -50,13 +50,13 @@ func (c *Coupler) Decouple(
 		}
 	}
 
-	plugConfig, err := configUtil.GetPlugConfig(plug, nil)
+	plugConfig, err := configUtil.GetPlugConfig(plug, nil, socket)
 	if err != nil {
 		return plugUtil.Error(err)
 	}
 	socketConfig := map[string]string{}
 	if socket != nil {
-		socketConfig, err = configUtil.GetSocketConfig(socket, nil)
+		socketConfig, err = configUtil.GetSocketConfig(socket, nil, plug)
 		if err != nil {
 			return plugUtil.Error(err)
 		}

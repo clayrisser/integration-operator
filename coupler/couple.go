@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 25-06-2023 14:21:54
+ * Last Modified: 02-07-2023 11:43:39
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * Risser Labs LLC (c) Copyright 2021
@@ -93,11 +93,11 @@ func (c *Coupler) Couple(
 		return plugUtil.Error(errors.New("plug and socket interface do not match"))
 	}
 
-	plugConfig, err := configUtil.GetPlugConfig(plug, plugInterface)
+	plugConfig, err := configUtil.GetPlugConfig(plug, plugInterface, socket)
 	if err != nil {
 		return plugUtil.Error(err)
 	}
-	socketConfig, err := configUtil.GetSocketConfig(socket, socketInterface)
+	socketConfig, err := configUtil.GetSocketConfig(socket, socketInterface, plug)
 	if err != nil {
 		return socketUtil.Error(err)
 	}
