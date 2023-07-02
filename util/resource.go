@@ -4,10 +4,10 @@
  * File Created: 23-07-2021 17:13:09
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 25-06-2023 14:21:54
+ * Last Modified: 02-07-2023 11:49:19
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
- * Risser Labs LLC (c) Copyright 2021
+ * BitSpur (c) Copyright 2021
  */
 
 package util
