@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 04-07-2023 11:05:20
+ * Last Modified: 05-07-2023 08:03:36
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -45,9 +45,30 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
+// if you want this more secure, you have to create resources from a pod running in the
+// respective plug or socket. This either require a special controller in the plug or socket
+// namespace that this controller communicates with, or it would require running a job that
+// creates the resource for us, which would be slow. For now, the security is robust against
+// creating cluster wide resources or resource in another namespace. However resources in
+// within the namespace are fully accessible to a plug or socket in that namespace. If you need
+// to create a resources that this controller is not giving permission to, you can create a job
+// or patch and then give them the respective permissions. This is secure enough because the
+// job or patch is created in the namespace of the plug or socket and will follow the permissions
+// granted in that namespace.
+
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=patch.rock8s.com,resources=patches,verbs=get;list;watch;create;update;patch;delete
 
 func main() {
 	var metricsAddr string
