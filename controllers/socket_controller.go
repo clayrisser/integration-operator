@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 02-07-2023 11:49:19
+ * Last Modified: 07-07-2023 08:25:17
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -56,7 +56,7 @@ type SocketReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("socket", req.NamespacedName)
-	log.Info("RECONCILING SOCKET")
+	log.Info("R socket " + req.NamespacedName.String())
 	socketUtil := util.NewSocketUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 		Name:      req.NamespacedName.Name,
 		Namespace: req.NamespacedName.Namespace,

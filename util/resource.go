@@ -4,7 +4,7 @@
  * File Created: 23-07-2021 17:13:09
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 02-07-2023 11:49:19
+ * Last Modified: 07-07-2023 08:24:06
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -276,7 +276,7 @@ metadata:
 		return nil, errors.New("var objRef namespace " + objRef.Namespace + " must be " + namespace)
 	}
 	if objRef.Group != "" && objRef.Version != "" {
-		objRef.APIVersion = objRef.Group + objRef.Version
+		objRef.APIVersion = objRef.Group + "/" + objRef.Version
 	}
 	var buff bytes.Buffer
 	err = t.Execute(&buff, objRef)

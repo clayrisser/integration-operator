@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 04-07-2023 11:05:10
+ * Last Modified: 07-07-2023 08:25:06
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -53,7 +53,7 @@ type PlugReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("plug", req.NamespacedName)
-	log.Info("RECONCILING PLUG")
+	log.Info("R plug " + req.NamespacedName.String())
 	plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &log, &integrationv1alpha2.NamespacedName{
 		Name:      req.NamespacedName.Name,
 		Namespace: req.NamespacedName.Namespace,
