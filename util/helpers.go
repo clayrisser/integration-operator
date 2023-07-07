@@ -4,7 +4,7 @@
  * File Created: 23-06-2021 09:14:26
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 02-07-2023 12:04:55
+ * Last Modified: 07-07-2023 04:52:28
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -96,6 +96,9 @@ func WhenInWhenSlice(when integrationv1alpha2.When, whenSlice *[]integrationv1al
 }
 
 func Validate(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket) error {
+	if socket.Spec.Validation == nil {
+		return nil
+	}
 	if socket.Spec.Validation.NamespaceBlacklist != nil {
 		for _, namespace := range socket.Spec.Validation.NamespaceBlacklist {
 			match, _ := regexp.MatchString(namespace, plug.Namespace)
