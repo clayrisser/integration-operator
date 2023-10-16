@@ -3,6 +3,7 @@ module gitlab.com/bitspur/rock8s/integration-operator
 go 1.15
 
 require (
+	github.com/Azure/go-autorest/autorest/adal v0.9.20 // indirect
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect

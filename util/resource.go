@@ -1,10 +1,10 @@
 /**
- * File: /resource.go
+ * File: /util/resource.go
  * Project: integration-operator
  * File Created: 23-07-2021 17:13:09
  * Author: Clay Risser <email@clayrisser.com>
  * -----
- * Last Modified: 07-07-2023 08:24:06
+ * Last Modified: 16-10-2023 18:29:35
  * Modified By: Clay Risser <email@clayrisser.com>
  * -----
  * BitSpur (c) Copyright 2021
@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -304,6 +305,9 @@ func (u *ResourceUtil) ProcessResources(
 			namespace,
 			resource.Resource,
 		)
+		if strings.TrimSpace(templatedResource) == "" {
+			return nil
+		}
 		if err != nil {
 			return err
 		}
