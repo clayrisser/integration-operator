@@ -1,13 +1,27 @@
 /**
- * File: /helpers.go
- * Project: integration-operator
- * File Created: 23-06-2021 09:14:26
- * Author: Clay Risser <email@clayrisser.com>
+ * File: /util/helpers.go
+ * Project: new
+ * File Created: 17-10-2023 13:49:54
+ * Author: Clay Risser
  * -----
- * Last Modified: 07-07-2023 04:52:28
- * Modified By: Clay Risser <email@clayrisser.com>
- * -----
- * BitSpur (c) Copyright 2021
+ * BitSpur (c) Copyright 2021 - 2023
+ *
+ * Licensed under the GNU Affero General Public License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.gnu.org/licenses/agpl-3.0.en.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * You can be released from the requirements of the license by purchasing
+ * a commercial license. Buying such a license is mandatory as soon as you
+ * develop commercial activities involving this software without disclosing
+ * the source code of your own applications.
  */
 
 package util
@@ -15,18 +29,12 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 	"os"
 	"regexp"
-	"time"
 
-	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
-	"gitlab.com/bitspur/rock8s/integration-operator/config"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
 )
-
-var startTime metav1.Time = metav1.Now()
 
 func Default(value string, defaultValue string) string {
 	if value == "" {
@@ -35,8 +43,12 @@ func Default(value string, defaultValue string) string {
 	return value
 }
 
+func EnsureServiceAccount(serviceAccountName string) string {
+	return Default(serviceAccountName, "default")
+}
+
 func EnsureNamespacedName(
-	partialNamespacedName *integrationv1alpha2.NamespacedName,
+	partialNamespacedName *integrationv1beta1.NamespacedName,
 	defaultNamespace string,
 ) types.NamespacedName {
 	return types.NamespacedName{
@@ -53,27 +65,6 @@ func GetOperatorNamespace() string {
 	return operatorNamespace
 }
 
-func CalculateExponentialRequireAfter(
-	lastUpdate metav1.Time,
-	factor int64,
-) time.Duration {
-	if factor == 0 {
-		factor = 2
-	}
-	now := metav1.Now()
-	if startTime.Unix() > lastUpdate.Unix() {
-		return time.Duration(time.Second * 2)
-	}
-	retryInterval := time.Second
-	if !lastUpdate.Time.IsZero() {
-		retryInterval = now.Sub(lastUpdate.Time).Round(time.Second)
-	}
-	return time.Duration(math.Min(
-		float64(retryInterval.Nanoseconds()*factor),
-		float64(config.MaxRequeueDuration),
-	))
-}
-
 func JsonToHashMap(body []byte) (map[string]string, error) {
 	hashMap := make(map[string]string)
 	var obj map[string]interface{}
@@ -86,7 +77,7 @@ func JsonToHashMap(body []byte) (map[string]string, error) {
 	return hashMap, nil
 }
 
-func WhenInWhenSlice(when integrationv1alpha2.When, whenSlice *[]integrationv1alpha2.When) bool {
+func WhenInWhenSlice(when integrationv1beta1.When, whenSlice *[]integrationv1beta1.When) bool {
 	for _, whenItem := range *whenSlice {
 		if when == whenItem {
 			return true
@@ -95,7 +86,7 @@ func WhenInWhenSlice(when integrationv1alpha2.When, whenSlice *[]integrationv1al
 	return false
 }
 
-func Validate(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket) error {
+func Validate(plug *integrationv1beta1.Plug, socket *integrationv1beta1.Socket) error {
 	if socket.Spec.Validation == nil {
 		return nil
 	}

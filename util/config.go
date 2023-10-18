@@ -1,13 +1,27 @@
 /**
- * File: /config.go
- * Project: integration-operator
- * File Created: 23-06-2021 22:09:27
- * Author: Clay Risser <email@clayrisser.com>
+ * File: /util/config.go
+ * Project: new
+ * File Created: 17-10-2023 13:49:54
+ * Author: Clay Risser
  * -----
- * Last Modified: 02-07-2023 12:17:19
- * Modified By: Clay Risser <email@clayrisser.com>
- * -----
- * BitSpur (c) Copyright 2021
+ * BitSpur (c) Copyright 2021 - 2023
+ *
+ * Licensed under the GNU Affero General Public License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.gnu.org/licenses/agpl-3.0.en.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * You can be released from the requirements of the license by purchasing
+ * a commercial license. Buying such a license is mandatory as soon as you
+ * develop commercial activities involving this software without disclosing
+ * the source code of your own applications.
  */
 
 package util
@@ -20,7 +34,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
-	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
+	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,9 +61,8 @@ func NewConfigUtil(
 }
 
 func (u *ConfigUtil) GetPlugConfig(
-	plug *integrationv1alpha2.Plug,
-	plugInterface *integrationv1alpha2.Interface,
-	socket *integrationv1alpha2.Socket,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
 ) (map[string]string, error) {
 	plugConfig := make(map[string]string)
 	if plug.Spec.ConfigSecretName != "" {
@@ -70,8 +83,8 @@ func (u *ConfigUtil) GetPlugConfig(
 			plugConfig[key] = value
 		}
 	}
-	if plug.Spec.ConfigMapper != nil {
-		for key, value := range plug.Spec.ConfigMapper {
+	if plug.Spec.ConfigTemplate != nil {
+		for key, value := range plug.Spec.ConfigTemplate {
 			result, err := u.plugLookup(plug, value, socket)
 			if err != nil {
 				return nil, err
@@ -105,7 +118,7 @@ func (u *ConfigUtil) GetPlugConfig(
 			plugConfig[key] = value
 		}
 	}
-	plugConfig, err := u.ValidatePlugConfig(plug, plugInterface, plugConfig)
+	plugConfig, err := u.ValidatePlugConfig(plug, socket.Spec.Interface, plugConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -113,9 +126,8 @@ func (u *ConfigUtil) GetPlugConfig(
 }
 
 func (u *ConfigUtil) GetSocketConfig(
-	socket *integrationv1alpha2.Socket,
-	socketInterface *integrationv1alpha2.Interface,
-	plug *integrationv1alpha2.Plug,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
 ) (map[string]string, error) {
 	socketConfig := make(map[string]string)
 	if socket.Spec.ConfigSecretName != "" {
@@ -136,8 +148,8 @@ func (u *ConfigUtil) GetSocketConfig(
 			socketConfig[key] = value
 		}
 	}
-	if socket.Spec.ConfigMapper != nil {
-		for key, value := range socket.Spec.ConfigMapper {
+	if socket.Spec.ConfigTemplate != nil {
+		for key, value := range socket.Spec.ConfigTemplate {
 			result, err := u.socketLookup(socket, value, plug)
 			if err != nil {
 				return nil, err
@@ -171,7 +183,7 @@ func (u *ConfigUtil) GetSocketConfig(
 			socketConfig[key] = value
 		}
 	}
-	socketConfig, err := u.ValidateSocketConfig(socket, socketInterface, socketConfig)
+	socketConfig, err := u.ValidateSocketConfig(socket, socketConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -179,23 +191,14 @@ func (u *ConfigUtil) GetSocketConfig(
 }
 
 func (u *ConfigUtil) ValidatePlugConfig(
-	plug *integrationv1alpha2.Plug,
-	plugInterface *integrationv1alpha2.Interface,
+	plug *integrationv1beta1.Plug,
+	interfaceSchema *integrationv1beta1.InterfaceSchema,
 	plugConfig map[string]string,
 ) (map[string]string, error) {
-	if plugInterface == nil {
+	if interfaceSchema == nil {
 		return plugConfig, nil
 	}
-	var schema *integrationv1alpha2.InterfaceSpecSchema
-	for _, s := range plugInterface.Spec.Schemas {
-		if u.validVersion(plug.Spec.InterfaceVersions, s.Version) {
-			schema = s
-		}
-	}
-	if schema == nil {
-		return plugConfig, errors.New("schema version " + schema.Version + " not supported for plug " + plug.Name)
-	}
-	for propertyName, property := range schema.PlugDefinition.Properties {
+	for propertyName, property := range interfaceSchema.PlugDefinition.Properties {
 		if _, found := plugConfig[propertyName]; !found {
 			if property.Required {
 				return plugConfig, errors.New("config property " + propertyName + " is required for plug " + plug.Name)
@@ -208,23 +211,14 @@ func (u *ConfigUtil) ValidatePlugConfig(
 }
 
 func (u *ConfigUtil) ValidateSocketConfig(
-	socket *integrationv1alpha2.Socket,
-	socketInterface *integrationv1alpha2.Interface,
+	socket *integrationv1beta1.Socket,
 	socketConfig map[string]string,
 ) (map[string]string, error) {
-	if socketInterface == nil {
+	interfaceSchema := socket.Spec.Interface
+	if interfaceSchema == nil {
 		return socketConfig, nil
 	}
-	var schema *integrationv1alpha2.InterfaceSpecSchema
-	for _, s := range socketInterface.Spec.Schemas {
-		if u.validVersion(socket.Spec.InterfaceVersions, s.Version) {
-			schema = s
-		}
-	}
-	if schema == nil {
-		return socketConfig, errors.New("schema version " + schema.Version + " not supported for socket " + socket.Name)
-	}
-	for propertyName, property := range schema.SocketDefinition.Properties {
+	for propertyName, property := range interfaceSchema.SocketDefinition.Properties {
 		if _, found := socketConfig[propertyName]; !found {
 			if property.Required {
 				return socketConfig, errors.New("config property " + propertyName + " is required for socket " + socket.Name)
@@ -236,30 +230,28 @@ func (u *ConfigUtil) ValidateSocketConfig(
 	return socketConfig, nil
 }
 
-func (u *ConfigUtil) validVersion(versions string, version string) bool {
-	if versions == "*" {
-		return true
-	}
-	return versions == version
-}
-
-func (u *ConfigUtil) plugLookup(plug *integrationv1alpha2.Plug, mapper string, socket *integrationv1alpha2.Socket) (string, error) {
+func (u *ConfigUtil) plugLookup(plug *integrationv1beta1.Plug, mapper string, socket *integrationv1beta1.Socket) (string, error) {
 	data, err := u.buildPlugTemplateData(plug, socket)
 	if err != nil {
 		return "", err
 	}
-	return u.templateConfigMapper(&data, mapper)
+	return u.templateConfigTemplate(&data, mapper)
 }
 
-func (u *ConfigUtil) socketLookup(socket *integrationv1alpha2.Socket, mapper string, plug *integrationv1alpha2.Plug) (string, error) {
+func (u *ConfigUtil) socketLookup(
+	socket *integrationv1beta1.Socket,
+	mapper string,
+	plug *integrationv1beta1.Plug,
+) (string, error) {
 	data, err := u.buildSocketTemplateData(socket, plug)
 	if err != nil {
 		return "", err
 	}
-	return u.templateConfigMapper(&data, mapper)
+	return u.templateConfigTemplate(&data, mapper)
 }
 
-func (u *ConfigUtil) buildPlugTemplateData(plug *integrationv1alpha2.Plug, socket *integrationv1alpha2.Socket) (map[string]interface{}, error) {
+func (u *ConfigUtil) buildPlugTemplateData(plug *integrationv1beta1.Plug, socket *integrationv1beta1.Socket) (map[string]interface{}, error) {
+	kubectlUtil := NewKubectlUtil(u.ctx, plug.Namespace, EnsureServiceAccount(plug.Spec.ServiceAccountName))
 	dataMap := map[string]interface{}{}
 	if plug != nil {
 		dataMap["plug"] = plug
@@ -282,7 +274,7 @@ func (u *ConfigUtil) buildPlugTemplateData(plug *integrationv1alpha2.Plug, socke
 		dataMap["socketData"] = socketData
 	}
 	if plug.Spec.Vars != nil {
-		varsMap, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars)
+		varsMap, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars, kubectlUtil)
 		if err != nil {
 			return dataMap, err
 		}
@@ -299,7 +291,11 @@ func (u *ConfigUtil) buildPlugTemplateData(plug *integrationv1alpha2.Plug, socke
 	return data, nil
 }
 
-func (u *ConfigUtil) buildSocketTemplateData(socket *integrationv1alpha2.Socket, plug *integrationv1alpha2.Plug) (map[string]interface{}, error) {
+func (u *ConfigUtil) buildSocketTemplateData(
+	socket *integrationv1beta1.Socket,
+	plug *integrationv1beta1.Plug,
+) (map[string]interface{}, error) {
+	kubectlUtil := NewKubectlUtil(u.ctx, socket.Namespace, EnsureServiceAccount(socket.Spec.ServiceAccountName))
 	dataMap := map[string]interface{}{}
 	if socket != nil {
 		dataMap["socket"] = socket
@@ -322,7 +318,7 @@ func (u *ConfigUtil) buildSocketTemplateData(socket *integrationv1alpha2.Socket,
 		dataMap["plugData"] = plugData
 	}
 	if socket.Spec.Vars != nil {
-		varsMap, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars)
+		varsMap, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars, kubectlUtil)
 		if err != nil {
 			return dataMap, err
 		}
@@ -339,7 +335,7 @@ func (u *ConfigUtil) buildSocketTemplateData(socket *integrationv1alpha2.Socket,
 	return data, nil
 }
 
-func (u *ConfigUtil) templateConfigMapper(
+func (u *ConfigUtil) templateConfigTemplate(
 	data *map[string]interface{},
 	mapper string,
 ) (string, error) {

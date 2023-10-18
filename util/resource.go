@@ -1,13 +1,27 @@
 /**
  * File: /util/resource.go
- * Project: integration-operator
- * File Created: 23-07-2021 17:13:09
- * Author: Clay Risser <email@clayrisser.com>
+ * Project: new
+ * File Created: 17-10-2023 13:49:54
+ * Author: Clay Risser
  * -----
- * Last Modified: 16-10-2023 18:29:35
- * Modified By: Clay Risser <email@clayrisser.com>
- * -----
- * BitSpur (c) Copyright 2021
+ * BitSpur (c) Copyright 2021 - 2023
+ *
+ * Licensed under the GNU Affero General Public License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.gnu.org/licenses/agpl-3.0.en.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * You can be released from the requirements of the license by purchasing
+ * a commercial license. Buying such a license is mandatory as soon as you
+ * develop commercial activities involving this software without disclosing
+ * the source code of your own applications.
  */
 
 package util
@@ -17,13 +31,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
-	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
+	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,19 +46,20 @@ import (
 )
 
 type ResourceUtil struct {
-	client      *kubernetes.Clientset
-	kubectlUtil *KubectlUtil
+	client *kubernetes.Clientset
+	ctx    *context.Context
 }
 
 func NewResourceUtil(ctx *context.Context) *ResourceUtil {
 	return &ResourceUtil{
-		client:      kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
-		kubectlUtil: NewKubectlUtil(ctx),
+		client: kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
+		ctx:    ctx,
 	}
 }
 
-func (u *ResourceUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
-	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.CreatedWhen)
+func (u *ResourceUtil) PlugCreated(plug *integrationv1beta1.Plug) error {
+	resources := u.filterResources(plug.Spec.Resources, integrationv1beta1.CreatedWhen)
+	kubectlUtil := NewKubectlUtil(u.ctx, plug.Namespace, EnsureServiceAccount(plug.Spec.ServiceAccountName))
 	if err := u.ProcessResources(
 		plug,
 		nil,
@@ -51,6 +67,7 @@ func (u *ResourceUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
 		nil,
 		plug.Namespace,
 		resources,
+		kubectlUtil,
 	); err != nil {
 		return err
 	}
@@ -58,12 +75,13 @@ func (u *ResourceUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
 }
 
 func (u *ResourceUtil) PlugCoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
-	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.CoupledWhen)
+	resources := u.filterResources(plug.Spec.Resources, integrationv1beta1.CoupledWhen)
+	kubectlUtil := NewKubectlUtil(u.ctx, plug.Namespace, EnsureServiceAccount(plug.Spec.ServiceAccountName))
 	if err := u.ProcessResources(
 		plug,
 		socket,
@@ -71,6 +89,7 @@ func (u *ResourceUtil) PlugCoupled(
 		socketConfig,
 		plug.Namespace,
 		resources,
+		kubectlUtil,
 	); err != nil {
 		return err
 	}
@@ -78,12 +97,13 @@ func (u *ResourceUtil) PlugCoupled(
 }
 
 func (u *ResourceUtil) PlugUpdated(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
-	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.UpdatedWhen)
+	resources := u.filterResources(plug.Spec.Resources, integrationv1beta1.UpdatedWhen)
+	kubectlUtil := NewKubectlUtil(u.ctx, plug.Namespace, EnsureServiceAccount(plug.Spec.ServiceAccountName))
 	if err := u.ProcessResources(
 		plug,
 		socket,
@@ -91,6 +111,7 @@ func (u *ResourceUtil) PlugUpdated(
 		socketConfig,
 		plug.Namespace,
 		resources,
+		kubectlUtil,
 	); err != nil {
 		return err
 	}
@@ -98,12 +119,13 @@ func (u *ResourceUtil) PlugUpdated(
 }
 
 func (u *ResourceUtil) PlugDecoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
-	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.DecoupledWhen)
+	resources := u.filterResources(plug.Spec.Resources, integrationv1beta1.DecoupledWhen)
+	kubectlUtil := NewKubectlUtil(u.ctx, plug.Namespace, EnsureServiceAccount(plug.Spec.ServiceAccountName))
 	if err := u.ProcessResources(
 		plug,
 		socket,
@@ -111,6 +133,7 @@ func (u *ResourceUtil) PlugDecoupled(
 		socketConfig,
 		plug.Namespace,
 		resources,
+		kubectlUtil,
 	); err != nil {
 		return err
 	}
@@ -118,9 +141,10 @@ func (u *ResourceUtil) PlugDecoupled(
 }
 
 func (u *ResourceUtil) PlugDeleted(
-	plug *integrationv1alpha2.Plug,
+	plug *integrationv1beta1.Plug,
 ) error {
-	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.DeletedWhen)
+	resources := u.filterResources(plug.Spec.Resources, integrationv1beta1.DeletedWhen)
+	kubectlUtil := NewKubectlUtil(u.ctx, plug.Namespace, EnsureServiceAccount(plug.Spec.ServiceAccountName))
 	if err := u.ProcessResources(
 		plug,
 		nil,
@@ -128,31 +152,16 @@ func (u *ResourceUtil) PlugDeleted(
 		nil,
 		plug.Namespace,
 		resources,
+		kubectlUtil,
 	); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u *ResourceUtil) PlugBroken(
-	plug *integrationv1alpha2.Plug,
-) error {
-	resources := u.filterResources(plug.Spec.Resources, integrationv1alpha2.BrokenWhen)
-	if err := u.ProcessResources(
-		plug,
-		nil,
-		nil,
-		nil,
-		plug.Namespace,
-		resources,
-	); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (u *ResourceUtil) SocketCreated(socket *integrationv1alpha2.Socket) error {
-	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.CreatedWhen)
+func (u *ResourceUtil) SocketCreated(socket *integrationv1beta1.Socket) error {
+	resources := u.filterResources(socket.Spec.Resources, integrationv1beta1.CreatedWhen)
+	kubectlUtil := NewKubectlUtil(u.ctx, socket.Namespace, EnsureServiceAccount(socket.Spec.ServiceAccountName))
 	if err := u.ProcessResources(
 		nil,
 		socket,
@@ -160,6 +169,7 @@ func (u *ResourceUtil) SocketCreated(socket *integrationv1alpha2.Socket) error {
 		nil,
 		socket.Namespace,
 		resources,
+		kubectlUtil,
 	); err != nil {
 		return err
 	}
@@ -167,12 +177,13 @@ func (u *ResourceUtil) SocketCreated(socket *integrationv1alpha2.Socket) error {
 }
 
 func (u *ResourceUtil) SocketCoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
-	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.CoupledWhen)
+	resources := u.filterResources(socket.Spec.Resources, integrationv1beta1.CoupledWhen)
+	kubectlUtil := NewKubectlUtil(u.ctx, socket.Namespace, EnsureServiceAccount(socket.Spec.ServiceAccountName))
 	if err := u.ProcessResources(
 		plug,
 		socket,
@@ -180,6 +191,7 @@ func (u *ResourceUtil) SocketCoupled(
 		socketConfig,
 		socket.Namespace,
 		resources,
+		kubectlUtil,
 	); err != nil {
 		return err
 	}
@@ -187,12 +199,13 @@ func (u *ResourceUtil) SocketCoupled(
 }
 
 func (u *ResourceUtil) SocketUpdated(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
-	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.UpdatedWhen)
+	resources := u.filterResources(socket.Spec.Resources, integrationv1beta1.UpdatedWhen)
+	kubectlUtil := NewKubectlUtil(u.ctx, socket.Namespace, EnsureServiceAccount(socket.Spec.ServiceAccountName))
 	if err := u.ProcessResources(
 		plug,
 		socket,
@@ -200,6 +213,7 @@ func (u *ResourceUtil) SocketUpdated(
 		socketConfig,
 		socket.Namespace,
 		resources,
+		kubectlUtil,
 	); err != nil {
 		return err
 	}
@@ -207,12 +221,13 @@ func (u *ResourceUtil) SocketUpdated(
 }
 
 func (u *ResourceUtil) SocketDecoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
-	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.DecoupledWhen)
+	resources := u.filterResources(socket.Spec.Resources, integrationv1beta1.DecoupledWhen)
+	kubectlUtil := NewKubectlUtil(u.ctx, socket.Namespace, EnsureServiceAccount(socket.Spec.ServiceAccountName))
 	if err := u.ProcessResources(
 		plug,
 		socket,
@@ -220,6 +235,7 @@ func (u *ResourceUtil) SocketDecoupled(
 		socketConfig,
 		socket.Namespace,
 		resources,
+		kubectlUtil,
 	); err != nil {
 		return err
 	}
@@ -227,9 +243,10 @@ func (u *ResourceUtil) SocketDecoupled(
 }
 
 func (u *ResourceUtil) SocketDeleted(
-	socket *integrationv1alpha2.Socket,
+	socket *integrationv1beta1.Socket,
 ) error {
-	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.DeletedWhen)
+	resources := u.filterResources(socket.Spec.Resources, integrationv1beta1.DeletedWhen)
+	kubectlUtil := NewKubectlUtil(u.ctx, socket.Namespace, EnsureServiceAccount(socket.Spec.ServiceAccountName))
 	if err := u.ProcessResources(
 		nil,
 		socket,
@@ -237,30 +254,18 @@ func (u *ResourceUtil) SocketDeleted(
 		nil,
 		socket.Namespace,
 		resources,
+		kubectlUtil,
 	); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u *ResourceUtil) SocketBroken(
-	socket *integrationv1alpha2.Socket,
-) error {
-	resources := u.filterResources(socket.Spec.Resources, integrationv1alpha2.BrokenWhen)
-	if err := u.ProcessResources(
-		nil,
-		socket,
-		nil,
-		nil,
-		socket.Namespace,
-		resources,
-	); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (u *ResourceUtil) GetResource(namespace string, objRef kustomizeTypes.Target) (*unstructured.Unstructured, error) {
+func (u *ResourceUtil) GetResource(
+	namespace string,
+	objRef kustomizeTypes.Target,
+	kubectlUtil *KubectlUtil,
+) (*unstructured.Unstructured, error) {
 	const tpl = `
 apiVersion: {{ .APIVersion }}
 kind: {{ .Kind }}
@@ -285,48 +290,53 @@ metadata:
 		return nil, err
 	}
 	body := buff.Bytes()
-	return u.kubectlUtil.Get(body)
+	return kubectlUtil.Get(body)
 }
 
 func (u *ResourceUtil) ProcessResources(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 	namespace string,
-	resources []*integrationv1alpha2.Resource,
+	resources []*integrationv1beta1.Resource,
+	kubectlUtil *KubectlUtil,
 ) error {
 	for _, resource := range resources {
-		templatedResource, err := u.templateResource(
-			plug,
-			socket,
-			plugConfig,
-			socketConfig,
-			namespace,
-			resource.Resource,
-		)
-		if strings.TrimSpace(templatedResource) == "" {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		do := resource.Do
-		if do == "" {
-			do = integrationv1alpha2.ApplyDo
-		}
-		if resource.Do == integrationv1alpha2.ApplyDo {
-			if err := u.kubectlUtil.Apply([]byte(templatedResource)); err != nil {
+		for _, template := range *resource.Templates {
+			templatedResource, err := u.templateResource(
+				plug,
+				socket,
+				plugConfig,
+				socketConfig,
+				namespace,
+				string(template.Raw),
+			)
+			fmt.Println("---")
+			fmt.Println(templatedResource)
+			if strings.TrimSpace(templatedResource) == "" {
+				return nil
+			}
+			if err != nil {
 				return err
 			}
-		} else if resource.Do == integrationv1alpha2.DeleteDo {
-			if err := u.kubectlUtil.Delete([]byte(templatedResource)); err != nil {
-				return err
+			do := resource.Do
+			if do == "" {
+				do = integrationv1beta1.ApplyDo
 			}
-		} else if resource.Do == integrationv1alpha2.RecreateDo {
-			u.kubectlUtil.Delete([]byte(templatedResource))
-			if err := u.kubectlUtil.Apply([]byte(templatedResource)); err != nil {
-				return err
+			if resource.Do == integrationv1beta1.ApplyDo {
+				if err := kubectlUtil.Apply([]byte(templatedResource)); err != nil {
+					return err
+				}
+			} else if resource.Do == integrationv1beta1.DeleteDo {
+				if err := kubectlUtil.Delete([]byte(templatedResource)); err != nil {
+					return err
+				}
+			} else if resource.Do == integrationv1beta1.RecreateDo {
+				kubectlUtil.Delete([]byte(templatedResource))
+				if err := kubectlUtil.Apply([]byte(templatedResource)); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -334,15 +344,15 @@ func (u *ResourceUtil) ProcessResources(
 }
 
 func (u *ResourceUtil) filterResources(
-	resources []*integrationv1alpha2.Resource,
-	when integrationv1alpha2.When,
-) []*integrationv1alpha2.Resource {
-	filteredResources := []*integrationv1alpha2.Resource{}
+	resources []*integrationv1beta1.Resource,
+	when integrationv1beta1.When,
+) []*integrationv1beta1.Resource {
+	filteredResources := []*integrationv1beta1.Resource{}
 	if resources == nil {
 		return resources
 	}
 	if when == "" {
-		when = integrationv1alpha2.CoupledWhen
+		when = integrationv1beta1.CoupledWhen
 	}
 	for _, resource := range resources {
 		if WhenInWhenSlice(when, resource.When) {
@@ -353,10 +363,10 @@ func (u *ResourceUtil) filterResources(
 }
 
 func (u *ResourceUtil) templateResource(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 	namespace string,
 	body string,
 ) (string, error) {
@@ -399,10 +409,10 @@ func (u *ResourceUtil) templateResource(
 }
 
 func (u *ResourceUtil) buildTemplateData(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) (map[string]interface{}, error) {
 	dataMap := map[string]interface{}{}
 	if plug != nil {

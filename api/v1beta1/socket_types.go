@@ -1,16 +1,30 @@
 /**
- * File: /socket_types.go
- * Project: integration-operator
- * File Created: 23-06-2021 09:14:26
- * Author: Clay Risser <email@clayrisser.com>
+ * File: /api/v1beta1/socket_types.go
+ * Project: new
+ * File Created: 17-10-2023 10:50:35
+ * Author: Clay Risser
  * -----
- * Last Modified: 02-07-2023 11:58:32
- * Modified By: Clay Risser <email@clayrisser.com>
- * -----
- * BitSpur (c) Copyright 2021
+ * BitSpur (c) Copyright 2021 - 2023
+ *
+ * Licensed under the GNU Affero General Public License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.gnu.org/licenses/agpl-3.0.en.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * You can be released from the requirements of the license by purchasing
+ * a commercial license. Buying such a license is mandatory as soon as you
+ * develop commercial activities involving this software without disclosing
+ * the source code of your own applications.
  */
 
-package v1alpha2
+package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,15 +32,10 @@ import (
 	kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 )
 
-const SocketFinalizer = "integration.rock8s.com/finalizer"
-
 // SocketSpec defines the desired state of Socket
 type SocketSpec struct {
 	// interface
-	Interface NamespacedName `json:"interface,omitempty"`
-
-	// interface versions
-	InterfaceVersions string `json:"interfaceVersions,omitempty"`
+	Interface *InterfaceSchema `json:"interface,omitempty"`
 
 	// limit
 	Limit int32 `json:"limit,omitempty"`
@@ -57,8 +66,13 @@ type SocketSpec struct {
 	// config secret name
 	ConfigSecretName string `json:"configSecretName,omitempty"`
 
-	// config mapper
-	ConfigMapper map[string]string `json:"configMapper,omitempty"`
+	// config template
+	ConfigTemplate map[string]string `json:"configTemplate,omitempty"`
+
+	// ServiceAccountName is the name of the ServiceAccount to use to run integrations.
+	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty" protobuf:"bytes,8,opt,name=serviceAccountName"`
 
 	// apparatus
 	Apparatus *SpecApparatus `json:"apparatus,omitempty"`
@@ -73,6 +87,28 @@ type SocketSpec struct {
 	Validation *SocketSpecValidation `json:"validation,omitempty"`
 }
 
+type InterfaceSchema struct {
+	// version
+	Version string `json:"version,omitempty"`
+
+	// plug definition
+	PlugDefinition *SchemaDefinition `json:"plugDefinition,omitempty"`
+
+	// socket definition
+	SocketDefinition *SchemaDefinition `json:"socketDefinition,omitempty"`
+}
+
+type SchemaDefinition struct {
+	Description string                     `json:"description,omitempty"`
+	Properties  map[string]*SchemaProperty `json:"properties,omitempty"`
+}
+
+type SchemaProperty struct {
+	Default     string `json:"default,omitempty"`
+	Description string `json:"description,omitempty"`
+	Required    bool   `json:"required,omitempty"`
+}
+
 type SocketSpecValidation struct {
 	// namespace whitelist
 	NamespaceWhitelist []string `json:"namespaceWhitelist,omitempty"`
@@ -83,26 +119,13 @@ type SocketSpecValidation struct {
 
 // SocketStatus defines the observed state of Socket
 type SocketStatus struct {
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
 	// Conditions represent the latest available observations of an object's state
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// integration socket phase (Pending, Succeeded, Failed, Unknown)
-	Phase Phase `json:"phase,omitempty"`
-
-	// socket is ready for coupling
-	Ready bool `json:"ready,omitempty"`
-
-	// last update time
-	LastUpdate metav1.Time `json:"lastUpdate,omitempty"`
-
-	// status message
-	Message string `json:"message,omitempty"`
-
 	// plugs coupled to socket
 	CoupledPlugs []*CoupledPlug `json:"coupledPlugs,omitempty"`
-
-	// requeued
-	Requeued bool `json:"requeued,omitempty"`
 }
 
 type CoupledPlug struct {

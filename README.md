@@ -1,92 +1,94 @@
-# integration-operator
+# new
+// TODO(user): Add simple overview of use/purpose
 
-> kubernetes operator to integrate deployments
+## Description
+// TODO(user): An in-depth paragraph about your project and overview of use
 
-Please ★ this repo if you found it useful ★ ★ ★
+## Getting Started
+You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
+**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
-This operator takes inspiration from [Juju](https://juju.is) [Charm](https://juju.is/docs/sdk)
-[Relations](https://juju.is/docs/sdk/relations) by [Canonical](https://canonical.com).
-
-## Install
-
-```sh
-git clone -b tag/v0.1.1 https://gitlab.com/bitspur/rock8s/integration-operator.git
-helm install \
-   --set name=integration-operator \
-   --create-namespace=integration-operator \
-   charts/integration-operator
-```
-
-## Develop
-
-1. Install the custom resource definitions
+### Running on the cluster
+1. Install Instances of Custom Resources:
 
 ```sh
-make install-crds
+kubectl apply -f config/samples/
 ```
 
-2. Start the operator
+2. Build and push your image to the location specified by `IMG`:
 
 ```sh
-make start
+make docker-build docker-push IMG=<some-registry>/new:tag
 ```
 
-3. Start apparatuses
+3. Deploy the controller to the cluster with the image specified by `IMG`:
 
-   You can find an example apparatus at the link below.
+```sh
+make deploy IMG=<some-registry>/new:tag
+```
 
-   https://gitlab.com/bitspur/rock8s/example-apparatus
+### Uninstall CRDs
+To delete the CRDs from the cluster:
 
-4. Create plugs and sockets
+```sh
+make uninstall
+```
 
-   You can start by taking a look at [config/samples](config/samples).
+### Undeploy controller
+UnDeploy the controller from the cluster:
 
-   ```sh
-   kubectl apply -f config/samples
-   ```
+```sh
+make undeploy
+```
 
-## Terminology
+## Contributing
+// TODO(user): Add detailed information on how you would like others to contribute to this project
 
-| Term            | Juju Equivalent | Definition                                                                                    |
-| --------------- | --------------- | --------------------------------------------------------------------------------------------- |
-| Integration     | Relation        | means to unite and connect applications through mutual communication and shared configuration |
-| Plug            | Requires        | request from an application to integrate with another application                             |
-| Socket          | Provides        | fulfils requests from applications trying to integrate                                        |
-| Interface       | Interface       | plug and socket schema required to connect                                                    |
-| Created Event   | Created Event   | event triggered when plug or socket created                                                   |
-| Updated Event   | Changed Event   | event triggered when plug or socket updated                                                   |
-| Coupled Event   | Joined Event    | event triggered when applications connected                                                   |
-| Decoupled Event | Detached Event  | event triggered when applications disconnected                                                |
+### How it works
+This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
 
-## Architecture
+It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/),
+which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
 
-### A simple analogy
+### Test It Out
+1. Install the CRDs into the cluster:
 
-The best way to explain the architecture is to think about how plugs and sockets work in the real world.
+```sh
+make install
+```
 
-Let's say I have a laptop purchased in the United States. In order to power my laptop, I need to **integrate** it with the power grid.
-Since the laptop was purchased in the United States, the **interface** of the **plug** is Type A as illustrated below.
+2. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
 
-![Type A](images/typea.png)
+```sh
+make run
+```
 
-This means the **socket** I connect to must be also be Type A.
+**NOTE:** You can also run this in one step by running: `make install run`
 
-Now, let's say I travel to India and the only **socket** available to me is Type D as illustrated below.
+### Modifying the API definitions
+If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
 
-![Type D](images/typed.png)
+```sh
+make manifests
+```
 
-Since the **socket** interface does not match the **plug** interface, I cannot integrate my laptop with the power grid in India. Of course
-this can be overcome with converters, but that is beyond the scope of this analogy.
+**NOTE:** Run `make --help` for more information on all potential `make` targets
 
-### A real example
+More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
-Let's say I have an express application that needs to **integrate** with a mongo database. The express deployment will have a **plug** with
-a mongo **interface** and the mongo deployment will have a **socket** with a mongo **interface**. If the **interface** of the **socket** is
-a postgres **interface** then the integration will fail. In other words, you cannot connect a mongo **plug** to a postgres **socket**. That
-would be like trying to plug a US Type A **plug** into an Indian Type D **socket**. You can only connect a mongo **plug** to a mongo **socket**.
+## License
 
-### diagram
+Copyright 2023.
 
-Below is a UML diagram that shows how **plugs**, **sockets** and **interfaces** wire together.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-![UML Diagram](images/architecture-diagram.jpg)
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+

@@ -1,0 +1,62 @@
+apiVersion: integration.rock8s.com/v1beta1
+kind: Socket
+metadata:
+  labels:
+    app.kubernetes.io/name: socket
+    app.kubernetes.io/instance: socket-sample
+    app.kubernetes.io/part-of: new
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: new
+  name: socket-sample
+spec:
+  interface:
+    socketDefinition:
+      properties:
+        hello: {}
+    plugDefinition:
+      properties:
+        howdy: {}
+  config:
+    hello: world
+  # interface:
+  #   plugDefinition:
+  #     description: connect postgres database
+  #     properties:
+  #       database:
+  #         description: postgres database
+  #         required: true
+  #   socketDefinition:
+  #     description: connect postgres database
+  #     properties:
+  #       password:
+  #         description: postgres password
+  #         default: postgres
+  #       username:
+  #         description: postgres username
+  #         default: postgres
+  #       port:
+  #         description: postgres port
+  #         default: "5432"
+  #       host:
+  #         description: postgres password
+  #         default: localhost
+  #       protocol:
+  #         description: postgres protocol
+  #         default: psql
+  # apparatus:
+  #   endpoint: /socket
+  #   containers:
+  #     - image: bitspur/example-apparatus:latest
+  #       imagePullPolicy: Always
+  #       name: apparatus
+  #       ports:
+  #         - containerPort: 3000
+  #           name: container
+  #           protocol: TCP
+  # data:
+  #   host: localhost
+  #   password: postgres
+  #   port: "5432"
+  #   username: postgres
+  # config:
+  #   protocol: psql

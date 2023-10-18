@@ -1,6 +1,5 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- integration_v1alpha2_plug.yaml
-- integration_v1alpha2_socket.yaml
-- integration_v1alpha2_interface.yaml
+- integration_v1beta1_socket.yaml
+- integration_v1beta1_plug.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

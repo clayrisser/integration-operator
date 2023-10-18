@@ -1,40 +1,51 @@
 /**
- * File: /couple.go
- * Project: integration-operator
- * File Created: 23-06-2021 09:14:26
- * Author: Clay Risser <email@clayrisser.com>
+ * File: /coupler/couple.go
+ * Project: new
+ * File Created: 17-10-2023 19:02:43
+ * Author: Clay Risser
  * -----
- * Last Modified: 02-07-2023 12:07:35
- * Modified By: Clay Risser <email@clayrisser.com>
- * -----
- * BitSpur (c) Copyright 2021
+ * BitSpur (c) Copyright 2021 - 2023
+ *
+ * Licensed under the GNU Affero General Public License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.gnu.org/licenses/agpl-3.0.en.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * You can be released from the requirements of the license by purchasing
+ * a commercial license. Buying such a license is mandatory as soon as you
+ * develop commercial activities involving this software without disclosing
+ * the source code of your own applications.
  */
 
 package coupler
 
 import (
 	"context"
-	"errors"
 
-	"github.com/go-logr/logr"
-	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
+	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"gitlab.com/bitspur/rock8s/integration-operator/util"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (c *Coupler) Couple(
+func Couple(
 	client *client.Client,
 	ctx *context.Context,
 	req *ctrl.Request,
-	log *logr.Logger,
-	plugNamespacedName *integrationv1alpha2.NamespacedName,
-	plug *integrationv1alpha2.Plug,
+	plugUtil *util.PlugUtil,
+	socketUtil *util.SocketUtil,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
 ) (ctrl.Result, error) {
 	configUtil := util.NewConfigUtil(ctx)
-
-	plugUtil := util.NewPlugUtil(client, ctx, req, log, plugNamespacedName, util.GlobalPlugMutex)
 	if plug == nil {
 		var err error
 		plug, err = plugUtil.Get()
@@ -42,93 +53,50 @@ func (c *Coupler) Couple(
 			return ctrl.Result{}, err
 		}
 	}
-
-	coupledCondition, err := plugUtil.GetCoupledCondition()
-	if err != nil {
-		return plugUtil.Error(err)
-	}
-	if coupledCondition == nil {
-		if err := GlobalCoupler.CreatedPlug(plug); err != nil {
-			return plugUtil.Error(err)
+	if socket == nil {
+		var err error
+		socket, err = socketUtil.Get()
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				return plugUtil.UpdateCoupledStatus(util.SocketNotCreated, plug, nil, true)
+			}
+			return plugUtil.Error(err, plug)
 		}
-		return plugUtil.UpdateStatusSimple(
-			integrationv1alpha2.PendingPhase,
-			util.PlugCreatedStatusCondition,
-			nil,
-			true,
-		)
 	}
 
-	socketUtil := util.NewSocketUtil(client, ctx, req, log, &plug.Spec.Socket, util.GlobalSocketMutex)
-	socket, err := socketUtil.Get()
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketNotCreatedStatusCondition, nil, false)
+	if socketUtil.CoupledPlugExists(socket.Status.CoupledPlugs, plug.UID) && plug.Status.CoupledSocket != nil {
+		if err := Update(client, ctx, req, plugUtil, socketUtil, plug, socket); err != nil {
+			return plugUtil.Error(err, plug)
 		}
-		return plugUtil.Error(err)
-	}
-	if !socket.Status.Ready {
-		return plugUtil.UpdateStatusSimple(integrationv1alpha2.PendingPhase, util.SocketNotReadyStatusCondition, nil, false)
-	}
-
-	plugIsCoupled, err := plugUtil.IsCoupled(plug, coupledCondition)
-	if err != nil {
-		return plugUtil.Error(err)
-	}
-	if socketUtil.CoupledPlugExists(socket.Status.CoupledPlugs, plug.UID) && plugIsCoupled {
-		return c.Update(client, ctx, req, log, plugNamespacedName, plug, socket, nil)
-	}
-
-	plugInterfaceUtil := util.NewInterfaceUtil(client, ctx, &plug.Spec.Interface)
-	plugInterface, err := plugInterfaceUtil.Get()
-	if err != nil {
-		return plugUtil.Error(err)
-	}
-	socketInterfaceUtil := util.NewInterfaceUtil(client, ctx, &socket.Spec.Interface)
-	socketInterface, err := socketInterfaceUtil.Get()
-	if err != nil {
-		return plugUtil.Error(err)
-	}
-	if plugInterface.UID != socketInterface.UID {
-		return plugUtil.Error(errors.New("plug and socket interface do not match"))
+		return ctrl.Result{}, nil
 	}
 
 	if err := util.Validate(plug, socket); err != nil {
-		return plugUtil.Error(err)
+		return plugUtil.Error(err, plug)
 	}
 
-	plugConfig, err := configUtil.GetPlugConfig(plug, plugInterface, socket)
+	plugConfig, err := configUtil.GetPlugConfig(plug, socket)
 	if err != nil {
-		return plugUtil.Error(err)
+		return plugUtil.Error(err, plug)
 	}
-	socketConfig, err := configUtil.GetSocketConfig(socket, socketInterface, plug)
+	socketConfig, err := configUtil.GetSocketConfig(plug, socket)
 	if err != nil {
-		return socketUtil.Error(err)
+		socketUtil.Error(err, socket)
+		return plugUtil.Error(err, plug)
 	}
 
-	err = GlobalCoupler.CoupledPlug(plug, socket, plugConfig, socketConfig)
+	err = CoupledPlug(plug, socket, plugConfig, socketConfig)
 	if err != nil {
-		return plugUtil.Error(err)
+		return plugUtil.Error(err, plug)
 	}
-	err = GlobalCoupler.CoupledSocket(plug, socket, plugConfig, socketConfig)
+	err = CoupledSocket(plug, socket, plugConfig, socketConfig)
 	if err != nil {
-		if err := plugUtil.SocketError(err); err != nil {
-			return plugUtil.Error(err)
-		}
-		return socketUtil.Error(err)
+		socketUtil.Error(err, socket)
+		return plugUtil.Error(err, plug)
 	}
 
-	if !socketUtil.CoupledPlugExists(socket.Status.CoupledPlugs, plug.UID) {
-		if _, err := socketUtil.UpdateStatusAppendPlug(plug, false); err != nil {
-			return plugUtil.Error(err)
-		}
+	if _, err := socketUtil.UpdateAppendCoupledPlugStatus(plug, socket, false); err != nil {
+		return plugUtil.Error(err, plug)
 	}
-	plugIsCoupled, err = plugUtil.IsCoupled(plug, nil)
-	if err != nil {
-		return plugUtil.Error(err)
-	}
-	if !plugIsCoupled {
-		return plugUtil.UpdateStatusSimple(integrationv1alpha2.SucceededPhase, util.CouplingSucceededStatusCondition, socket, false)
-	}
-	return ctrl.Result{}, nil
+	return plugUtil.UpdateCoupledStatus(util.CouplingSucceeded, plug, socket, false)
 }

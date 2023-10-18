@@ -1,13 +1,27 @@
 /**
- * File: /plug.go
- * Project: integration-operator
- * File Created: 23-06-2021 09:14:26
- * Author: Clay Risser <email@clayrisser.com>
+ * File: /util/plug.go
+ * Project: new
+ * File Created: 17-10-2023 13:49:54
+ * Author: Clay Risser
  * -----
- * Last Modified: 02-07-2023 11:49:19
- * Modified By: Clay Risser <email@clayrisser.com>
- * -----
- * BitSpur (c) Copyright 2021
+ * BitSpur (c) Copyright 2021 - 2023
+ *
+ * Licensed under the GNU Affero General Public License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.gnu.org/licenses/agpl-3.0.en.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * You can be released from the requirements of the license by purchasing
+ * a commercial license. Buying such a license is mandatory as soon as you
+ * develop commercial activities involving this software without disclosing
+ * the source code of your own applications.
  */
 
 package util
@@ -16,11 +30,8 @@ import (
 	"context"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/go-logr/logr"
-	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
-	"gitlab.com/bitspur/rock8s/integration-operator/config"
+	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,8 +44,6 @@ type PlugUtil struct {
 	apparatusUtil  *ApparatusUtil
 	client         *client.Client
 	ctx            *context.Context
-	log            *logr.Logger
-	mutex          *sync.Mutex
 	namespacedName types.NamespacedName
 	req            *ctrl.Request
 }
@@ -43,67 +52,58 @@ func NewPlugUtil(
 	client *client.Client,
 	ctx *context.Context,
 	req *ctrl.Request,
-	log *logr.Logger,
-	namespacedName *integrationv1alpha2.NamespacedName,
-	mutex *sync.Mutex,
+	namespacedName *integrationv1beta1.NamespacedName,
 ) *PlugUtil {
 	operatorNamespace := GetOperatorNamespace()
-	if mutex == nil {
-		mutex = &sync.Mutex{}
-	}
 	return &PlugUtil{
 		apparatusUtil:  NewApparatusUtil(ctx),
 		client:         client,
 		ctx:            ctx,
-		log:            log,
-		mutex:          mutex,
 		namespacedName: EnsureNamespacedName(namespacedName, operatorNamespace),
 		req:            req,
 	}
 }
 
-func (u *PlugUtil) Get() (*integrationv1alpha2.Plug, error) {
+func (u *PlugUtil) Get() (*integrationv1beta1.Plug, error) {
 	client := *u.client
 	ctx := *u.ctx
-	plug := &integrationv1alpha2.Plug{}
+	plug := &integrationv1beta1.Plug{}
 	if err := client.Get(ctx, u.namespacedName, plug); err != nil {
 		return nil, err
 	}
 	return plug.DeepCopy(), nil
 }
 
-func (u *PlugUtil) Update(plug *integrationv1alpha2.Plug) error {
+func (u *PlugUtil) Update(plug *integrationv1beta1.Plug, requeue bool) (ctrl.Result, error) {
 	client := *u.client
 	ctx := *u.ctx
-	u.mutex.Lock()
+	plug.Status.ObservedGeneration = plug.Generation
 	if err := client.Update(ctx, plug); err != nil {
-		u.mutex.Unlock()
-		return err
+		return u.Error(err, plug)
 	}
-	u.mutex.Unlock()
-	return nil
+	return ctrl.Result{Requeue: requeue}, nil
 }
 
 func (u *PlugUtil) UpdateStatus(
-	plug *integrationv1alpha2.Plug,
+	plug *integrationv1beta1.Plug,
 	requeue bool,
-	exponentialBackoff bool,
-) error {
+) (ctrl.Result, error) {
 	client := *u.client
 	ctx := *u.ctx
-	if !exponentialBackoff ||
-		plug.Status.LastUpdate.IsZero() ||
-		config.StartTime.Unix() > plug.Status.LastUpdate.Unix() {
-		plug.Status.LastUpdate = metav1.Now()
-	}
-	plug.Status.Requeued = requeue
-	u.mutex.Lock()
+	plug.Status.ObservedGeneration = plug.Generation
 	if err := client.Status().Update(ctx, plug); err != nil {
-		u.mutex.Unlock()
-		return err
+		return ctrl.Result{}, err
 	}
-	u.mutex.Unlock()
-	return nil
+	return ctrl.Result{Requeue: requeue}, nil
+}
+
+func (u *PlugUtil) Delete(plug *integrationv1beta1.Plug) (ctrl.Result, error) {
+	client := *u.client
+	ctx := *u.ctx
+	if err := client.Delete(ctx, plug); err != nil {
+		return u.Error(err, plug)
+	}
+	return ctrl.Result{}, nil
 }
 
 func (u *PlugUtil) GetCoupledCondition() (*metav1.Condition, error) {
@@ -111,183 +111,115 @@ func (u *PlugUtil) GetCoupledCondition() (*metav1.Condition, error) {
 	if err != nil {
 		return nil, err
 	}
-	coupledCondition := meta.FindStatusCondition(plug.Status.Conditions, "coupled")
+	coupledCondition := meta.FindStatusCondition(plug.Status.Conditions, string(ConditionTypeCoupled))
 	return coupledCondition, nil
 }
 
-func (u *PlugUtil) IsCoupled(
-	plug *integrationv1alpha2.Plug,
-	coupledCondition *metav1.Condition,
-) (bool, error) {
-	if coupledCondition == nil {
+func (u *PlugUtil) Error(
+	err error,
+	plug *integrationv1beta1.Plug,
+) (ctrl.Result, error) {
+	e := err
+	if plug == nil {
 		var err error
-		coupledCondition, err = u.GetCoupledCondition()
+		plug, err = u.Get()
 		if err != nil {
-			return false, err
-
+			return ctrl.Result{}, err
 		}
 	}
-	return coupledCondition != nil && plug.Status.Phase == integrationv1alpha2.SucceededPhase &&
-		coupledCondition.Reason == string(CouplingSucceededStatusCondition), nil
+	// TODO: ???
+	// if u.apparatusUtil.NotRunning(err) {
+	// 	started, err := u.apparatusUtil.StartFromPlug(plug)
+	// 	if err != nil {
+	// 		return ctrl.Result{}, err
+	// 	}
+	// 	if started {
+	// 		if err := u.updateStatus(plug); err != nil {
+	// 			return ctrl.Result{}, err
+	// 		}
+	// 		return ctrl.Result{}, nil
+	// 	}
+	// }
+	return u.UpdateErrorStatus(e, plug)
 }
 
-func (u *PlugUtil) SocketError(err error) error {
-	if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) <= -1 {
-		if _, _err := u.UpdateErrorStatus(err, true); _err != nil {
-			if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
-				return nil
-			}
-			return _err
+func (u *PlugUtil) UpdateErrorStatus(
+	err error,
+	plug *integrationv1beta1.Plug,
+) (ctrl.Result, error) {
+	e := err
+	if plug == nil {
+		var err error
+		plug, err = u.Get()
+		if err != nil {
+			return ctrl.Result{}, err
 		}
 	}
-	return nil
+	if err = u.setErrorStatus(e, plug); err != nil {
+		return ctrl.Result{}, err
+	}
+	if _, err := u.UpdateStatus(plug, true); err != nil {
+		return ctrl.Result{}, err
+	}
+	if strings.Contains(e.Error(), registry.OptimisticLockErrorMsg) {
+		return ctrl.Result{Requeue: true}, nil
+	}
+	return ctrl.Result{}, e
 }
 
-func (u *PlugUtil) Error(err error) (ctrl.Result, error) {
-	log := *u.log
-	plug, _err := u.Get()
-	if _err != nil {
-		log.Error(nil, err.Error())
-		return ctrl.Result{
-			Requeue:      true,
-			RequeueAfter: config.MaxRequeueDuration,
-		}, _err
-	}
-	requeueAfter := CalculateExponentialRequireAfter(
-		plug.Status.LastUpdate,
-		2,
-	)
-	if u.apparatusUtil.NotRunning(err) {
-		successRequeueAfter := time.Duration(time.Second.Nanoseconds() * 10)
-		started, _err := u.apparatusUtil.StartFromPlug(plug, &successRequeueAfter)
-		if _err != nil {
-			return u.Error(_err)
-		}
-		if started {
-			if _err := u.UpdateStatus(plug, true, true); _err != nil {
-				if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
-					return ctrl.Result{
-						Requeue:      true,
-						RequeueAfter: requeueAfter,
-					}, nil
-				}
-				return u.Error(_err)
-			}
-			return ctrl.Result{
-				Requeue:      true,
-				RequeueAfter: successRequeueAfter,
-			}, nil
-		}
-	}
-	log.Error(nil, err.Error())
-	if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) <= -1 {
-		if _, _err := u.UpdateErrorStatus(err, true); _err != nil {
-			if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
-				return ctrl.Result{
-					Requeue:      true,
-					RequeueAfter: requeueAfter,
-				}, nil
-			}
-			return ctrl.Result{
-				Requeue:      true,
-				RequeueAfter: requeueAfter,
-			}, _err
-		}
-	}
-	return ctrl.Result{
-		Requeue:      true,
-		RequeueAfter: requeueAfter,
-	}, nil
-}
-
-func (u *PlugUtil) UpdateErrorStatus(err error, requeue bool) (ctrl.Result, error) {
-	plug, _err := u.Get()
-	if _err != nil {
-		return ctrl.Result{}, _err
-	}
-	u.setErrorStatus(plug, err)
-	if _err := u.UpdateStatus(plug, requeue, true); _err != nil {
-		return ctrl.Result{}, _err
-	}
-	return ctrl.Result{}, nil
-}
-
-func (u *PlugUtil) UpdateStatusSimple(
-	phase integrationv1alpha2.Phase,
-	coupledStatusCondition StatusCondition,
-	socket *integrationv1alpha2.Socket,
+func (u *PlugUtil) UpdateCoupledStatus(
+	conditionCoupledReason ConditionCoupledReason,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
 	requeue bool,
 ) (ctrl.Result, error) {
-	plug, err := u.Get()
-	if err != nil {
-		return u.Error(err)
-	}
-	if coupledStatusCondition != "" {
-		u.setCoupledStatusCondition(plug, coupledStatusCondition, "")
+	if plug == nil {
+		var err error
+		plug, err = u.Get()
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 	if socket != nil {
 		u.setCoupledSocketStatus(plug, socket)
 	}
-	if phase != "" {
-		u.setPhaseStatus(plug, phase)
+	if conditionCoupledReason != "" {
+		u.setCoupledStatusCondition(conditionCoupledReason, "", plug)
 	}
-	if coupledStatusCondition == SocketNotCreatedStatusCondition ||
-		coupledStatusCondition == SocketNotReadyStatusCondition {
-		requeueAfter := CalculateExponentialRequireAfter(
-			plug.Status.LastUpdate,
-			2,
-		)
-		if err := u.UpdateStatus(plug, requeue, false); err != nil {
-			return u.Error(err)
-		}
-		return ctrl.Result{Requeue: true, RequeueAfter: requeueAfter}, nil
-	}
-	if err := u.UpdateStatus(plug, requeue, false); err != nil {
-		return u.Error(err)
-	}
-	return ctrl.Result{}, nil
-}
-
-func (u *PlugUtil) setPhaseStatus(
-	plug *integrationv1alpha2.Plug,
-	phase integrationv1alpha2.Phase,
-) {
-	if phase != integrationv1alpha2.FailedPhase {
-		plug.Status.Message = ""
-	}
-	plug.Status.Phase = phase
+	return u.UpdateStatus(plug, requeue)
 }
 
 func (u *PlugUtil) setCoupledStatusCondition(
-	plug *integrationv1alpha2.Plug,
-	coupledStatusCondition StatusCondition,
+	conditionCoupledReason ConditionCoupledReason,
 	message string,
+	plug *integrationv1beta1.Plug,
 ) {
 	coupledStatus := false
 	if message == "" {
-		if coupledStatusCondition == PlugCreatedStatusCondition {
+		if conditionCoupledReason == PlugCreated {
 			message = "plug created"
-		} else if coupledStatusCondition == SocketNotCreatedStatusCondition {
+		} else if conditionCoupledReason == SocketNotCreated {
 			message = "waiting for socket to be created"
-		} else if coupledStatusCondition == SocketNotReadyStatusCondition {
-			message = "waiting for socket to be ready"
-		} else if coupledStatusCondition == CouplingInProcessStatusCondition {
+		} else if conditionCoupledReason == CouplingInProcess {
 			message = "coupling to socket"
-		} else if coupledStatusCondition == CouplingSucceededStatusCondition {
+		} else if conditionCoupledReason == CouplingSucceeded {
 			message = "coupling succeeded"
-		} else if coupledStatusCondition == ErrorStatusCondition {
+		} else if conditionCoupledReason == Error {
 			message = "unknown error"
 		}
 	}
-	if coupledStatusCondition == CouplingSucceededStatusCondition {
+	if conditionCoupledReason != Error {
+		plug.Status.Conditions = []metav1.Condition{}
+	}
+	if conditionCoupledReason == CouplingSucceeded {
 		coupledStatus = true
 	}
 	condition := metav1.Condition{
 		Message:            message,
 		ObservedGeneration: plug.Generation,
-		Reason:             string(coupledStatusCondition),
+		Reason:             string(conditionCoupledReason),
 		Status:             "False",
-		Type:               "coupled",
+		Type:               string(ConditionTypeCoupled),
 	}
 	if coupledStatus {
 		condition.Status = "True"
@@ -295,24 +227,41 @@ func (u *PlugUtil) setCoupledStatusCondition(
 	meta.SetStatusCondition(&plug.Status.Conditions, condition)
 }
 
-func (u *PlugUtil) setErrorStatus(plug *integrationv1alpha2.Plug, err error) {
-	message := err.Error()
-	coupledCondition, _err := u.GetCoupledCondition()
-	if _err == nil {
-		coupledCondition = nil
+func (u *PlugUtil) setErrorStatus(err error, plug *integrationv1beta1.Plug) error {
+	e := err
+	if e == nil {
+		return nil
+	}
+	if plug == nil {
+		return nil
+	}
+	if strings.Contains(e.Error(), registry.OptimisticLockErrorMsg) {
+		return nil
+	}
+	message := e.Error()
+	coupledCondition, err := u.GetCoupledCondition()
+	if err != nil {
+		return err
 	}
 	if coupledCondition != nil {
-		u.setCoupledStatusCondition(plug, ErrorStatusCondition, message)
+		u.setCoupledStatusCondition(Error, message, plug)
 	}
-	plug.Status.Phase = integrationv1alpha2.FailedPhase
-	plug.Status.Message = message
+	failedCondition := metav1.Condition{
+		Message:            message,
+		ObservedGeneration: plug.Generation,
+		Reason:             "Error",
+		Status:             "True",
+		Type:               string(ConditionTypeFailed),
+	}
+	meta.SetStatusCondition(&plug.Status.Conditions, failedCondition)
+	return nil
 }
 
 func (u *PlugUtil) setCoupledSocketStatus(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
 ) {
-	plug.Status.CoupledSocket = &integrationv1alpha2.CoupledSocket{
+	plug.Status.CoupledSocket = &integrationv1beta1.CoupledSocket{
 		APIVersion: socket.APIVersion,
 		Kind:       socket.Kind,
 		Name:       socket.Name,

@@ -1,13 +1,27 @@
 /**
- * File: /apparatus.go
- * Project: integration-operator
- * File Created: 23-06-2021 22:14:06
- * Author: Clay Risser <email@clayrisser.com>
+ * File: /util/apparatus.go
+ * Project: new
+ * File Created: 17-10-2023 13:49:54
+ * Author: Clay Risser
  * -----
- * Last Modified: 02-07-2023 12:16:39
- * Modified By: Clay Risser <email@clayrisser.com>
- * -----
- * BitSpur (c) Copyright 2021
+ * BitSpur (c) Copyright 2021 - 2023
+ *
+ * Licensed under the GNU Affero General Public License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.gnu.org/licenses/agpl-3.0.en.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * You can be released from the requirements of the license by purchasing
+ * a commercial license. Buying such a license is mandatory as soon as you
+ * develop commercial activities involving this software without disclosing
+ * the source code of your own applications.
  */
 
 package util
@@ -24,7 +38,7 @@ import (
 	"github.com/tdewolff/minify"
 	minifyJson "github.com/tdewolff/minify/json"
 	"github.com/tidwall/sjson"
-	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
+	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"gitlab.com/bitspur/rock8s/integration-operator/config"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,8 +71,8 @@ func NewApparatusUtil(
 }
 
 func (u *ApparatusUtil) GetPlugConfig(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
 ) ([]byte, error) {
 	client := resty.New()
 	rCh := make(chan *resty.Response)
@@ -66,6 +80,7 @@ func (u *ApparatusUtil) GetPlugConfig(
 	min := minify.New()
 	min.AddFunc("application/json", minifyJson.Minify)
 	url := u.getPlugEndpoint(plug) + "/config"
+	kubectlUtil := NewKubectlUtil(u.ctx, plug.Namespace, EnsureServiceAccount(plug.Spec.ServiceAccountName))
 	go func() {
 		body := `{"version":1}`
 		var err error
@@ -105,7 +120,7 @@ func (u *ApparatusUtil) GetPlugConfig(
 			}
 
 			if plug.Spec.Vars != nil {
-				vars, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars)
+				vars, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars, kubectlUtil)
 				if err != nil {
 					errCh <- err
 					return
@@ -144,8 +159,8 @@ func (u *ApparatusUtil) GetPlugConfig(
 }
 
 func (u *ApparatusUtil) GetSocketConfig(
-	socket *integrationv1alpha2.Socket,
-	plug *integrationv1alpha2.Plug,
+	socket *integrationv1beta1.Socket,
+	plug *integrationv1beta1.Plug,
 ) ([]byte, error) {
 	client := resty.New()
 	rCh := make(chan *resty.Response)
@@ -153,6 +168,7 @@ func (u *ApparatusUtil) GetSocketConfig(
 	min := minify.New()
 	min.AddFunc("application/json", minifyJson.Minify)
 	url := u.getSocketEndpoint(socket) + "/config"
+	kubectlUtil := NewKubectlUtil(u.ctx, plug.Namespace, EnsureServiceAccount(plug.Spec.ServiceAccountName))
 	go func() {
 		body := `{"version":1}`
 		var err error
@@ -192,7 +208,7 @@ func (u *ApparatusUtil) GetSocketConfig(
 			}
 
 			if socket.Spec.Vars != nil {
-				vars, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars)
+				vars, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars, kubectlUtil)
 				if err != nil {
 					errCh <- err
 					return
@@ -230,7 +246,7 @@ func (u *ApparatusUtil) GetSocketConfig(
 	}
 }
 
-func (u *ApparatusUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
+func (u *ApparatusUtil) PlugCreated(plug *integrationv1beta1.Plug) error {
 	if plug.Spec.Apparatus == nil {
 		return nil
 	}
@@ -249,10 +265,10 @@ func (u *ApparatusUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
 }
 
 func (u *ApparatusUtil) PlugCoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if plug.Spec.Apparatus == nil {
 		return nil
@@ -272,10 +288,10 @@ func (u *ApparatusUtil) PlugCoupled(
 }
 
 func (u *ApparatusUtil) PlugUpdated(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if plug.Spec.Apparatus == nil {
 		return nil
@@ -295,10 +311,10 @@ func (u *ApparatusUtil) PlugUpdated(
 }
 
 func (u *ApparatusUtil) PlugDecoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if plug.Spec.Apparatus == nil {
 		return nil
@@ -318,7 +334,7 @@ func (u *ApparatusUtil) PlugDecoupled(
 }
 
 func (u *ApparatusUtil) PlugDeleted(
-	plug *integrationv1alpha2.Plug,
+	plug *integrationv1beta1.Plug,
 ) error {
 	if plug.Spec.Apparatus == nil {
 		return nil
@@ -337,27 +353,7 @@ func (u *ApparatusUtil) PlugDeleted(
 	)
 }
 
-func (u *ApparatusUtil) PlugBroken(
-	plug *integrationv1alpha2.Plug,
-) error {
-	if plug.Spec.Apparatus == nil {
-		return nil
-	}
-	return u.processEvent(
-		plug,
-		nil,
-		nil,
-		nil,
-		plug.Spec.Apparatus,
-		plug.Name,
-		plug.Namespace,
-		string(plug.UID),
-		u.getPlugEndpoint(plug),
-		"broken",
-	)
-}
-
-func (u *ApparatusUtil) SocketCreated(socket *integrationv1alpha2.Socket) error {
+func (u *ApparatusUtil) SocketCreated(socket *integrationv1beta1.Socket) error {
 	if socket.Spec.Apparatus == nil {
 		return nil
 	}
@@ -376,10 +372,10 @@ func (u *ApparatusUtil) SocketCreated(socket *integrationv1alpha2.Socket) error 
 }
 
 func (u *ApparatusUtil) SocketCoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if socket.Spec.Apparatus == nil {
 		return nil
@@ -399,10 +395,10 @@ func (u *ApparatusUtil) SocketCoupled(
 }
 
 func (u *ApparatusUtil) SocketUpdated(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if socket.Spec.Apparatus == nil {
 		return nil
@@ -422,10 +418,10 @@ func (u *ApparatusUtil) SocketUpdated(
 }
 
 func (u *ApparatusUtil) SocketDecoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if socket.Spec.Apparatus == nil {
 		return nil
@@ -445,7 +441,7 @@ func (u *ApparatusUtil) SocketDecoupled(
 }
 
 func (u *ApparatusUtil) SocketDeleted(
-	socket *integrationv1alpha2.Socket,
+	socket *integrationv1beta1.Socket,
 ) error {
 	if socket.Spec.Apparatus == nil {
 		return nil
@@ -464,26 +460,6 @@ func (u *ApparatusUtil) SocketDeleted(
 	)
 }
 
-func (u *ApparatusUtil) SocketBroken(
-	socket *integrationv1alpha2.Socket,
-) error {
-	if socket.Spec.Apparatus == nil {
-		return nil
-	}
-	return u.processEvent(
-		nil,
-		socket,
-		nil,
-		nil,
-		socket.Spec.Apparatus,
-		socket.Name,
-		socket.Namespace,
-		string(socket.UID),
-		u.getSocketEndpoint(socket),
-		"broken",
-	)
-}
-
 func (u *ApparatusUtil) NotRunning(err error) bool {
 	// TODO: detect if apparatus api call
 	if nerr, ok := err.(net.Error); ok {
@@ -493,7 +469,7 @@ func (u *ApparatusUtil) NotRunning(err error) bool {
 }
 
 func (u *ApparatusUtil) RenewIdleTimeout(
-	apparatus *integrationv1alpha2.SpecApparatus,
+	apparatus *integrationv1beta1.SpecApparatus,
 	name string,
 	namespace string,
 	uid string,
@@ -534,35 +510,32 @@ func (u *ApparatusUtil) RenewIdleTimeout(
 	}
 }
 
-func (u *ApparatusUtil) StartFromPlug(plug *integrationv1alpha2.Plug, requeueAfter *time.Duration) (bool, error) {
+func (u *ApparatusUtil) StartFromPlug(plug *integrationv1beta1.Plug) (bool, error) {
 	return u.start(
 		plug.Spec.Apparatus,
 		plug.Name+"-apparatus",
 		plug.Namespace,
 		string(plug.UID),
 		u.createPlugOwnerReference(plug),
-		requeueAfter,
 	)
 }
 
-func (u *ApparatusUtil) StartFromSocket(socket *integrationv1alpha2.Socket, requeueAfter *time.Duration) (bool, error) {
+func (u *ApparatusUtil) StartFromSocket(socket *integrationv1beta1.Socket, requeueAfter *time.Duration) (bool, error) {
 	return u.start(
 		socket.Spec.Apparatus,
 		socket.Name+"-apparatus",
 		socket.Namespace,
 		string(socket.UID),
 		u.createSocketOwnerReference(socket),
-		requeueAfter,
 	)
 }
 
 func (u *ApparatusUtil) start(
-	apparatus *integrationv1alpha2.SpecApparatus,
+	apparatus *integrationv1beta1.SpecApparatus,
 	name string,
 	namespace string,
 	uid string,
 	ownerReference metav1.OwnerReference,
-	requeueAfter *time.Duration,
 ) (bool, error) {
 	if apparatus == nil || len(*apparatus.Containers) <= 0 {
 		return false, nil
@@ -570,9 +543,6 @@ func (u *ApparatusUtil) start(
 	idleTimeout := time.Second * 60
 	if apparatus.IdleTimeout != 0 {
 		idleTimeout = time.Second * time.Duration(apparatus.IdleTimeout)
-	}
-	if requeueAfter != nil {
-		idleTimeout = idleTimeout + *requeueAfter
 	}
 	alreadyExists := false
 	automountServiceAccountToken := true
@@ -683,7 +653,7 @@ func (u *ApparatusUtil) start(
 	return true, nil
 }
 
-func (u *ApparatusUtil) createPlugOwnerReference(plug *integrationv1alpha2.Plug) metav1.OwnerReference {
+func (u *ApparatusUtil) createPlugOwnerReference(plug *integrationv1beta1.Plug) metav1.OwnerReference {
 	return metav1.OwnerReference{
 		APIVersion: plug.APIVersion,
 		Kind:       plug.Kind,
@@ -692,7 +662,7 @@ func (u *ApparatusUtil) createPlugOwnerReference(plug *integrationv1alpha2.Plug)
 	}
 }
 
-func (u *ApparatusUtil) createSocketOwnerReference(socket *integrationv1alpha2.Socket) metav1.OwnerReference {
+func (u *ApparatusUtil) createSocketOwnerReference(socket *integrationv1beta1.Socket) metav1.OwnerReference {
 	return metav1.OwnerReference{
 		APIVersion: socket.APIVersion,
 		Kind:       socket.Kind,
@@ -701,18 +671,18 @@ func (u *ApparatusUtil) createSocketOwnerReference(socket *integrationv1alpha2.S
 	}
 }
 
-func (u *ApparatusUtil) getPlugEndpoint(plug *integrationv1alpha2.Plug) string {
+func (u *ApparatusUtil) getPlugEndpoint(plug *integrationv1beta1.Plug) string {
 	return u.getEndpoint(plug.Name+"-apparatus", plug.Namespace, plug.Spec.Apparatus, config.DebugPlugEndpoint)
 }
 
-func (u *ApparatusUtil) getSocketEndpoint(socket *integrationv1alpha2.Socket) string {
+func (u *ApparatusUtil) getSocketEndpoint(socket *integrationv1beta1.Socket) string {
 	return u.getEndpoint(socket.Name+"-apparatus", socket.Namespace, socket.Spec.Apparatus, config.DebugSocketEndpoint)
 }
 
 func (u *ApparatusUtil) getEndpoint(
 	name string,
 	namespace string,
-	apparatus *integrationv1alpha2.SpecApparatus,
+	apparatus *integrationv1beta1.SpecApparatus,
 	debugEndpoint string,
 ) string {
 	endpoint := debugEndpoint
@@ -737,11 +707,11 @@ func (u *ApparatusUtil) getEndpoint(
 }
 
 func (u *ApparatusUtil) processEvent(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
-	apparatus *integrationv1alpha2.SpecApparatus,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
+	apparatus *integrationv1beta1.SpecApparatus,
 	name string,
 	namespace string,
 	uid string,

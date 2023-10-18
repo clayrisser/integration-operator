@@ -1,24 +1,28 @@
-# operator framework
-!vendor/**/zz_generated.*
-*.dll
-*.dylib
+# Binaries for programs and plugins
 *.exe
 *.exe~
-*.out
+*.dll
 *.so
-*.swo
-*.swp
-*.test
-*~
-.idea
+*.dylib
 bin
 testbin/*
+Dockerfile.cross
 
-# custom
-/.make
-/integration-operator
-/main
-.mkpm/*
-**/.mkpm/*
-!/.mkpm/.cache.tar.gz
-!/.mkpm/.bootstrap.mk
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Kubernetes Generated files - skip generated files, except for vendored files
+
+!vendor/**/zz_generated.*
+
+# editor and IDE paraphernalia
+.idea
+*.swp
+*.swo
+*~
+
+# mkpm
+.mkpm/mkpm

@@ -1,13 +1,27 @@
 /**
- * File: /event.go
- * Project: integration-operator
- * File Created: 26-06-2021 04:17:51
- * Author: Clay Risser <email@clayrisser.com>
+ * File: /util/event.go
+ * Project: new
+ * File Created: 17-10-2023 13:49:54
+ * Author: Clay Risser
  * -----
- * Last Modified: 02-07-2023 11:49:19
- * Modified By: Clay Risser <email@clayrisser.com>
- * -----
- * BitSpur (c) Copyright 2021
+ * BitSpur (c) Copyright 2021 - 2023
+ *
+ * Licensed under the GNU Affero General Public License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.gnu.org/licenses/agpl-3.0.en.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * You can be released from the requirements of the license by purchasing
+ * a commercial license. Buying such a license is mandatory as soon as you
+ * develop commercial activities involving this software without disclosing
+ * the source code of your own applications.
  */
 
 package util
@@ -15,7 +29,7 @@ package util
 import (
 	"context"
 
-	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
+	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 )
 
 type EventUtil struct {
@@ -23,14 +37,16 @@ type EventUtil struct {
 	resourceUtil  *ResourceUtil
 }
 
-func NewEventUtil(ctx *context.Context) *EventUtil {
+func NewEventUtil(
+	ctx *context.Context,
+) *EventUtil {
 	return &EventUtil{
 		apparatusUtil: NewApparatusUtil(ctx),
 		resourceUtil:  NewResourceUtil(ctx),
 	}
 }
 
-func (u *EventUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
+func (u *EventUtil) PlugCreated(plug *integrationv1beta1.Plug) error {
 	if err := u.apparatusUtil.PlugCreated(plug); err != nil {
 		return err
 	}
@@ -38,10 +54,10 @@ func (u *EventUtil) PlugCreated(plug *integrationv1alpha2.Plug) error {
 }
 
 func (u *EventUtil) PlugCoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if err := u.apparatusUtil.PlugCoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
@@ -50,10 +66,10 @@ func (u *EventUtil) PlugCoupled(
 }
 
 func (u *EventUtil) PlugUpdated(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if err := u.apparatusUtil.PlugUpdated(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
@@ -62,10 +78,10 @@ func (u *EventUtil) PlugUpdated(
 }
 
 func (u *EventUtil) PlugDecoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if err := u.apparatusUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
@@ -74,7 +90,7 @@ func (u *EventUtil) PlugDecoupled(
 }
 
 func (u *EventUtil) PlugDeleted(
-	plug *integrationv1alpha2.Plug,
+	plug *integrationv1beta1.Plug,
 ) error {
 	if err := u.apparatusUtil.PlugDeleted(plug); err != nil {
 		return err
@@ -82,16 +98,7 @@ func (u *EventUtil) PlugDeleted(
 	return u.resourceUtil.PlugDeleted(plug)
 }
 
-func (u *EventUtil) PlugBroken(
-	plug *integrationv1alpha2.Plug,
-) error {
-	if err := u.apparatusUtil.PlugBroken(plug); err != nil {
-		return err
-	}
-	return u.resourceUtil.PlugBroken(plug)
-}
-
-func (u *EventUtil) SocketCreated(socket *integrationv1alpha2.Socket) error {
+func (u *EventUtil) SocketCreated(socket *integrationv1beta1.Socket) error {
 	if err := u.apparatusUtil.SocketCreated(socket); err != nil {
 		return err
 	}
@@ -99,10 +106,10 @@ func (u *EventUtil) SocketCreated(socket *integrationv1alpha2.Socket) error {
 }
 
 func (u *EventUtil) SocketCoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if err := u.apparatusUtil.SocketCoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
@@ -111,10 +118,10 @@ func (u *EventUtil) SocketCoupled(
 }
 
 func (u *EventUtil) SocketUpdated(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if err := u.apparatusUtil.SocketUpdated(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
@@ -123,10 +130,10 @@ func (u *EventUtil) SocketUpdated(
 }
 
 func (u *EventUtil) SocketDecoupled(
-	plug *integrationv1alpha2.Plug,
-	socket *integrationv1alpha2.Socket,
-	plugConfig *map[string]string,
-	socketConfig *map[string]string,
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	plugConfig *Config,
+	socketConfig *Config,
 ) error {
 	if err := u.apparatusUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
@@ -135,19 +142,10 @@ func (u *EventUtil) SocketDecoupled(
 }
 
 func (u *EventUtil) SocketDeleted(
-	socket *integrationv1alpha2.Socket,
+	socket *integrationv1beta1.Socket,
 ) error {
 	if err := u.apparatusUtil.SocketDeleted(socket); err != nil {
 		return err
 	}
 	return u.resourceUtil.SocketDeleted(socket)
-}
-
-func (u *EventUtil) SocketBroken(
-	socket *integrationv1alpha2.Socket,
-) error {
-	if err := u.apparatusUtil.SocketBroken(socket); err != nil {
-		return err
-	}
-	return u.resourceUtil.SocketBroken(socket)
 }

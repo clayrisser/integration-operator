@@ -1,7 +1,7 @@
 /**
- * File: /util/main.go
+ * File: /api/v1beta1/groupversion_info.go
  * Project: new
- * File Created: 17-10-2023 13:49:54
+ * File Created: 17-10-2023 10:50:35
  * Author: Clay Risser
  * -----
  * BitSpur (c) Copyright 2021 - 2023
@@ -24,35 +24,23 @@
  * the source code of your own applications.
  */
 
-package util
+// Package v1beta1 contains API Schema definitions for the integration v1beta1 API group
+// +kubebuilder:object:generate=true
+// +groupName=integration.rock8s.com
+package v1beta1
 
 import (
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
 var (
-	decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+	// GroupVersion is group version used to register these objects
+	GroupVersion = schema.GroupVersion{Group: "integration.rock8s.com", Version: "v1beta1"}
+
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
+	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
+
+	// AddToScheme adds the types in this group-version to the given scheme.
+	AddToScheme = SchemeBuilder.AddToScheme
 )
-
-type ConditionCoupledReason string
-
-const (
-	CouplingInProcess ConditionCoupledReason = "CouplingInProcess"
-	CouplingSucceeded ConditionCoupledReason = "CouplingSucceeded"
-	Error             ConditionCoupledReason = "Error"
-	PlugCreated       ConditionCoupledReason = "PlugCreated"
-	SocketCoupled     ConditionCoupledReason = "SocketCoupled"
-	SocketCreated     ConditionCoupledReason = "SocketCreated"
-	SocketEmpty       ConditionCoupledReason = "SocketEmpty"
-	SocketNotCreated  ConditionCoupledReason = "SocketNotCreated"
-)
-
-type ConditionType string
-
-const (
-	ConditionTypeCoupled ConditionType = "Coupled"
-	ConditionTypeFailed  ConditionType = "Failed"
-)
-
-type Config map[string]string

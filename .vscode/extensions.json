@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "golang.go",
+    "ms-azuretools.vscode-docker",
+    "ms-kubernetes-tools.vscode-kubernetes-tools",
+    "streetsidesoftware.code-spell-checker",
+    "mkhl.direnv"
+  ]
+}

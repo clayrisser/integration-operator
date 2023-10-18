@@ -1,13 +1,27 @@
 /**
- * File: /socket.go
- * Project: integration-operator
- * File Created: 23-06-2021 09:14:26
- * Author: Clay Risser <email@clayrisser.com>
+ * File: /util/socket.go
+ * Project: new
+ * File Created: 17-10-2023 13:49:54
+ * Author: Clay Risser
  * -----
- * Last Modified: 02-07-2023 11:49:19
- * Modified By: Clay Risser <email@clayrisser.com>
- * -----
- * BitSpur (c) Copyright 2021
+ * BitSpur (c) Copyright 2021 - 2023
+ *
+ * Licensed under the GNU Affero General Public License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.gnu.org/licenses/agpl-3.0.en.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * You can be released from the requirements of the license by purchasing
+ * a commercial license. Buying such a license is mandatory as soon as you
+ * develop commercial activities involving this software without disclosing
+ * the source code of your own applications.
  */
 
 package util
@@ -17,11 +31,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/go-logr/logr"
-	integrationv1alpha2 "gitlab.com/bitspur/rock8s/integration-operator/api/v1alpha2"
-	"gitlab.com/bitspur/rock8s/integration-operator/config"
+	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,8 +45,6 @@ type SocketUtil struct {
 	apparatusUtil  *ApparatusUtil
 	client         *client.Client
 	ctx            *context.Context
-	log            *logr.Logger
-	mutex          *sync.Mutex
 	namespacedName types.NamespacedName
 	req            *ctrl.Request
 }
@@ -44,77 +53,58 @@ func NewSocketUtil(
 	client *client.Client,
 	ctx *context.Context,
 	req *ctrl.Request,
-	log *logr.Logger,
-	namespacedName *integrationv1alpha2.NamespacedName,
-	mutex *sync.Mutex,
+	namespacedName *integrationv1beta1.NamespacedName,
 ) *SocketUtil {
 	operatorNamespace := GetOperatorNamespace()
-	if mutex == nil {
-		mutex = &sync.Mutex{}
-	}
 	return &SocketUtil{
 		apparatusUtil:  NewApparatusUtil(ctx),
 		client:         client,
 		ctx:            ctx,
-		log:            log,
-		mutex:          mutex,
 		namespacedName: EnsureNamespacedName(namespacedName, operatorNamespace),
 		req:            req,
 	}
 }
 
-func (u *SocketUtil) Get() (*integrationv1alpha2.Socket, error) {
+func (u *SocketUtil) Get() (*integrationv1beta1.Socket, error) {
 	client := *u.client
 	ctx := *u.ctx
-	socket := &integrationv1alpha2.Socket{}
+	socket := &integrationv1beta1.Socket{}
 	if err := client.Get(ctx, u.namespacedName, socket); err != nil {
 		return nil, err
 	}
 	return socket.DeepCopy(), nil
 }
 
-func (u *SocketUtil) Update(socket *integrationv1alpha2.Socket) error {
+func (u *SocketUtil) Update(socket *integrationv1beta1.Socket, requeue bool) (ctrl.Result, error) {
 	client := *u.client
 	ctx := *u.ctx
-	u.mutex.Lock()
+	socket.Status.ObservedGeneration = socket.Generation
 	if err := client.Update(ctx, socket); err != nil {
-		u.mutex.Unlock()
-		return err
+		return u.Error(err, socket)
 	}
-	u.mutex.Unlock()
-	return nil
+	return ctrl.Result{Requeue: requeue}, nil
 }
 
 func (u *SocketUtil) UpdateStatus(
-	socket *integrationv1alpha2.Socket,
+	socket *integrationv1beta1.Socket,
 	requeue bool,
-	exponentialBackoff bool,
-) error {
+) (ctrl.Result, error) {
 	client := *u.client
 	ctx := *u.ctx
-	if !exponentialBackoff ||
-		socket.Status.LastUpdate.IsZero() ||
-		config.StartTime.Unix() > socket.Status.LastUpdate.Unix() {
-		socket.Status.LastUpdate = metav1.Now()
-	}
-	socket.Status.Requeued = requeue
-	u.mutex.Lock()
+	socket.Status.ObservedGeneration = socket.Generation
 	if err := client.Status().Update(ctx, socket); err != nil {
-		u.mutex.Unlock()
-		return err
+		return ctrl.Result{}, err
 	}
-	u.mutex.Unlock()
-	return nil
+	return ctrl.Result{Requeue: requeue}, nil
 }
 
-func (u *SocketUtil) CoupledPlugExists(coupledPlugs []*integrationv1alpha2.CoupledPlug, plugUid types.UID) bool {
-	coupledPlugExits := false
-	for _, coupledPlug := range coupledPlugs {
-		if coupledPlug.UID == plugUid {
-			coupledPlugExits = true
-		}
+func (u *SocketUtil) Delete(socket *integrationv1beta1.Socket) (ctrl.Result, error) {
+	client := *u.client
+	ctx := *u.ctx
+	if err := client.Delete(ctx, socket); err != nil {
+		return u.Error(err, socket)
 	}
-	return coupledPlugExits
+	return ctrl.Result{}, nil
 }
 
 func (u *SocketUtil) GetCoupledCondition() (*metav1.Condition, error) {
@@ -122,155 +112,176 @@ func (u *SocketUtil) GetCoupledCondition() (*metav1.Condition, error) {
 	if err != nil {
 		return nil, err
 	}
-	coupledCondition := meta.FindStatusCondition(socket.Status.Conditions, "Coupled")
+	coupledCondition := meta.FindStatusCondition(socket.Status.Conditions, string(ConditionTypeCoupled))
 	return coupledCondition, nil
 }
 
-func (u *SocketUtil) PlugError(err error) error {
-	if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) <= -1 {
-		if _, _err := u.UpdateErrorStatus(err, true); _err != nil {
-			if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
-				return nil
-			}
-			return _err
+func (u *SocketUtil) CoupledPlugExists(coupledPlugs []*integrationv1beta1.CoupledPlug, plugUid types.UID) bool {
+	for _, coupledPlug := range coupledPlugs {
+		if coupledPlug.UID == plugUid {
+			return true
 		}
 	}
-	return nil
+	return false
 }
 
-func (u *SocketUtil) Error(err error) (ctrl.Result, error) {
-	log := *u.log
-	socket, _err := u.Get()
-	if _err != nil {
-		log.Error(nil, err.Error())
-		return ctrl.Result{
-			Requeue:      true,
-			RequeueAfter: config.MaxRequeueDuration,
-		}, _err
-	}
-	requeueAfter := CalculateExponentialRequireAfter(
-		socket.Status.LastUpdate,
-		2,
-	)
-	if u.apparatusUtil.NotRunning(err) {
-		successRequeueAfter := time.Duration(time.Second.Nanoseconds() * 10)
-		started, _err := u.apparatusUtil.StartFromSocket(socket, &successRequeueAfter)
-		if _err != nil {
-			return u.Error(_err)
-		}
-		if started {
-			if _err := u.UpdateStatus(socket, true, true); _err != nil {
-				if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
-					return ctrl.Result{
-						Requeue:      true,
-						RequeueAfter: requeueAfter,
-					}, nil
-				}
-				return u.Error(_err)
-			}
-			return ctrl.Result{
-				Requeue:      true,
-				RequeueAfter: successRequeueAfter,
-			}, nil
+func (u *SocketUtil) Error(err error, socket *integrationv1beta1.Socket) (ctrl.Result, error) {
+	e := err
+	if socket == nil {
+		var err error
+		socket, err = u.Get()
+		if err != nil {
+			return ctrl.Result{}, err
 		}
 	}
-	log.Error(nil, err.Error())
-	if strings.Index(err.Error(), registry.OptimisticLockErrorMsg) <= -1 {
-		if _, _err := u.UpdateErrorStatus(err, true); _err != nil {
-			if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
-				return ctrl.Result{
-					Requeue:      true,
-					RequeueAfter: requeueAfter,
-				}, nil
-			}
-			return ctrl.Result{
-				Requeue:      true,
-				RequeueAfter: requeueAfter,
-			}, _err
-		}
-	}
-	return ctrl.Result{
-		Requeue:      true,
-		RequeueAfter: requeueAfter,
-	}, nil
+	// TODO: ???
+	// if u.apparatusUtil.NotRunning(err) {
+	// 	successRequeueAfter := time.Duration(time.Second.Nanoseconds() * 10)
+	// 	started, _err := u.apparatusUtil.StartFromSocket(socket, &successRequeueAfter)
+	// 	if _err != nil {
+	// 		return u.Error(err, socket)
+	// 	}
+	// 	if started {
+	// 		if _err := u.updateStatus(socket); _err != nil {
+	// 			if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
+	// 				return ctrl.Result{}, nil
+	// 			}
+	// 			return u.Error(err, socket)
+	// 		}
+	// 		return ctrl.Result{
+	// 			Requeue:      true,
+	// 			RequeueAfter: successRequeueAfter,
+	// 		}, nil
+	// 	}
+	// }
+	return u.UpdateErrorStatus(e, socket)
 }
 
-func (u *SocketUtil) UpdateStatusSimple(
-	phase integrationv1alpha2.Phase,
-	coupledStatusCondition StatusCondition,
-	appendPlug *integrationv1alpha2.Plug,
+func (u *SocketUtil) UpdateCoupledStatus(
+	conditionCoupledReason ConditionCoupledReason,
+	socket *integrationv1beta1.Socket,
+	appendPlug *integrationv1beta1.Plug,
 	requeue bool,
 ) (ctrl.Result, error) {
-	socket, err := u.Get()
-	if err != nil {
-		return u.Error(err)
-	}
-	if phase != "" {
-		u.setPhaseStatus(socket, phase)
+	if socket == nil {
+		var err error
+		socket, err = u.Get()
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 	if appendPlug != nil {
 		if err := u.appendCoupledPlugStatus(socket, appendPlug); err != nil {
-			return u.Error(err)
+			return u.Error(err, socket)
 		}
 	}
-	if coupledStatusCondition != "" {
-		u.setCoupledStatusCondition(socket, coupledStatusCondition, "")
+	if conditionCoupledReason != "" {
+		u.setCoupledStatusCondition(conditionCoupledReason, "", socket)
 	}
-	if err := u.UpdateStatus(socket, requeue, false); err != nil {
-		return u.Error(err)
-	}
-	return ctrl.Result{}, nil
+	return u.UpdateStatus(socket, requeue)
 }
 
-func (u *SocketUtil) UpdateErrorStatus(err error, requeue bool) (ctrl.Result, error) {
-	socket, _err := u.Get()
-	if _err != nil {
-		return ctrl.Result{}, _err
+func (u *SocketUtil) UpdateErrorStatus(
+	err error,
+	socket *integrationv1beta1.Socket,
+) (ctrl.Result, error) {
+	e := err
+	if socket == nil {
+		var err error
+		socket, err = u.Get()
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
-	u.setErrorStatus(socket, err)
-	if _err := u.UpdateStatus(socket, requeue, true); _err != nil {
-		return ctrl.Result{}, _err
+	if err = u.setErrorStatus(e, socket); err != nil {
+		return ctrl.Result{}, err
 	}
-	return ctrl.Result{}, nil
+	if _, err := u.UpdateStatus(socket, true); err != nil {
+		return ctrl.Result{}, err
+	}
+	if strings.Contains(e.Error(), registry.OptimisticLockErrorMsg) {
+		return ctrl.Result{Requeue: true}, nil
+	}
+	return ctrl.Result{}, e
 }
 
-func (u *SocketUtil) UpdateStatusRemovePlug(plugUid types.UID, requeue bool) (ctrl.Result, error) {
-	socket, err := u.Get()
-	if err != nil {
-		return u.Error(err)
-	}
-	if err := u.removeCoupledPlugStatus(socket, plugUid); err != nil {
-		return u.Error(err)
-	}
-	if err := u.UpdateStatus(socket, requeue, false); err != nil {
-		return u.Error(err)
-	}
-	return ctrl.Result{}, nil
-}
-
-func (u *SocketUtil) UpdateStatusAppendPlug(
-	plug *integrationv1alpha2.Plug,
+func (u *SocketUtil) UpdateRemoveCoupledPlugStatus(
+	plugUid types.UID,
+	socket *integrationv1beta1.Socket,
 	requeue bool,
 ) (ctrl.Result, error) {
-	socket, err := u.Get()
+	if socket == nil {
+		var err error
+		socket, err = u.Get()
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+	removedCoupledPlug, err := u.RemoveCoupledPlugStatus(plugUid, socket)
 	if err != nil {
-		return u.Error(err)
+		return u.Error(err, socket)
+	}
+	if removedCoupledPlug {
+		return u.UpdateStatus(socket, requeue)
+	}
+	return ctrl.Result{Requeue: requeue}, nil
+}
+
+func (u *SocketUtil) UpdateAppendCoupledPlugStatus(
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	requeue bool,
+) (ctrl.Result, error) {
+	if socket == nil {
+		var err error
+		socket, err = u.Get()
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 	if err := u.appendCoupledPlugStatus(socket, plug); err != nil {
-		return u.Error(err)
+		return u.Error(err, socket)
 	}
-	if err := u.UpdateStatus(socket, requeue, false); err != nil {
-		return u.Error(err)
+	return u.UpdateStatus(socket, requeue)
+}
+
+func (u *SocketUtil) RemoveCoupledPlugStatus(
+	plugUid types.UID,
+	socket *integrationv1beta1.Socket,
+) (bool, error) {
+	if socket == nil {
+		var err error
+		socket, err = u.Get()
+		if err != nil {
+			return false, err
+		}
 	}
-	return ctrl.Result{}, nil
+	coupledPlugs := []*integrationv1beta1.CoupledPlug{}
+	removedCoupledPlug := false
+	for _, coupledPlug := range socket.Status.CoupledPlugs {
+		if coupledPlug.UID == plugUid {
+			removedCoupledPlug = true
+		} else {
+			coupledPlugs = append(coupledPlugs, coupledPlug)
+		}
+	}
+	socket.Status.CoupledPlugs = coupledPlugs
+	coupledCondition, err := u.GetCoupledCondition()
+	if err != nil {
+		return false, err
+	}
+	if (*coupledCondition).Reason == string(SocketCoupled) {
+		u.setCoupledStatusCondition(SocketCoupled, "", socket)
+	}
+	return removedCoupledPlug, nil
 }
 
 func (u *SocketUtil) appendCoupledPlugStatus(
-	socket *integrationv1alpha2.Socket,
-	plug *integrationv1alpha2.Plug,
+	socket *integrationv1beta1.Socket,
+	plug *integrationv1beta1.Plug,
 ) error {
 	if !u.CoupledPlugExists(socket.Status.CoupledPlugs, plug.UID) {
-		socket.Status.CoupledPlugs = append(socket.Status.CoupledPlugs, &integrationv1alpha2.CoupledPlug{
+		socket.Status.CoupledPlugs = append(socket.Status.CoupledPlugs, &integrationv1beta1.CoupledPlug{
 			APIVersion: plug.APIVersion,
 			Kind:       plug.Kind,
 			Name:       plug.Name,
@@ -278,97 +289,83 @@ func (u *SocketUtil) appendCoupledPlugStatus(
 			UID:        plug.UID,
 		})
 	}
-	u.setCoupledStatusCondition(socket, SocketCoupledStatusCondition, "")
+	u.setCoupledStatusCondition(SocketCoupled, "", socket)
 	return nil
 }
 
 func (u *SocketUtil) setCoupledStatusCondition(
-	socket *integrationv1alpha2.Socket,
-	coupledStatusCondition StatusCondition,
+	conditionCoupledReason ConditionCoupledReason,
 	message string,
+	socket *integrationv1beta1.Socket,
 ) {
-	u.setReadyStatus(socket, false)
 	coupledStatus := false
 	coupledPlugsCount := len(socket.Status.CoupledPlugs)
 	if message == "" {
-		if coupledStatusCondition == SocketCreatedStatusCondition {
+		if conditionCoupledReason == SocketCreated {
 			message = "socket created"
-		} else if coupledStatusCondition == ErrorStatusCondition {
+		} else if conditionCoupledReason == Error {
 			message = "unknown error"
-		} else if coupledStatusCondition == SocketCoupledStatusCondition {
-			message = "socket ready with " + fmt.Sprint(coupledPlugsCount) + " plugs coupled"
-		} else if coupledStatusCondition == SocketEmptyStatusCondition {
-			message = "socket ready with 0 plugs coupled"
+		} else if conditionCoupledReason == SocketCoupled {
+			message = fmt.Sprint(coupledPlugsCount)
+			if coupledPlugsCount == 1 {
+				message += " plug coupled"
+			} else {
+				message += " plugs coupled"
+			}
+		} else if conditionCoupledReason == SocketEmpty {
+			message = "0 plugs coupled"
 		}
 	}
-	if coupledStatusCondition == SocketCoupledStatusCondition {
+	if conditionCoupledReason != Error {
+		socket.Status.Conditions = []metav1.Condition{}
+	}
+	if conditionCoupledReason == SocketCoupled {
 		if coupledPlugsCount > 0 {
 			coupledStatus = true
 		} else {
-			coupledStatusCondition = SocketEmptyStatusCondition
+			conditionCoupledReason = SocketEmpty
 		}
 	}
 	condition := metav1.Condition{
 		Message:            message,
 		ObservedGeneration: socket.Generation,
-		Reason:             string(coupledStatusCondition),
+		Reason:             string(conditionCoupledReason),
 		Status:             "False",
-		Type:               "Coupled",
+		Type:               string(ConditionTypeCoupled),
 	}
 	if coupledStatus {
 		condition.Status = "True"
 	}
 	meta.SetStatusCondition(&socket.Status.Conditions, condition)
-	if coupledStatusCondition == SocketCoupledStatusCondition || coupledStatusCondition == SocketEmptyStatusCondition {
-		u.setReadyStatus(socket, true)
-	}
 }
 
-func (u *SocketUtil) setPhaseStatus(
-	socket *integrationv1alpha2.Socket,
-	phase integrationv1alpha2.Phase,
-) {
-	if phase != integrationv1alpha2.FailedPhase {
-		socket.Status.Message = ""
+func (u *SocketUtil) setErrorStatus(err error, socket *integrationv1beta1.Socket) error {
+	e := err
+	if e == nil {
+		return nil
 	}
-	socket.Status.Phase = phase
-}
-
-func (u *SocketUtil) setReadyStatus(socket *integrationv1alpha2.Socket, ready bool) {
-	socket.Status.Ready = ready
-}
-
-func (u *SocketUtil) setErrorStatus(socket *integrationv1alpha2.Socket, err error) {
-	message := err.Error()
-	coupledCondition, _err := u.GetCoupledCondition()
-	if _err == nil {
-		coupledCondition = nil
+	if socket == nil {
+		return nil
 	}
-	if coupledCondition != nil {
-		u.setCoupledStatusCondition(socket, ErrorStatusCondition, message)
+	if strings.Contains(e.Error(), registry.OptimisticLockErrorMsg) {
+		return nil
 	}
-	socket.Status.Phase = integrationv1alpha2.FailedPhase
-	socket.Status.Message = message
-}
-
-func (u *SocketUtil) removeCoupledPlugStatus(
-	socket *integrationv1alpha2.Socket,
-	plugUid types.UID,
-) error {
-	coupledPlugs := []*integrationv1alpha2.CoupledPlug{}
-	for _, coupledPlug := range socket.Status.CoupledPlugs {
-		if coupledPlug.UID != plugUid {
-			coupledPlugs = append(coupledPlugs, coupledPlug)
-		}
-	}
-	socket.Status.CoupledPlugs = coupledPlugs
+	message := e.Error()
 	coupledCondition, err := u.GetCoupledCondition()
 	if err != nil {
 		return err
 	}
-	if (*coupledCondition).Reason == string(SocketCoupledStatusCondition) {
-		u.setCoupledStatusCondition(socket, SocketCoupledStatusCondition, "")
+	if coupledCondition != nil {
+		u.setCoupledStatusCondition(Error, message, socket)
 	}
+	failedCondition := metav1.Condition{
+		Message:            message,
+		ObservedGeneration: socket.Generation,
+		Reason:             "Error",
+		Status:             "True",
+		Type:               string(ConditionTypeFailed),
+	}
+	meta.SetStatusCondition(&socket.Status.Conditions, failedCondition)
 	return nil
 }
 

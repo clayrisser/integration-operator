@@ -1,6 +1,6 @@
-# File: /.envrc
+# File: /Mkpmfile
 # Project: new
-# File Created: 17-10-2023 10:51:29
+# File Created: 13-10-2023 15:40:24
 # Author: Clay Risser
 # -----
 # BitSpur (c) Copyright 2021 - 2023
@@ -22,25 +22,20 @@
 # develop commercial activities involving this software without disclosing
 # the source code of your own applications.
 
-export GO_VERSION="$(cat go.mod | grep -E '^go ' | sed 's|^go ||g')"
+include $(MKPM)/mkpm
+include $(MKPM)/gnu
 
-use_golang() {
-    export GVM_PKGSET=$(pwd | sed 's|.*\/||g')
-    [[ -s "$GVM_ROOT/scripts/gvm" ]] && source "$GVM_ROOT/scripts/gvm"
-    if ! (gvm list | grep -q "$GO_VERSION"); then
-        INSTALL_LOG=$(mktemp)
-        gvm install go$GO_VERSION -B 2>&1 | tee $INSTALL_LOG
-        cat $INSTALL_LOG
-        if (cat $INSTALL_LOG | grep -q "ERROR: Binary Go unavailable for this platform"); then
-            gvm install go$GO_VERSION
-        fi
-        rm -rf $INSTALL_LOG 2>/dev/null || true
-    fi
-    gvm use go$GO_VERSION
-    if ! (gvm pkgset list | grep -q "$GVM_PKGSET"); then
-        gvm pkgset create $GVM_PKGSET
-    fi
-    gvm pkgset use $GVM_PKGSET
-}
+.PHONY: of-% build generate manifests install uninstall start reinstall
+build: of-build
+dev: of-run
+generate: of-generate
+install: of-install
+manifests: generate of-manifests
+uninstall: of-uninstall
+reinstall: uninstall install
+of-%:
+	@$(MAKE) -s $*
 
-use_golang
+.PHONY: docker/%
+docker/%:
+	@$(MAKE) -sC docker $*
