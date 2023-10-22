@@ -1,6 +1,6 @@
 /**
  * File: /util/main.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 13:49:54
  * Author: Clay Risser
  * -----
@@ -46,6 +46,7 @@ const (
 	SocketCreated     ConditionCoupledReason = "SocketCreated"
 	SocketEmpty       ConditionCoupledReason = "SocketEmpty"
 	SocketNotCreated  ConditionCoupledReason = "SocketNotCreated"
+	UpdatingInProcess ConditionCoupledReason = "UpdatingInProcess"
 )
 
 type ConditionType string
@@ -56,3 +57,5 @@ const (
 )
 
 type Config map[string]string
+
+type Result map[string]string

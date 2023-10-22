@@ -1,6 +1,6 @@
 /**
  * File: /util/event.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 13:49:54
  * Author: Clay Risser
  * -----
@@ -28,25 +28,31 @@ package util
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/go-logr/logr"
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type EventUtil struct {
 	apparatusUtil *ApparatusUtil
 	resourceUtil  *ResourceUtil
+	logger        logr.Logger
 }
 
 func NewEventUtil(
-	ctx *context.Context,
+	ctx context.Context,
 ) *EventUtil {
 	return &EventUtil{
 		apparatusUtil: NewApparatusUtil(ctx),
 		resourceUtil:  NewResourceUtil(ctx),
+		logger:        log.FromContext(ctx),
 	}
 }
 
 func (u *EventUtil) PlugCreated(plug *integrationv1beta1.Plug) error {
+	u.logger.Info("plug created " + fmt.Sprintf("%s/%s", plug.Name, plug.Namespace))
 	if err := u.apparatusUtil.PlugCreated(plug); err != nil {
 		return err
 	}
@@ -59,6 +65,7 @@ func (u *EventUtil) PlugCoupled(
 	plugConfig *Config,
 	socketConfig *Config,
 ) error {
+	u.logger.Info("plug coupled " + fmt.Sprintf("%s/%s", plug.Name, plug.Namespace))
 	if err := u.apparatusUtil.PlugCoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
@@ -71,6 +78,7 @@ func (u *EventUtil) PlugUpdated(
 	plugConfig *Config,
 	socketConfig *Config,
 ) error {
+	u.logger.Info("plug updated " + fmt.Sprintf("%s/%s", plug.Name, plug.Namespace))
 	if err := u.apparatusUtil.PlugUpdated(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
@@ -83,6 +91,7 @@ func (u *EventUtil) PlugDecoupled(
 	plugConfig *Config,
 	socketConfig *Config,
 ) error {
+	u.logger.Info("plug decoupled " + fmt.Sprintf("%s/%s", plug.Name, plug.Namespace))
 	if err := u.apparatusUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
@@ -92,6 +101,7 @@ func (u *EventUtil) PlugDecoupled(
 func (u *EventUtil) PlugDeleted(
 	plug *integrationv1beta1.Plug,
 ) error {
+	u.logger.Info("plug deleted " + fmt.Sprintf("%s/%s", plug.Name, plug.Namespace))
 	if err := u.apparatusUtil.PlugDeleted(plug); err != nil {
 		return err
 	}
@@ -99,6 +109,7 @@ func (u *EventUtil) PlugDeleted(
 }
 
 func (u *EventUtil) SocketCreated(socket *integrationv1beta1.Socket) error {
+	u.logger.Info("socket created " + fmt.Sprintf("%s/%s", socket.Name, socket.Namespace))
 	if err := u.apparatusUtil.SocketCreated(socket); err != nil {
 		return err
 	}
@@ -111,6 +122,7 @@ func (u *EventUtil) SocketCoupled(
 	plugConfig *Config,
 	socketConfig *Config,
 ) error {
+	u.logger.Info("socket coupled " + fmt.Sprintf("%s/%s", socket.Name, socket.Namespace))
 	if err := u.apparatusUtil.SocketCoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
@@ -123,6 +135,7 @@ func (u *EventUtil) SocketUpdated(
 	plugConfig *Config,
 	socketConfig *Config,
 ) error {
+	u.logger.Info("socket updated " + fmt.Sprintf("%s/%s", socket.Name, socket.Namespace))
 	if err := u.apparatusUtil.SocketUpdated(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
@@ -135,6 +148,7 @@ func (u *EventUtil) SocketDecoupled(
 	plugConfig *Config,
 	socketConfig *Config,
 ) error {
+	u.logger.Info("socket decoupled " + fmt.Sprintf("%s/%s", socket.Name, socket.Namespace))
 	if err := u.apparatusUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
@@ -144,6 +158,7 @@ func (u *EventUtil) SocketDecoupled(
 func (u *EventUtil) SocketDeleted(
 	socket *integrationv1beta1.Socket,
 ) error {
+	u.logger.Info("socket deleted " + fmt.Sprintf("%s/%s", socket.Name, socket.Namespace))
 	if err := u.apparatusUtil.SocketDeleted(socket); err != nil {
 		return err
 	}

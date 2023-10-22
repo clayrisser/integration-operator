@@ -4,20 +4,40 @@ metadata:
   labels:
     app.kubernetes.io/name: socket
     app.kubernetes.io/instance: socket-sample
-    app.kubernetes.io/part-of: new
+    app.kubernetes.io/part-of: integration-operator
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: new
+    app.kubernetes.io/created-by: integration-operator
   name: socket-sample
+  namespace: default
 spec:
   interface:
-    socketDefinition:
-      properties:
+    config:
+      socket:
         hello: {}
-    plugDefinition:
-      properties:
+      plug:
         howdy: {}
+    result:
+      plug:
+        hello:
+          required: true
+      socket:
+        world:
+          required: true
   config:
     hello: world
+  resultTemplate:
+    world: '{% printf "chip" %}'
+  resultResources:
+    - do: apply
+      templates:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: result
+          data:
+            hello: '{% .plugResult.hello %}'
+            world: '{% .socketResult.world %}'
+
   # interface:
   #   plugDefinition:
   #     description: connect postgres database

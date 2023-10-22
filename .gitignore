@@ -26,3 +26,6 @@ Dockerfile.cross
 
 # mkpm
 .mkpm/mkpm
+
+# app
+/integration-operator

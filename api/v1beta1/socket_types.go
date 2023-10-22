@@ -1,6 +1,6 @@
 /**
  * File: /api/v1beta1/socket_types.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 10:50:35
  * Author: Clay Risser
  * -----
@@ -35,7 +35,7 @@ import (
 // SocketSpec defines the desired state of Socket
 type SocketSpec struct {
 	// interface
-	Interface *InterfaceSchema `json:"interface,omitempty"`
+	Interface *Interface `json:"interface,omitempty"`
 
 	// limit
 	Limit int32 `json:"limit,omitempty"`
@@ -51,7 +51,7 @@ type SocketSpec struct {
 	// data
 	Data map[string]string `json:"data,omitempty"`
 
-	// data config map name
+	// data configmap name
 	DataConfigMapName string `json:"dataConfigMapName,omitempty"`
 
 	// data secret name
@@ -60,7 +60,7 @@ type SocketSpec struct {
 	// config
 	Config map[string]string `json:"config,omitempty"`
 
-	// config config map name
+	// config configmap name
 	ConfigConfigMapName string `json:"configConfigMapName,omitempty"`
 
 	// config secret name
@@ -68,6 +68,18 @@ type SocketSpec struct {
 
 	// config template
 	ConfigTemplate map[string]string `json:"configTemplate,omitempty"`
+
+	// result
+	Result map[string]string `json:"result,omitempty"`
+
+	// result configmap name
+	ResultConfigMapName string `json:"resultConfigMapName,omitempty"`
+
+	// result secret name
+	ResultSecretName string `json:"resultSecretName,omitempty"`
+
+	// result template
+	ResultTemplate map[string]string `json:"resultTemplate,omitempty"`
 
 	// ServiceAccountName is the name of the ServiceAccount to use to run integrations.
 	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
@@ -80,6 +92,9 @@ type SocketSpec struct {
 	// resources
 	Resources []*Resource `json:"resources,omitempty"`
 
+	// result resources
+	ResultResources []*ResourceAction `json:"resultResources,omitempty"`
+
 	// change epoch to force an update
 	Epoch string `json:"epoch,omitempty"`
 
@@ -87,20 +102,28 @@ type SocketSpec struct {
 	Validation *SocketSpecValidation `json:"validation,omitempty"`
 }
 
-type InterfaceSchema struct {
-	// version
-	Version string `json:"version,omitempty"`
+type Interface struct {
+	// config interface
+	Config *ConfigInterface `json:"config,omitempty"`
 
-	// plug definition
-	PlugDefinition *SchemaDefinition `json:"plugDefinition,omitempty"`
-
-	// socket definition
-	SocketDefinition *SchemaDefinition `json:"socketDefinition,omitempty"`
+	// result interface
+	Result *ResultInterface `json:"result,omitempty"`
 }
 
-type SchemaDefinition struct {
-	Description string                     `json:"description,omitempty"`
-	Properties  map[string]*SchemaProperty `json:"properties,omitempty"`
+type ConfigInterface struct {
+	// plug config properties
+	Plug map[string]*SchemaProperty `json:"plug,omitempty"`
+
+	// socket config properties
+	Socket map[string]*SchemaProperty `json:"socket,omitempty"`
+}
+
+type ResultInterface struct {
+	// plug result properties
+	Plug map[string]*SchemaProperty `json:"plug,omitempty"`
+
+	// socket result properties
+	Socket map[string]*SchemaProperty `json:"socket,omitempty"`
 }
 
 type SchemaProperty struct {
@@ -119,8 +142,6 @@ type SocketSpecValidation struct {
 
 // SocketStatus defines the observed state of Socket
 type SocketStatus struct {
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-
 	// Conditions represent the latest available observations of an object's state
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 

@@ -4,15 +4,18 @@ metadata:
   labels:
     app.kubernetes.io/name: plug
     app.kubernetes.io/instance: plug-sample
-    app.kubernetes.io/part-of: new
+    app.kubernetes.io/part-of: integration-operator
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: new
-  name: plug-sample
+    app.kubernetes.io/created-by: integration-operator
+  name: plug-sample2
+  namespace: default
 spec:
   socket:
     name: socket-sample
   config:
     howdy: texas
+  result:
+    hello: foo
   resources:
     - when: [coupled, updated]
       do: apply

@@ -1,5 +1,5 @@
 # File: /docker/Makefile
-# Project: new
+# Project: integration-operator
 # File Created: 13-10-2023 15:44:20
 # Author: Clay Risser
 # -----

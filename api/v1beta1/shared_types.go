@@ -1,6 +1,6 @@
 /**
  * File: /api/v1beta1/shared_types.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 12:06:48
  * Author: Clay Risser
  * -----
@@ -51,10 +51,14 @@ const (
 	RecreateDo Do = "recreate"
 )
 
-type Resource struct {
+type ResourceAction struct {
 	Do        Do                `json:"do,omitempty"`
 	Templates *[]*apiextv1.JSON `json:"templates,omitempty"`
-	When      *[]When           `json:"when,omitempty"`
+}
+
+type Resource struct {
+	ResourceAction `json:",inline"`
+	When           *[]When `json:"when,omitempty"`
 }
 
 type NamespacedName struct {

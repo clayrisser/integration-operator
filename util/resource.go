@@ -1,6 +1,6 @@
 /**
  * File: /util/resource.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 13:49:54
  * Author: Clay Risser
  * -----
@@ -31,7 +31,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 	"text/template"
 
@@ -47,10 +46,10 @@ import (
 
 type ResourceUtil struct {
 	client *kubernetes.Clientset
-	ctx    *context.Context
+	ctx    context.Context
 }
 
-func NewResourceUtil(ctx *context.Context) *ResourceUtil {
+func NewResourceUtil(ctx context.Context) *ResourceUtil {
 	return &ResourceUtil{
 		client: kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
 		ctx:    ctx,
@@ -62,6 +61,8 @@ func (u *ResourceUtil) PlugCreated(plug *integrationv1beta1.Plug) error {
 	kubectlUtil := NewKubectlUtil(u.ctx, plug.Namespace, EnsureServiceAccount(plug.Spec.ServiceAccountName))
 	if err := u.ProcessResources(
 		plug,
+		nil,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -87,6 +88,8 @@ func (u *ResourceUtil) PlugCoupled(
 		socket,
 		plugConfig,
 		socketConfig,
+		nil,
+		nil,
 		plug.Namespace,
 		resources,
 		kubectlUtil,
@@ -109,6 +112,8 @@ func (u *ResourceUtil) PlugUpdated(
 		socket,
 		plugConfig,
 		socketConfig,
+		nil,
+		nil,
 		plug.Namespace,
 		resources,
 		kubectlUtil,
@@ -131,6 +136,8 @@ func (u *ResourceUtil) PlugDecoupled(
 		socket,
 		plugConfig,
 		socketConfig,
+		nil,
+		nil,
 		plug.Namespace,
 		resources,
 		kubectlUtil,
@@ -150,6 +157,8 @@ func (u *ResourceUtil) PlugDeleted(
 		nil,
 		nil,
 		nil,
+		nil,
+		nil,
 		plug.Namespace,
 		resources,
 		kubectlUtil,
@@ -165,6 +174,8 @@ func (u *ResourceUtil) SocketCreated(socket *integrationv1beta1.Socket) error {
 	if err := u.ProcessResources(
 		nil,
 		socket,
+		nil,
+		nil,
 		nil,
 		nil,
 		socket.Namespace,
@@ -189,6 +200,8 @@ func (u *ResourceUtil) SocketCoupled(
 		socket,
 		plugConfig,
 		socketConfig,
+		nil,
+		nil,
 		socket.Namespace,
 		resources,
 		kubectlUtil,
@@ -211,6 +224,8 @@ func (u *ResourceUtil) SocketUpdated(
 		socket,
 		plugConfig,
 		socketConfig,
+		nil,
+		nil,
 		socket.Namespace,
 		resources,
 		kubectlUtil,
@@ -233,6 +248,8 @@ func (u *ResourceUtil) SocketDecoupled(
 		socket,
 		plugConfig,
 		socketConfig,
+		nil,
+		nil,
 		socket.Namespace,
 		resources,
 		kubectlUtil,
@@ -250,6 +267,8 @@ func (u *ResourceUtil) SocketDeleted(
 	if err := u.ProcessResources(
 		nil,
 		socket,
+		nil,
+		nil,
 		nil,
 		nil,
 		socket.Namespace,
@@ -298,8 +317,10 @@ func (u *ResourceUtil) ProcessResources(
 	socket *integrationv1beta1.Socket,
 	plugConfig *Config,
 	socketConfig *Config,
+	plugResult *Result,
+	socketResult *Result,
 	namespace string,
-	resources []*integrationv1beta1.Resource,
+	resources []*integrationv1beta1.ResourceAction,
 	kubectlUtil *KubectlUtil,
 ) error {
 	for _, resource := range resources {
@@ -309,11 +330,11 @@ func (u *ResourceUtil) ProcessResources(
 				socket,
 				plugConfig,
 				socketConfig,
+				plugResult,
+				socketResult,
 				namespace,
 				string(template.Raw),
 			)
-			fmt.Println("---")
-			fmt.Println(templatedResource)
 			if strings.TrimSpace(templatedResource) == "" {
 				return nil
 			}
@@ -346,17 +367,20 @@ func (u *ResourceUtil) ProcessResources(
 func (u *ResourceUtil) filterResources(
 	resources []*integrationv1beta1.Resource,
 	when integrationv1beta1.When,
-) []*integrationv1beta1.Resource {
-	filteredResources := []*integrationv1beta1.Resource{}
+) []*integrationv1beta1.ResourceAction {
+	filteredResources := []*integrationv1beta1.ResourceAction{}
 	if resources == nil {
-		return resources
+		return filteredResources
 	}
 	if when == "" {
 		when = integrationv1beta1.CoupledWhen
 	}
 	for _, resource := range resources {
 		if WhenInWhenSlice(when, resource.When) {
-			filteredResources = append(filteredResources, resource)
+			filteredResources = append(filteredResources, &integrationv1beta1.ResourceAction{
+				Do:        resource.Do,
+				Templates: resource.Templates,
+			})
 		}
 	}
 	return filteredResources
@@ -367,10 +391,12 @@ func (u *ResourceUtil) templateResource(
 	socket *integrationv1beta1.Socket,
 	plugConfig *Config,
 	socketConfig *Config,
+	plugResult *Result,
+	socketResult *Result,
 	namespace string,
 	body string,
 ) (string, error) {
-	data, err := u.buildTemplateData(plug, socket, plugConfig, socketConfig)
+	data, err := u.buildTemplateData(plug, socket, plugConfig, socketConfig, plugResult, socketResult)
 	if err != nil {
 		return "", err
 	}
@@ -413,6 +439,8 @@ func (u *ResourceUtil) buildTemplateData(
 	socket *integrationv1beta1.Socket,
 	plugConfig *Config,
 	socketConfig *Config,
+	plugResult *Result,
+	socketResult *Result,
 ) (map[string]interface{}, error) {
 	dataMap := map[string]interface{}{}
 	if plug != nil {
@@ -426,6 +454,12 @@ func (u *ResourceUtil) buildTemplateData(
 	}
 	if socketConfig != nil {
 		dataMap["socketConfig"] = socketConfig
+	}
+	if plugResult != nil {
+		dataMap["plugResult"] = plugResult
+	}
+	if socketResult != nil {
+		dataMap["socketResult"] = socketResult
 	}
 	bData, err := json.Marshal(dataMap)
 	if err != nil {

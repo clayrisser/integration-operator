@@ -1,6 +1,6 @@
 /**
  * File: /util/socket.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 13:49:54
  * Author: Clay Risser
  * -----
@@ -44,14 +44,14 @@ import (
 type SocketUtil struct {
 	apparatusUtil  *ApparatusUtil
 	client         *client.Client
-	ctx            *context.Context
+	ctx            context.Context
 	namespacedName types.NamespacedName
 	req            *ctrl.Request
 }
 
 func NewSocketUtil(
 	client *client.Client,
-	ctx *context.Context,
+	ctx context.Context,
 	req *ctrl.Request,
 	namespacedName *integrationv1beta1.NamespacedName,
 ) *SocketUtil {
@@ -67,7 +67,7 @@ func NewSocketUtil(
 
 func (u *SocketUtil) Get() (*integrationv1beta1.Socket, error) {
 	client := *u.client
-	ctx := *u.ctx
+	ctx := u.ctx
 	socket := &integrationv1beta1.Socket{}
 	if err := client.Get(ctx, u.namespacedName, socket); err != nil {
 		return nil, err
@@ -77,8 +77,7 @@ func (u *SocketUtil) Get() (*integrationv1beta1.Socket, error) {
 
 func (u *SocketUtil) Update(socket *integrationv1beta1.Socket, requeue bool) (ctrl.Result, error) {
 	client := *u.client
-	ctx := *u.ctx
-	socket.Status.ObservedGeneration = socket.Generation
+	ctx := u.ctx
 	if err := client.Update(ctx, socket); err != nil {
 		return u.Error(err, socket)
 	}
@@ -90,9 +89,11 @@ func (u *SocketUtil) UpdateStatus(
 	requeue bool,
 ) (ctrl.Result, error) {
 	client := *u.client
-	ctx := *u.ctx
-	socket.Status.ObservedGeneration = socket.Generation
+	ctx := u.ctx
 	if err := client.Status().Update(ctx, socket); err != nil {
+		if strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
+			return ctrl.Result{Requeue: true}, nil
+		}
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{Requeue: requeue}, nil
@@ -100,7 +101,7 @@ func (u *SocketUtil) UpdateStatus(
 
 func (u *SocketUtil) Delete(socket *integrationv1beta1.Socket) (ctrl.Result, error) {
 	client := *u.client
-	ctx := *u.ctx
+	ctx := u.ctx
 	if err := client.Delete(ctx, socket); err != nil {
 		return u.Error(err, socket)
 	}
@@ -134,26 +135,15 @@ func (u *SocketUtil) Error(err error, socket *integrationv1beta1.Socket) (ctrl.R
 			return ctrl.Result{}, err
 		}
 	}
-	// TODO: ???
-	// if u.apparatusUtil.NotRunning(err) {
-	// 	successRequeueAfter := time.Duration(time.Second.Nanoseconds() * 10)
-	// 	started, _err := u.apparatusUtil.StartFromSocket(socket, &successRequeueAfter)
-	// 	if _err != nil {
-	// 		return u.Error(err, socket)
-	// 	}
-	// 	if started {
-	// 		if _err := u.updateStatus(socket); _err != nil {
-	// 			if strings.Contains(_err.Error(), registry.OptimisticLockErrorMsg) {
-	// 				return ctrl.Result{}, nil
-	// 			}
-	// 			return u.Error(err, socket)
-	// 		}
-	// 		return ctrl.Result{
-	// 			Requeue:      true,
-	// 			RequeueAfter: successRequeueAfter,
-	// 		}, nil
-	// 	}
-	// }
+	if u.apparatusUtil.NotRunning(err) {
+		started, err := u.apparatusUtil.StartFromSocket(socket)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if started {
+			return ctrl.Result{Requeue: true}, nil
+		}
+	}
 	return u.UpdateErrorStatus(e, socket)
 }
 
@@ -356,7 +346,7 @@ func (u *SocketUtil) setErrorStatus(err error, socket *integrationv1beta1.Socket
 		return err
 	}
 	if coupledCondition != nil {
-		u.setCoupledStatusCondition(Error, message, socket)
+		u.setCoupledStatusCondition(Error, "coupling failed", socket)
 	}
 	failedCondition := metav1.Condition{
 		Message:            message,

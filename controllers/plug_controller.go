@@ -1,6 +1,6 @@
 /**
  * File: /controllers/plug_controller.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 10:50:57
  * Author: Clay Risser
  * -----
@@ -57,8 +57,9 @@ type PlugReconciler struct {
 //+kubebuilder:rbac:groups=integration.rock8s.com,resources=plugs/finalizers,verbs=update
 
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
-	plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &integrationv1beta1.NamespacedName{
+	logger := log.FromContext(ctx)
+	logger.V(1).Info("Plug Reconcile")
+	plugUtil := util.NewPlugUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
 		Name:      req.NamespacedName.Name,
 		Namespace: req.NamespacedName.Namespace,
 	})
@@ -66,7 +67,7 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	socketUtil := util.NewSocketUtil(&r.Client, &ctx, &req, &integrationv1beta1.NamespacedName{
+	socketUtil := util.NewSocketUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
 		Name:      plug.Spec.Socket.Name,
 		Namespace: util.Default(plug.Spec.Socket.Namespace, req.NamespacedName.Namespace),
 	})
@@ -78,7 +79,7 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if plug.GetDeletionTimestamp() != nil {
 		if controllerutil.ContainsFinalizer(plug, integrationv1beta1.Finalizer) {
 			if plug.Status.CoupledSocket != nil && socket != nil {
-				if err := coupler.Decouple(&r.Client, &ctx, &req, plugUtil, socketUtil, plug, socket); err != nil {
+				if err := coupler.Decouple(&r.Client, ctx, &req, plugUtil, socketUtil, plug, socket); err != nil {
 					return plugUtil.Error(err, plug)
 				}
 			}
@@ -107,7 +108,7 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return plugUtil.UpdateCoupledStatus(util.PlugCreated, plug, nil, true)
 	}
 
-	return coupler.Couple(&r.Client, &ctx, &req, plugUtil, socketUtil, plug, socket)
+	return coupler.Couple(&r.Client, ctx, &req, plugUtil, socketUtil, plug, socket)
 }
 
 func filterPlugPredicate() predicate.Predicate {

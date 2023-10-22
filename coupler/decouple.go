@@ -1,6 +1,6 @@
 /**
  * File: /coupler/decouple.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 18:17:21
  * Author: Clay Risser
  * -----
@@ -37,7 +37,7 @@ import (
 
 func Decouple(
 	client *client.Client,
-	ctx *context.Context,
+	ctx context.Context,
 	req *ctrl.Request,
 	plugUtil *util.PlugUtil,
 	socketUtil *util.SocketUtil,

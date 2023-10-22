@@ -1329,7 +1329,7 @@ spec:
                 description: config
                 type: object
               configConfigMapName:
-                description: config config map name
+                description: config configmap name
                 type: string
               configSecretName:
                 description: config secret name
@@ -1345,7 +1345,7 @@ spec:
                 description: data
                 type: object
               dataConfigMapName:
-                description: data config map name
+                description: data configmap name
                 type: string
               dataSecretName:
                 description: data secret name
@@ -1369,6 +1369,34 @@ spec:
                       type: array
                   type: object
                 type: array
+              result:
+                additionalProperties:
+                  type: string
+                description: result
+                type: object
+              resultConfigMapName:
+                description: result configmap name
+                type: string
+              resultResources:
+                description: result resources
+                items:
+                  properties:
+                    do:
+                      type: string
+                    templates:
+                      items:
+                        x-kubernetes-preserve-unknown-fields: true
+                      type: array
+                  type: object
+                type: array
+              resultSecretName:
+                description: result secret name
+                type: string
+              resultTemplate:
+                additionalProperties:
+                  type: string
+                description: result template
+                type: object
               serviceAccountName:
                 description: 'ServiceAccountName is the name of the ServiceAccount
                   to use to run integrations. More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/'
@@ -1508,6 +1536,24 @@ spec:
                   - type
                   type: object
                 type: array
+              coupledResult:
+                description: coupled result
+                properties:
+                  observedGeneration:
+                    description: observed generation
+                    format: int64
+                    type: integer
+                  plug:
+                    additionalProperties:
+                      type: string
+                    description: plug result
+                    type: object
+                  socket:
+                    additionalProperties:
+                      type: string
+                    description: socket result
+                    type: object
+                type: object
               coupledSocket:
                 description: socket coupled to plug
                 properties:
@@ -1527,9 +1573,6 @@ spec:
                     description: UID of the socket
                     type: string
                 type: object
-              observedGeneration:
-                format: int64
-                type: integer
             type: object
         type: object
     served: true

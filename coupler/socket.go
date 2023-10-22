@@ -1,6 +1,6 @@
 /**
  * File: /coupler/socket.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 15:20:41
  * Author: Clay Risser
  * -----
@@ -38,7 +38,7 @@ func CreatedSocket(
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	eventUtil := util.NewEventUtil(&ctx)
+	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.SocketCreated(socket)
 }
 
@@ -47,7 +47,7 @@ func DeletedSocket(
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	eventUtil := util.NewEventUtil(&ctx)
+	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.SocketDeleted(socket)
 }
 
@@ -59,7 +59,7 @@ func CoupledSocket(
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	eventUtil := util.NewEventUtil(&ctx)
+	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.SocketCoupled(plug, socket, &plugConfig, &socketConfig)
 }
 
@@ -71,7 +71,7 @@ func UpdatedSocket(
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	eventUtil := util.NewEventUtil(&ctx)
+	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.SocketUpdated(plug, socket, &plugConfig, &socketConfig)
 }
 
@@ -83,6 +83,6 @@ func DecoupledSocket(
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	eventUtil := util.NewEventUtil(&ctx)
+	eventUtil := util.NewEventUtil(ctx)
 	return eventUtil.SocketDecoupled(plug, socket, &plugConfig, &socketConfig)
 }

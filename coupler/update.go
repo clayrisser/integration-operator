@@ -1,6 +1,6 @@
 /**
  * File: /coupler/update.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 16:09:52
  * Author: Clay Risser
  * -----
@@ -37,7 +37,7 @@ import (
 
 func Update(
 	client *client.Client,
-	ctx *context.Context,
+	ctx context.Context,
 	req *ctrl.Request,
 	plugUtil *util.PlugUtil,
 	socketUtil *util.SocketUtil,

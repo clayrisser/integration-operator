@@ -1,6 +1,6 @@
 /**
  * File: /util/var.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 13:49:54
  * Author: Clay Risser
  * -----
@@ -41,7 +41,7 @@ type VarUtil struct {
 	resourceUtil *ResourceUtil
 }
 
-func NewVarUtil(ctx *context.Context) *VarUtil {
+func NewVarUtil(ctx context.Context) *VarUtil {
 	return &VarUtil{
 		client:       kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
 		resourceUtil: NewResourceUtil(ctx),

@@ -1,6 +1,6 @@
 /**
  * File: /util/apparatus.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 13:49:54
  * Author: Clay Risser
  * -----
@@ -52,14 +52,14 @@ var startedApparatusTimers map[string]*time.Timer = map[string]*time.Timer{}
 
 type ApparatusUtil struct {
 	client   *kubernetes.Clientset
-	ctx      *context.Context
+	ctx      context.Context
 	dataUtil *DataUtil
 	log      logr.Logger
 	varUtil  *VarUtil
 }
 
 func NewApparatusUtil(
-	ctx *context.Context,
+	ctx context.Context,
 ) *ApparatusUtil {
 	return &ApparatusUtil{
 		client:   kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
@@ -142,7 +142,7 @@ func (u *ApparatusUtil) GetPlugConfig(
 			"Content-Type": "application/json",
 		}).SetBody([]byte(body)).Post(url)
 		if err != nil {
-			errCh <- err
+			errCh <- NewApparatusNetError(err, r)
 			return
 		}
 		rCh <- r
@@ -150,7 +150,10 @@ func (u *ApparatusUtil) GetPlugConfig(
 	select {
 	case r := <-rCh:
 		if r.IsError() {
-			return r.Body(), errors.New("config failed with " + strconv.Itoa(r.StatusCode()) + " status from POST " + url)
+			return r.Body(), NewApparatusNetError(
+				errors.New("config failed with "+strconv.Itoa(r.StatusCode())+" status from POST "+url),
+				r,
+			)
 		}
 		return r.Body(), nil
 	case err := <-errCh:
@@ -230,7 +233,7 @@ func (u *ApparatusUtil) GetSocketConfig(
 			"Content-Type": "application/json",
 		}).SetBody([]byte(body)).Post(url)
 		if err != nil {
-			errCh <- err
+			errCh <- NewApparatusNetError(err, r)
 			return
 		}
 		rCh <- r
@@ -238,7 +241,10 @@ func (u *ApparatusUtil) GetSocketConfig(
 	select {
 	case r := <-rCh:
 		if r.IsError() {
-			return r.Body(), errors.New("config failed with " + strconv.Itoa(r.StatusCode()) + " status from POST " + url)
+			return r.Body(), NewApparatusNetError(
+				errors.New("config failed with "+strconv.Itoa(r.StatusCode())+" status from POST "+url),
+				r,
+			)
 		}
 		return r.Body(), nil
 	case err := <-errCh:
@@ -461,9 +467,8 @@ func (u *ApparatusUtil) SocketDeleted(
 }
 
 func (u *ApparatusUtil) NotRunning(err error) bool {
-	// TODO: detect if apparatus api call
-	if nerr, ok := err.(net.Error); ok {
-		return !nerr.Timeout() && !nerr.Temporary()
+	if netErr, ok := err.(ApparatusNetError); ok {
+		return netErr.NotRunning()
 	}
 	return false
 }
@@ -485,7 +490,7 @@ func (u *ApparatusUtil) RenewIdleTimeout(
 		timer.Reset(idleTimeout)
 	} else {
 		if _, err := u.client.CoreV1().Pods(namespace).Get(
-			*u.ctx,
+			u.ctx,
 			name,
 			metav1.GetOptions{},
 		); err != nil {
@@ -495,7 +500,7 @@ func (u *ApparatusUtil) RenewIdleTimeout(
 		}
 		startedApparatusTimers[uid] = time.AfterFunc(idleTimeout, func() {
 			if err := u.client.CoreV1().Pods(namespace).Delete(
-				*u.ctx,
+				u.ctx,
 				name,
 				metav1.DeleteOptions{},
 			); err != nil {
@@ -517,16 +522,18 @@ func (u *ApparatusUtil) StartFromPlug(plug *integrationv1beta1.Plug) (bool, erro
 		plug.Namespace,
 		string(plug.UID),
 		u.createPlugOwnerReference(plug),
+		EnsureServiceAccount(plug.Spec.ServiceAccountName),
 	)
 }
 
-func (u *ApparatusUtil) StartFromSocket(socket *integrationv1beta1.Socket, requeueAfter *time.Duration) (bool, error) {
+func (u *ApparatusUtil) StartFromSocket(socket *integrationv1beta1.Socket) (bool, error) {
 	return u.start(
 		socket.Spec.Apparatus,
 		socket.Name+"-apparatus",
 		socket.Namespace,
 		string(socket.UID),
 		u.createSocketOwnerReference(socket),
+		EnsureServiceAccount(socket.Spec.ServiceAccountName),
 	)
 }
 
@@ -536,6 +543,7 @@ func (u *ApparatusUtil) start(
 	namespace string,
 	uid string,
 	ownerReference metav1.OwnerReference,
+	serviceAccountName string,
 ) (bool, error) {
 	if apparatus == nil || len(*apparatus.Containers) <= 0 {
 		return false, nil
@@ -561,6 +569,7 @@ func (u *ApparatusUtil) start(
 		},
 		Spec: v1.PodSpec{
 			AutomountServiceAccountToken: &automountServiceAccountToken,
+			ServiceAccountName:           serviceAccountName,
 			Affinity: &v1.Affinity{
 				NodeAffinity: &v1.NodeAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
@@ -604,7 +613,7 @@ func (u *ApparatusUtil) start(
 		},
 	}
 	_, err := u.client.CoreV1().Services(namespace).Create(
-		*u.ctx,
+		u.ctx,
 		service,
 		metav1.CreateOptions{
 			FieldManager: "integration-operator",
@@ -616,7 +625,7 @@ func (u *ApparatusUtil) start(
 		}
 	}
 	_, err = u.client.CoreV1().Pods(namespace).Create(
-		*u.ctx,
+		u.ctx,
 		pod,
 		metav1.CreateOptions{
 			FieldManager: "integration-operator",
@@ -634,21 +643,21 @@ func (u *ApparatusUtil) start(
 	} else {
 		startedApparatusTimers[uid] = time.AfterFunc(idleTimeout, func() {
 			if err := u.client.CoreV1().Pods(namespace).Delete(
-				*u.ctx,
+				u.ctx,
 				name,
 				metav1.DeleteOptions{},
 			); err != nil {
 				u.log.Error(
 					err,
-					"failed to terminate idle apparatus "+namespace+"."+name,
+					"failed to terminate idle apparatus "+namespace+"/"+name,
 				)
 			} else {
-				u.log.Info("terminated idle apparatus " + namespace + "." + name)
+				u.log.Info("terminated idle apparatus " + namespace + "/" + name)
 			}
 		})
 	}
 	if !alreadyExists {
-		u.log.Info("started apparatus " + namespace + "." + name)
+		u.log.Info("started apparatus " + namespace + "/" + name)
 	}
 	return true, nil
 }
@@ -761,17 +770,51 @@ func (u *ApparatusUtil) processEvent(
 			"Content-Type": "application/json",
 		}).SetBody([]byte(body)).Post(url)
 		if err != nil {
-			errCh <- err
+			errCh <- NewApparatusNetError(err, r)
 		}
 		rCh <- r
 	}()
 	select {
 	case r := <-rCh:
 		if r.IsError() {
-			return errors.New("event " + eventName + " failed with " + strconv.Itoa(r.StatusCode()) + " status from POST " + url)
+			return NewApparatusNetError(
+				errors.New("event "+eventName+" failed with "+strconv.Itoa(r.StatusCode())+" status from POST "+url),
+				r,
+			)
 		}
 		return nil
 	case err := <-errCh:
 		return err
 	}
+}
+
+type ApparatusNetError struct {
+	err      error
+	response *resty.Response
+}
+
+func NewApparatusNetError(err error, response *resty.Response) ApparatusNetError {
+	return ApparatusNetError{
+		err:      err,
+		response: response,
+	}
+}
+
+func (e ApparatusNetError) Error() string {
+	return e.err.Error()
+}
+
+func (e ApparatusNetError) Timeout() bool {
+	netErr, ok := e.err.(net.Error)
+	if ok {
+		return netErr.Timeout()
+	}
+	return false
+}
+
+func (e ApparatusNetError) NotRunning() bool {
+	if e.response != nil && (e.response.StatusCode() > 0 || e.Timeout()) {
+		return false
+	}
+	return true
 }

@@ -1,6 +1,6 @@
 /**
  * File: /util/config.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 13:49:54
  * Author: Clay Risser
  * -----
@@ -27,13 +27,10 @@
 package util
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
-	"text/template"
 
-	"github.com/Masterminds/sprig"
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -43,13 +40,13 @@ import (
 type ConfigUtil struct {
 	apparatusUtil *ApparatusUtil
 	client        *kubernetes.Clientset
-	ctx           *context.Context
+	ctx           context.Context
 	dataUtil      *DataUtil
 	varUtil       *VarUtil
 }
 
 func NewConfigUtil(
-	ctx *context.Context,
+	ctx context.Context,
 ) *ConfigUtil {
 	return &ConfigUtil{
 		apparatusUtil: NewApparatusUtil(ctx),
@@ -67,7 +64,7 @@ func (u *ConfigUtil) GetPlugConfig(
 	plugConfig := make(map[string]string)
 	if plug.Spec.ConfigSecretName != "" {
 		secret, err := u.client.CoreV1().Secrets(plug.Namespace).Get(
-			*u.ctx,
+			u.ctx,
 			plug.Spec.ConfigSecretName,
 			metav1.GetOptions{},
 		)
@@ -85,7 +82,7 @@ func (u *ConfigUtil) GetPlugConfig(
 	}
 	if plug.Spec.ConfigTemplate != nil {
 		for key, value := range plug.Spec.ConfigTemplate {
-			result, err := u.plugLookup(plug, value, socket)
+			result, err := u.plugConfigTemplateLookup(plug, value, socket)
 			if err != nil {
 				return nil, err
 			}
@@ -94,7 +91,7 @@ func (u *ConfigUtil) GetPlugConfig(
 	}
 	if plug.Spec.ConfigConfigMapName != "" {
 		configMap, err := u.client.CoreV1().ConfigMaps(plug.Namespace).Get(
-			*u.ctx,
+			u.ctx,
 			plug.Spec.ConfigConfigMapName,
 			metav1.GetOptions{},
 		)
@@ -118,7 +115,7 @@ func (u *ConfigUtil) GetPlugConfig(
 			plugConfig[key] = value
 		}
 	}
-	plugConfig, err := u.ValidatePlugConfig(plug, socket.Spec.Interface, plugConfig)
+	plugConfig, err := u.ValidatePlugConfig(plug, socket.Spec.Interface.Config, plugConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +129,7 @@ func (u *ConfigUtil) GetSocketConfig(
 	socketConfig := make(map[string]string)
 	if socket.Spec.ConfigSecretName != "" {
 		secret, err := u.client.CoreV1().Secrets(socket.Namespace).Get(
-			*u.ctx,
+			u.ctx,
 			socket.Spec.ConfigSecretName,
 			metav1.GetOptions{},
 		)
@@ -150,7 +147,7 @@ func (u *ConfigUtil) GetSocketConfig(
 	}
 	if socket.Spec.ConfigTemplate != nil {
 		for key, value := range socket.Spec.ConfigTemplate {
-			result, err := u.socketLookup(socket, value, plug)
+			result, err := u.socketConfigTemplateLookup(socket, value, plug)
 			if err != nil {
 				return nil, err
 			}
@@ -159,7 +156,7 @@ func (u *ConfigUtil) GetSocketConfig(
 	}
 	if socket.Spec.ConfigConfigMapName != "" {
 		configMap, err := u.client.CoreV1().ConfigMaps(socket.Namespace).Get(
-			*u.ctx,
+			u.ctx,
 			socket.Spec.ConfigConfigMapName,
 			metav1.GetOptions{},
 		)
@@ -192,87 +189,90 @@ func (u *ConfigUtil) GetSocketConfig(
 
 func (u *ConfigUtil) ValidatePlugConfig(
 	plug *integrationv1beta1.Plug,
-	interfaceSchema *integrationv1beta1.InterfaceSchema,
+	configInterface *integrationv1beta1.ConfigInterface,
 	plugConfig map[string]string,
 ) (map[string]string, error) {
-	if interfaceSchema == nil {
+	if configInterface == nil {
 		return plugConfig, nil
 	}
-	for propertyName, property := range interfaceSchema.PlugDefinition.Properties {
-		if _, found := plugConfig[propertyName]; !found {
+	validatedPlugConfig := make(map[string]string)
+	for propertyName, property := range configInterface.Plug {
+		if _, found := plugConfig[propertyName]; found {
+			validatedPlugConfig[propertyName] = plugConfig[propertyName]
+		} else {
 			if property.Required {
-				return plugConfig, errors.New("config property " + propertyName + " is required for plug " + plug.Name)
+				return plugConfig, errors.New("plug config property '" + propertyName + "' is required")
 			} else if property.Default != "" {
-				plugConfig[propertyName] = property.Default
+				validatedPlugConfig[propertyName] = property.Default
 			}
 		}
 	}
-	return plugConfig, nil
+	return validatedPlugConfig, nil
 }
 
 func (u *ConfigUtil) ValidateSocketConfig(
 	socket *integrationv1beta1.Socket,
 	socketConfig map[string]string,
 ) (map[string]string, error) {
-	interfaceSchema := socket.Spec.Interface
-	if interfaceSchema == nil {
+	configInterface := socket.Spec.Interface.Config
+	if configInterface == nil {
 		return socketConfig, nil
 	}
-	for propertyName, property := range interfaceSchema.SocketDefinition.Properties {
-		if _, found := socketConfig[propertyName]; !found {
+	validatedSocketConfig := make(map[string]string)
+	for propertyName, property := range configInterface.Socket {
+		if _, found := socketConfig[propertyName]; found {
+			validatedSocketConfig[propertyName] = socketConfig[propertyName]
+		} else {
 			if property.Required {
-				return socketConfig, errors.New("config property " + propertyName + " is required for socket " + socket.Name)
+				return socketConfig, errors.New("socket config property '" + propertyName + "' is required")
 			} else if property.Default != "" {
-				socketConfig[propertyName] = property.Default
+				validatedSocketConfig[propertyName] = property.Default
 			}
 		}
 	}
-	return socketConfig, nil
+	return validatedSocketConfig, nil
 }
 
-func (u *ConfigUtil) plugLookup(plug *integrationv1beta1.Plug, mapper string, socket *integrationv1beta1.Socket) (string, error) {
-	data, err := u.buildPlugTemplateData(plug, socket)
+func (u *ConfigUtil) plugConfigTemplateLookup(plug *integrationv1beta1.Plug, mapper string, socket *integrationv1beta1.Socket) (string, error) {
+	data, err := u.buildPlugConfigTemplateData(*plug, socket)
 	if err != nil {
 		return "", err
 	}
-	return u.templateConfigTemplate(&data, mapper)
+	return Template(&data, mapper)
 }
 
-func (u *ConfigUtil) socketLookup(
+func (u *ConfigUtil) socketConfigTemplateLookup(
 	socket *integrationv1beta1.Socket,
 	mapper string,
 	plug *integrationv1beta1.Plug,
 ) (string, error) {
-	data, err := u.buildSocketTemplateData(socket, plug)
+	data, err := u.buildSocketConfigTemplateData(*socket, plug)
 	if err != nil {
 		return "", err
 	}
-	return u.templateConfigTemplate(&data, mapper)
+	return Template(&data, mapper)
 }
 
-func (u *ConfigUtil) buildPlugTemplateData(plug *integrationv1beta1.Plug, socket *integrationv1beta1.Socket) (map[string]interface{}, error) {
+func (u *ConfigUtil) buildPlugConfigTemplateData(
+	plug integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+) (map[string]interface{}, error) {
 	kubectlUtil := NewKubectlUtil(u.ctx, plug.Namespace, EnsureServiceAccount(plug.Spec.ServiceAccountName))
 	dataMap := map[string]interface{}{}
-	if plug != nil {
-		dataMap["plug"] = plug
-	}
+	dataMap["plug"] = plug
 	if socket != nil {
 		dataMap["socket"] = socket
 	}
-	plugData, err := u.dataUtil.GetPlugData(plug)
+	plugData, err := u.dataUtil.GetPlugData(&plug)
 	if err != nil {
 		return dataMap, err
 	}
-	if dataMap != nil {
-		dataMap["plugData"] = plugData
-	}
+	dataMap["plugData"] = plugData
 	socketData, err := u.dataUtil.GetSocketData(socket)
 	if err != nil {
 		return dataMap, err
 	}
-	if dataMap != nil {
-		dataMap["socketData"] = socketData
-	}
+	dataMap["socketData"] = socketData
 	if plug.Spec.Vars != nil {
 		varsMap, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars, kubectlUtil)
 		if err != nil {
@@ -291,32 +291,26 @@ func (u *ConfigUtil) buildPlugTemplateData(plug *integrationv1beta1.Plug, socket
 	return data, nil
 }
 
-func (u *ConfigUtil) buildSocketTemplateData(
-	socket *integrationv1beta1.Socket,
+func (u *ConfigUtil) buildSocketConfigTemplateData(
+	socket integrationv1beta1.Socket,
 	plug *integrationv1beta1.Plug,
 ) (map[string]interface{}, error) {
 	kubectlUtil := NewKubectlUtil(u.ctx, socket.Namespace, EnsureServiceAccount(socket.Spec.ServiceAccountName))
 	dataMap := map[string]interface{}{}
-	if socket != nil {
-		dataMap["socket"] = socket
-	}
+	dataMap["socket"] = socket
 	if plug != nil {
 		dataMap["plug"] = plug
 	}
-	socketData, err := u.dataUtil.GetSocketData(socket)
+	socketData, err := u.dataUtil.GetSocketData(&socket)
 	if err != nil {
 		return dataMap, err
 	}
-	if dataMap != nil {
-		dataMap["socketData"] = socketData
-	}
+	dataMap["socketData"] = socketData
 	plugData, err := u.dataUtil.GetPlugData(plug)
 	if err != nil {
 		return dataMap, err
 	}
-	if dataMap != nil {
-		dataMap["plugData"] = plugData
-	}
+	dataMap["plugData"] = plugData
 	if socket.Spec.Vars != nil {
 		varsMap, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars, kubectlUtil)
 		if err != nil {
@@ -333,20 +327,4 @@ func (u *ConfigUtil) buildSocketTemplateData(
 		return nil, err
 	}
 	return data, nil
-}
-
-func (u *ConfigUtil) templateConfigTemplate(
-	data *map[string]interface{},
-	mapper string,
-) (string, error) {
-	t, err := template.New("").Funcs(sprig.TxtFuncMap()).Delims("{%", "%}").Parse(mapper)
-	if err != nil {
-		return "", err
-	}
-	var buff bytes.Buffer
-	err = t.Execute(&buff, data)
-	if err != nil {
-		return "", err
-	}
-	return buff.String(), nil
 }

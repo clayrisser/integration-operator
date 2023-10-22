@@ -1,6 +1,6 @@
 /**
  * File: /util/helpers.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 13:49:54
  * Author: Clay Risser
  * -----
@@ -27,11 +27,14 @@
 package util
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
+	"text/template"
 
+	"github.com/Masterminds/sprig"
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -108,4 +111,20 @@ func Validate(plug *integrationv1beta1.Plug, socket *integrationv1beta1.Socket) 
 		return fmt.Errorf("namespace %s is not whitelisted", plug.Namespace)
 	}
 	return nil
+}
+
+func Template(
+	data *map[string]interface{},
+	mapper string,
+) (string, error) {
+	t, err := template.New("").Funcs(sprig.TxtFuncMap()).Delims("{%", "%}").Parse(mapper)
+	if err != nil {
+		return "", err
+	}
+	var buff bytes.Buffer
+	err = t.Execute(&buff, data)
+	if err != nil {
+		return "", err
+	}
+	return buff.String(), nil
 }

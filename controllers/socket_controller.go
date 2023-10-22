@@ -1,6 +1,6 @@
 /**
  * File: /controllers/socket_controller.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 10:50:35
  * Author: Clay Risser
  * -----
@@ -30,6 +30,7 @@ import (
 	"context"
 	"os"
 	"strconv"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -57,9 +58,9 @@ type SocketReconciler struct {
 //+kubebuilder:rbac:groups=integration.rock8s.com,resources=sockets/finalizers,verbs=update
 
 func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
-
-	socketUtil := util.NewSocketUtil(&r.Client, &ctx, &req, &integrationv1beta1.NamespacedName{
+	logger := log.FromContext(ctx)
+	logger.V(1).Info("Socket Reconcile")
+	socketUtil := util.NewSocketUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
 		Name:      req.NamespacedName.Name,
 		Namespace: req.NamespacedName.Namespace,
 	})
@@ -81,7 +82,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					return socketUtil.Error(err, socket)
 				}
 				for _, coupledPlug := range coupledPlugs {
-					plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &integrationv1beta1.NamespacedName{
+					plugUtil := util.NewPlugUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
 						Name:      coupledPlug.Name,
 						Namespace: coupledPlug.Namespace,
 					})
@@ -96,7 +97,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 						return socketUtil.Error(err, socket)
 					}
 				}
-				return ctrl.Result{Requeue: true}, nil
+				return ctrl.Result{Requeue: true, RequeueAfter: 0}, nil
 			}
 			if socket == nil {
 				return ctrl.Result{}, nil
@@ -128,7 +129,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	setSocketStatus := false
 	for _, coupledPlug := range socket.Status.CoupledPlugs {
-		plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &integrationv1beta1.NamespacedName{
+		plugUtil := util.NewPlugUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
 			Name:      coupledPlug.Name,
 			Namespace: coupledPlug.Namespace,
 		})
@@ -148,7 +149,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	for _, coupledPlug := range socket.Status.CoupledPlugs {
-		plugUtil := util.NewPlugUtil(&r.Client, &ctx, &req, &integrationv1beta1.NamespacedName{
+		plugUtil := util.NewPlugUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
 			Name:      coupledPlug.Name,
 			Namespace: coupledPlug.Namespace,
 		})
@@ -156,7 +157,8 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if err != nil {
 			return socketUtil.Error(err, socket)
 		}
-		if err := coupler.Update(&r.Client, &ctx, &req, plugUtil, socketUtil, plug, socket); err != nil {
+		plug.Spec.Epoch = strconv.FormatInt(time.Now().Unix(), 10)
+		if _, err := plugUtil.Update(plug, false); err != nil {
 			return socketUtil.Error(err, socket)
 		}
 	}

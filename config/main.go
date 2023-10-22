@@ -1,6 +1,6 @@
 /**
  * File: /config/main.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 14:02:00
  * Author: Clay Risser
  * -----

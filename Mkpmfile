@@ -1,5 +1,5 @@
 # File: /Mkpmfile
-# Project: new
+# Project: integration-operator
 # File Created: 13-10-2023 15:40:24
 # Author: Clay Risser
 # -----
@@ -25,16 +25,20 @@
 include $(MKPM)/mkpm
 include $(MKPM)/gnu
 
-.PHONY: of-% build generate manifests install uninstall start reinstall
-build: of-build
-dev: of-run
-generate: of-generate
-install: of-install
-manifests: generate of-manifests
-uninstall: of-uninstall
+.PHONY: of/% build generate manifests install uninstall start reinstall
+build: of/build
+dev: of/run
+generate: of/generate
+install: of/install
+manifests: generate of/manifests
+uninstall: of/uninstall
 reinstall: uninstall install
-of-%:
+of/%:
 	@$(MAKE) -s $*
+
+.PHONY: count
+count:
+	@$(CLOC) $(shell ($(GIT) ls-files && ($(GIT) lfs ls-files | $(CUT) -d' ' -f3)) | $(SORT) | $(UNIQ) -u)
 
 .PHONY: docker/%
 docker/%:

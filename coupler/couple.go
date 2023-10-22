@@ -1,6 +1,6 @@
 /**
  * File: /coupler/couple.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 19:02:43
  * Author: Clay Risser
  * -----
@@ -38,7 +38,7 @@ import (
 
 func Couple(
 	client *client.Client,
-	ctx *context.Context,
+	ctx context.Context,
 	req *ctrl.Request,
 	plugUtil *util.PlugUtil,
 	socketUtil *util.SocketUtil,
@@ -64,9 +64,30 @@ func Couple(
 		}
 	}
 
-	if socketUtil.CoupledPlugExists(socket.Status.CoupledPlugs, plug.UID) && plug.Status.CoupledSocket != nil {
-		if err := Update(client, ctx, req, plugUtil, socketUtil, plug, socket); err != nil {
+	if socketUtil.CoupledPlugExists(socket.Status.CoupledPlugs, plug.UID) &&
+		plug.Status.CoupledSocket != nil &&
+		plug.Status.CoupledResult != nil {
+		coupledCondition, err := plugUtil.GetCoupledCondition()
+		if err != nil {
 			return plugUtil.Error(err, plug)
+		}
+		if plug.Generation > coupledCondition.ObservedGeneration {
+			return plugUtil.UpdateCoupledStatus(util.UpdatingInProcess, plug, socket, true)
+		}
+		if plug.Generation > plug.Status.CoupledResult.ObservedGeneration {
+			if err := Update(client, ctx, req, plugUtil, socketUtil, plug, socket); err != nil {
+				return plugUtil.Error(err, plug)
+			}
+			plugConfig, err := configUtil.GetPlugConfig(plug, socket)
+			if err != nil {
+				return plugUtil.Error(err, plug)
+			}
+			socketConfig, err := configUtil.GetSocketConfig(plug, socket)
+			if err != nil {
+				socketUtil.Error(err, socket)
+				return plugUtil.Error(err, plug)
+			}
+			return plugUtil.UpdateResultStatus(plug, socket, plugConfig, socketConfig)
 		}
 		return ctrl.Result{}, nil
 	}
@@ -85,18 +106,38 @@ func Couple(
 		return plugUtil.Error(err, plug)
 	}
 
-	err = CoupledPlug(plug, socket, plugConfig, socketConfig)
-	if err != nil {
-		return plugUtil.Error(err, plug)
-	}
-	err = CoupledSocket(plug, socket, plugConfig, socketConfig)
-	if err != nil {
-		socketUtil.Error(err, socket)
-		return plugUtil.Error(err, plug)
+	if !socketUtil.CoupledPlugExists(socket.Status.CoupledPlugs, plug.UID) {
+		if plug.Status.CoupledSocket != nil {
+			if _, err := socketUtil.UpdateAppendCoupledPlugStatus(plug, socket, false); err != nil {
+				return plugUtil.Error(err, plug)
+			}
+			return plugUtil.UpdateCoupledStatus(util.CouplingInProcess, plug, socket, true)
+		}
+		coupledCondition, err := plugUtil.GetCoupledCondition()
+		if err != nil {
+			return plugUtil.Error(err, plug)
+		}
+		if coupledCondition.Reason != string(util.CouplingInProcess) {
+			return plugUtil.UpdateCoupledStatus(util.CouplingInProcess, plug, nil, true)
+		}
+		err = CoupledPlug(plug, socket, plugConfig, socketConfig)
+		if err != nil {
+			return plugUtil.Error(err, plug)
+		}
+		err = CoupledSocket(plug, socket, plugConfig, socketConfig)
+		if err != nil {
+			socketUtil.Error(err, socket)
+			return plugUtil.Error(err, plug)
+		}
+		if _, err := socketUtil.UpdateAppendCoupledPlugStatus(plug, socket, false); err != nil {
+			return plugUtil.Error(err, plug)
+		}
+		return plugUtil.UpdateCoupledStatus(util.CouplingInProcess, plug, socket, true)
 	}
 
-	if _, err := socketUtil.UpdateAppendCoupledPlugStatus(plug, socket, false); err != nil {
-		return plugUtil.Error(err, plug)
+	if plug.Status.CoupledResult == nil {
+		return plugUtil.UpdateResultStatus(plug, socket, plugConfig, socketConfig)
 	}
-	return plugUtil.UpdateCoupledStatus(util.CouplingSucceeded, plug, socket, false)
+
+	return ctrl.Result{}, nil
 }

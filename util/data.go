@@ -1,6 +1,6 @@
 /**
  * File: /util/data.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 13:49:54
  * Author: Clay Risser
  * -----
@@ -37,21 +37,20 @@ import (
 
 type DataUtil struct {
 	client *kubernetes.Clientset
-	ctx    *context.Context
+	ctx    context.Context
 }
 
-func NewDataUtil(ctx *context.Context) *DataUtil {
+func NewDataUtil(ctx context.Context) *DataUtil {
 	return &DataUtil{
 		client: kubernetes.NewForConfigOrDie(ctrl.GetConfigOrDie()),
 	}
-
 }
 
 func (u *DataUtil) GetPlugData(plug *integrationv1beta1.Plug) (map[string]string, error) {
 	plugData := make(map[string]string)
 	if plug.Spec.DataSecretName != "" {
 		secret, err := u.client.CoreV1().Secrets(plug.Namespace).Get(
-			*u.ctx,
+			u.ctx,
 			plug.Spec.DataSecretName,
 			metav1.GetOptions{},
 		)
@@ -69,7 +68,7 @@ func (u *DataUtil) GetPlugData(plug *integrationv1beta1.Plug) (map[string]string
 	}
 	if plug.Spec.ConfigConfigMapName != "" {
 		configMap, err := u.client.CoreV1().ConfigMaps(plug.Namespace).Get(
-			*u.ctx,
+			u.ctx,
 			plug.Spec.ConfigConfigMapName,
 			metav1.GetOptions{},
 		)
@@ -87,7 +86,7 @@ func (u *DataUtil) GetSocketData(socket *integrationv1beta1.Socket) (map[string]
 	socketData := make(map[string]string)
 	if socket.Spec.DataSecretName != "" {
 		secret, err := u.client.CoreV1().Secrets(socket.Namespace).Get(
-			*u.ctx,
+			u.ctx,
 			socket.Spec.DataSecretName,
 			metav1.GetOptions{},
 		)
@@ -105,7 +104,7 @@ func (u *DataUtil) GetSocketData(socket *integrationv1beta1.Socket) (map[string]
 	}
 	if socket.Spec.ConfigConfigMapName != "" {
 		configMap, err := u.client.CoreV1().ConfigMaps(socket.Namespace).Get(
-			*u.ctx,
+			u.ctx,
 			socket.Spec.DataConfigMapName,
 			metav1.GetOptions{},
 		)

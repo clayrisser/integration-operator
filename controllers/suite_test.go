@@ -1,6 +1,6 @@
 /**
  * File: /controllers/suite_test.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 10:50:35
  * Author: Clay Risser
  * -----

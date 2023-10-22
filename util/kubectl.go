@@ -1,6 +1,6 @@
 /**
  * File: /util/kubectl.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 13:49:54
  * Author: Clay Risser
  * -----
@@ -44,11 +44,11 @@ import (
 )
 
 type KubectlUtil struct {
-	ctx *context.Context
+	ctx context.Context
 	cfg *rest.Config
 }
 
-func NewKubectlUtil(ctx *context.Context, namespace string, serviceAccountName string) *KubectlUtil {
+func NewKubectlUtil(ctx context.Context, namespace string, serviceAccountName string) *KubectlUtil {
 	cfg := ctrl.GetConfigOrDie()
 	cfg.Impersonate = rest.ImpersonationConfig{
 		UserName: fmt.Sprintf("system:serviceaccount:%s:%s", namespace, Default(serviceAccountName, "default")),
@@ -64,7 +64,7 @@ func (u *KubectlUtil) Create(body []byte) error {
 	if err != nil {
 		return err
 	}
-	if _, err := dr.Create(*u.ctx, obj, metav1.CreateOptions{
+	if _, err := dr.Create(u.ctx, obj, metav1.CreateOptions{
 		FieldManager: "integration-operator",
 	}); err != nil {
 		return err
@@ -77,7 +77,7 @@ func (u *KubectlUtil) Update(body []byte) error {
 	if err != nil {
 		return err
 	}
-	if _, err := dr.Update(*u.ctx, obj, metav1.UpdateOptions{
+	if _, err := dr.Update(u.ctx, obj, metav1.UpdateOptions{
 		FieldManager: "integration-operator",
 	}); err != nil {
 		return err
@@ -94,7 +94,7 @@ func (u *KubectlUtil) Apply(body []byte) error {
 	if err != nil {
 		return err
 	}
-	if _, err = dr.Patch(*u.ctx, obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
+	if _, err = dr.Patch(u.ctx, obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
 		FieldManager: "integration-operator",
 	}); err != nil {
 		return err
@@ -107,7 +107,7 @@ func (u *KubectlUtil) Delete(body []byte) error {
 	if err != nil {
 		return err
 	}
-	if err = dr.Delete(*u.ctx, obj.GetName(), metav1.DeleteOptions{}); err != nil {
+	if err = dr.Delete(u.ctx, obj.GetName(), metav1.DeleteOptions{}); err != nil {
 		return err
 	}
 	return nil
@@ -118,7 +118,7 @@ func (u *KubectlUtil) Get(body []byte) (*unstructured.Unstructured, error) {
 	if err != nil {
 		return nil, err
 	}
-	return dr.Get(*u.ctx, obj.GetName(), metav1.GetOptions{})
+	return dr.Get(u.ctx, obj.GetName(), metav1.GetOptions{})
 }
 
 // https://ymmt2005.hatenablog.com/entry/2020/04/14/An_example_of_using_dynamic_client_of_k8s.io/client-go

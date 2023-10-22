@@ -1,6 +1,6 @@
 /**
  * File: /coupler/main.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 15:18:21
  * Author: Clay Risser
  * -----

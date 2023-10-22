@@ -8,7 +8,7 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: new
+projectName: integration-operator
 repo: gitlab.com/bitspur/rock8s/integration-operator
 resources:
 - api:

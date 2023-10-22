@@ -1,6 +1,6 @@
 /**
  * File: /api/v1beta1/plug_types.go
- * Project: new
+ * Project: integration-operator
  * File Created: 17-10-2023 10:50:57
  * Author: Clay Risser
  * -----
@@ -48,7 +48,7 @@ type PlugSpec struct {
 	// data
 	Data map[string]string `json:"data,omitempty"`
 
-	// data config map name
+	// data configmap name
 	DataConfigMapName string `json:"dataConfigMapName,omitempty"`
 
 	// data secret name
@@ -57,7 +57,7 @@ type PlugSpec struct {
 	// config
 	Config map[string]string `json:"config,omitempty"`
 
-	// config config map name
+	// config configmap name
 	ConfigConfigMapName string `json:"configConfigMapName,omitempty"`
 
 	// config secret name
@@ -65,6 +65,18 @@ type PlugSpec struct {
 
 	// config template
 	ConfigTemplate map[string]string `json:"configTemplate,omitempty"`
+
+	// result
+	Result map[string]string `json:"result,omitempty"`
+
+	// result configmap name
+	ResultConfigMapName string `json:"resultConfigMapName,omitempty"`
+
+	// result secret name
+	ResultSecretName string `json:"resultSecretName,omitempty"`
+
+	// result template
+	ResultTemplate map[string]string `json:"resultTemplate,omitempty"`
 
 	// ServiceAccountName is the name of the ServiceAccount to use to run integrations.
 	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
@@ -77,19 +89,38 @@ type PlugSpec struct {
 	// resources
 	Resources []*Resource `json:"resources,omitempty"`
 
+	// result resources
+	ResultResources []*ResourceAction `json:"resultResources,omitempty"`
+
 	// change epoch to force an update
 	Epoch string `json:"epoch,omitempty"`
 }
 
 // PlugStatus defines the observed state of Plug
 type PlugStatus struct {
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-
 	// Conditions represent the latest available observations of an object's state
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// socket coupled to plug
 	CoupledSocket *CoupledSocket `json:"coupledSocket,omitempty"`
+
+	// coupled result
+	CoupledResult *CoupledResultStatus `json:"coupledResult,omitempty"`
+}
+
+type CoupledResult struct {
+	// plug result
+	Plug map[string]string `json:"plug,omitempty"`
+
+	// socket result
+	Socket map[string]string `json:"socket,omitempty"`
+}
+
+type CoupledResultStatus struct {
+	CoupledResult `json:",inline"`
+
+	// observed generation
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 type CoupledSocket struct {
