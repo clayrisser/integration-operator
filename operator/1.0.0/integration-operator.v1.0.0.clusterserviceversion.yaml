@@ -1,0 +1,258 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: integration-operator.v1.0.0
+  namespace: placeholder
+  annotations:
+    alm-examples: >-
+      [{"apiVersion":"","kind":"Plug","metadata":{"name":""},"spec":{}},{"apiVersion":"","kind":"Socket","metadata":{"name":""},"spec":{}}]
+    k8sMinVersion: ""
+    k8sMaxVersion: ""
+    categories: Integration & Delivery
+    certified: "false"
+    createdAt: ""
+    description: integrations between applications
+    containerImage: ""
+    support: ""
+    capabilities: Full Lifecycle
+    repository: ""
+spec:
+  displayName: Integration Operator
+  description: >
+    ## About the managed application
+
+
+    This operator facilitates integrations between applications.
+
+    ## About this Operator
+
+
+    This operator takes inspiration from [Juju](https://juju.is)
+    [Charm](https://juju.is/docs/sdk)
+
+    [Relations](https://juju.is/docs/sdk/relations) by
+    [Canonical](https://canonical.com).
+
+
+    ### Terminology
+
+
+    | Term            | Juju Equivalent |
+    Definition                                                                                   
+    |
+
+    | --------------- | --------------- |
+    ---------------------------------------------------------------------------------------------
+    |
+
+    | Integration     | Relation        | means to unite and connect
+    applications through mutual communication and shared configuration |
+
+    | Plug            | Requires        | request from an application to
+    integrate with another application                             |
+
+    | Socket          | Provides        | fulfils requests from applications
+    trying to integrate                                        |
+
+    | Interface       | Interface       | plug and socket schema required to
+    connect                                                    |
+
+    | Created Event   | Created Event   | event triggered when plug or socket
+    created                                                   |
+
+    | Updated Event   | Changed Event   | event triggered when plug or socket
+    updated                                                   |
+
+    | Coupled Event   | Joined Event    | event triggered when applications
+    connected                                                   |
+
+    | Decoupled Event | Detached Event  | event triggered when applications
+    disconnected                                                |
+
+
+    ### Architecture
+
+
+    #### A simple analogy
+
+
+    The best way to explain the architecture is to think about how plugs and
+    sockets work in the real world.
+
+
+    Let's say I have a laptop purchased in the United States. In order to power
+    my laptop, I need to **integrate** it with the power grid.
+
+    Since the laptop was purchased in the United States, the **interface** of
+    the **plug** is Type A as illustrated below.
+
+
+    ![Type
+    A](https://gitlab.com/bitspur/rock8s/integration-operator/-/raw/main/images/typea.png)
+
+
+    This means the **socket** I connect to must be also be Type A.
+
+
+    Now, let's say I travel to India and the only **socket** available to me is
+    Type D as illustrated below.
+
+
+    ![Type
+    D](https://gitlab.com/bitspur/rock8s/integration-operator/-/raw/main/images/typea.png)
+
+
+    Since the **socket** interface does not match the **plug** interface, I
+    cannot integrate my laptop with the power grid in India. Of course
+
+    this can be overcome with converters, but that is beyond the scope of this
+    analogy.
+
+
+    #### A real example
+
+
+    Let's say I have an express application that needs to **integrate** with a
+    mongo database. The express deployment will have a **plug** with
+
+    a mongo **interface** and the mongo deployment will have a **socket** with a
+    mongo **interface**. If the **interface** of the **socket** is
+
+    a postgres **interface** then the integration will fail. In other words, you
+    cannot connect a mongo **plug** to a postgres **socket**. That
+
+    would be like trying to plug a US Type A **plug** into an Indian Type D
+    **socket**. You can only connect a mongo **plug** to a mongo **socket**.
+
+    ## Prerequisites for enabling this Operator
+
+
+    This operator has only been tested on Kubernetes v1.16.0.
+
+
+    No other dependencies are required, although it's sometimes convenient to
+    template [Kyverno](https://kyverno.io) policies in Plugs and Sockets for
+    patching resources during integrations.
+  maturity: stable
+  version: 1.0.0
+  replaces: ""
+  skips: []
+  minKubeVersion: 1.26.0
+  keywords:
+    - integration
+    - plug
+    - socket
+  maintainers:
+    - name: Clay Risser
+      email: email@clayrisser.com
+  provider:
+    name: BitSpur
+  labels: {}
+  selector:
+    matchLabels: {}
+  links:
+    - name: Integration Operator
+      url: "https://gitlab.com/bitspur/rock8s/integration-operator"
+    - name: Inspired by Juju Charms
+      url: "https://juju.is"
+  icon:
+    - base64data: >-
+        PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB2ZXJzaW9uPSIxLjEiCiAgIGlkPSJzdmcxIgogICB3aWR0aD0iMjUxLjk2OTI3IgogICBoZWlnaHQ9IjMxNC44NDQxOCIKICAgdmlld0JveD0iMCAwIDI1MS45NjkyNyAzMTQuODQ0MTgiCiAgIHNvZGlwb2RpOmRvY25hbWU9ImNsYXlyaXNzZXJfYV9taW5pbWFsaXN0XzItY29sb3JfbG9nb19vZl9hX3BsdWdfYW5kX3NvY2tldF81YmM0MDc3YS1hZDQ5LTRmMjYtOTZjMi1iNDEyOTY5ZTA1OGEuc3ZnIgogICBpbmtzY2FwZTpleHBvcnQtZmlsZW5hbWU9ImNsYXlyaXNzZXJfYV9taW5pbWFsaXN0XzItY29sb3JfbG9nb19vZl9hX3BsdWdfYW5kX3NvY2tldF81YmM0MDc3YS1hZDQ5LTRmMjYtOTZjMi1iNDEyOTY5ZTA1OGEucG5nIgogICBpbmtzY2FwZTpleHBvcnQteGRwaT0iNzMxLjUxNzciCiAgIGlua3NjYXBlOmV4cG9ydC15ZHBpPSI3MzEuNTE3NyIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMS4zICgwZTE1MGVkLCAyMDIzLTA3LTIxKSIKICAgeG1sbnM6aW5rc2NhcGU9Imh0dHA6Ly93d3cuaW5rc2NhcGUub3JnL25hbWVzcGFjZXMvaW5rc2NhcGUiCiAgIHhtbG5zOnNvZGlwb2RpPSJodHRwOi8vc29kaXBvZGkuc291cmNlZm9yZ2UubmV0L0RURC9zb2RpcG9kaS0wLmR0ZCIKICAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcwogICAgIGlkPSJkZWZzMSIgLz4KICA8c29kaXBvZGk6bmFtZWR2aWV3CiAgICAgaWQ9Im5hbWVkdmlldzEiCiAgICAgcGFnZWNvbG9yPSIjZmZmZmZmIgogICAgIGJvcmRlcmNvbG9yPSIjMDAwMDAwIgogICAgIGJvcmRlcm9wYWNpdHk9IjAuMjUiCiAgICAgaW5rc2NhcGU6c2hvd3BhZ2VzaGFkb3c9IjIiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAuMCIKICAgICBpbmtzY2FwZTpwYWdlY2hlY2tlcmJvYXJkPSIwIgogICAgIGlua3NjYXBlOmRlc2tjb2xvcj0iI2QxZDFkMSIKICAgICBzaG93Z3JpZD0iZmFsc2UiCiAgICAgaW5rc2NhcGU6em9vbT0iMC43MTQ4NDM3NSIKICAgICBpbmtzY2FwZTpjeD0iMjAwLjc0MzE3IgogICAgIGlua3NjYXBlOmN5PSIyMzkuMjEzMTEiCiAgICAgaW5rc2NhcGU6d2luZG93LXdpZHRoPSIxNTEyIgogICAgIGlua3NjYXBlOndpbmRvdy1oZWlnaHQ9Ijk0NSIKICAgICBpbmtzY2FwZTp3aW5kb3cteD0iMCIKICAgICBpbmtzY2FwZTp3aW5kb3cteT0iMzciCiAgICAgaW5rc2NhcGU6d2luZG93LW1heGltaXplZD0iMCIKICAgICBpbmtzY2FwZTpjdXJyZW50LWxheWVyPSJnMSIgLz4KICA8ZwogICAgIGlua3NjYXBlOmdyb3VwbW9kZT0ibGF5ZXIiCiAgICAgaW5rc2NhcGU6bGFiZWw9IkltYWdlIgogICAgIGlkPSJnMSIKICAgICB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMzEwLjg2Nzc1LC0yNzIuMTYxMjkpIj4KICAgIDxyZWN0CiAgICAgICBzdHlsZT0iZmlsbDojZmYwMDAwO3N0cm9rZS13aWR0aDoxLjEwNjQiCiAgICAgICBpZD0icmVjdDEiCiAgICAgICB3aWR0aD0iMTYyLjI3MzI1IgogICAgICAgaGVpZ2h0PSIyMTYuODMwNjMiCiAgICAgICB4PSIzNTMuOTIzNTIiCiAgICAgICB5PSIyOTIuMzcxNTgiIC8+CiAgICA8cmVjdAogICAgICAgc3R5bGU9ImZpbGw6I2ZmMDAwMCIKICAgICAgIGlkPSJyZWN0MiIKICAgICAgIHdpZHRoPSIyNS4xODAzMjgiCiAgICAgICBoZWlnaHQ9IjQuMTk2NzIxMSIKICAgICAgIHg9IjQzMC44NjMzNyIKICAgICAgIHk9IjQ1NC42NDQ4MSIgLz4KICAgIDxyZWN0CiAgICAgICBzdHlsZT0iZmlsbDojZmYwMDAwO3N0cm9rZS13aWR0aDoxLjE5NTExIgogICAgICAgaWQ9InJlY3QzIgogICAgICAgd2lkdGg9IjM0Ljk3MjY3OSIKICAgICAgIGhlaWdodD0iMjAyLjg0MTUyIgogICAgICAgeD0iNTA2LjQwNDM2IgogICAgICAgeT0iMjk2LjU2ODMiIC8+CiAgICA8cmVjdAogICAgICAgc3R5bGU9ImZpbGw6I2ZmMDAwMDtzdHJva2Utd2lkdGg6MS4xODY4NCIKICAgICAgIGlkPSJyZWN0My01IgogICAgICAgd2lkdGg9IjM0Ljk3MjY3OSIKICAgICAgIGhlaWdodD0iMjAwLjA0MzciCiAgICAgICB4PSIzMzUuMzcxNTgiCiAgICAgICB5PSIzMDEuNDkxNzkiIC8+CiAgICA8cGF0aAogICAgICAgc3R5bGU9ImZpbGw6IzAwMDAwMCIKICAgICAgIGQ9Im0gMzg0LjMwNzAxLDU4NC41NTA5MSBjIC0zLjM2Mzk4LC0zLjM2Mzk3IC0zLjM2NTg1LC05LjMwODk4IC0wLjAwNCwtMTMuMzA0MDggMi4yNzgxNywtMi43MDc0NiAyLjMzNDI4LC0zLjAyODE1IDAuNzk4NTYsLTQuNTYzODggLTEuMDY2NSwtMS4wNjY1IC0xLjkwMjc0LC00LjI3ODk4IC0yLjM2MDAxLC05LjA2NjE5IC0xLjQ4Mzk2LC0xNS41MzU2NyAtNy41MTIxNywtMjMuMDU1NTEgLTI1LjM4ODkxLC0zMS42NzExOSAtMTguODE2OSwtOS4wNjg3OSAtMjkuNzgyMTMsLTE5LjM1NDY3IC0zOC41NDEyMywtMzYuMTUzMzkgLTguMDIxODEsLTE1LjM4NDczIC03Ljk2MTA0LC0xNC43MTc0OSAtNy45NDE0MSwtODcuMTk2NjggMC4wMTg3LC02OC44OTg0OSAwLjEzNTY1LC03MC43Mzg0MyA1LjMxMjM5LC04My41NTQ3MyA0LjAyNTM0LC05Ljk2NTc0IDguNzI2ODgsLTE3LjAzNTcyIDE2LjY3MDI1LC0yNS4wNjgwMyA4LjYxMjQ1LC04LjcwODg5IDE4LjU2NjYsLTE1LjAxMDA2IDI5LjcyMTk1LC0xOC44MTQ1OCBsIDcuNzc3ODYsLTIuNjUyNyA2My45NzA4NiwtMC4yODU1IGMgNDEuOTY1MzMsLTAuMTg3MjkgNjUuNjU0MTksMC4wNzU1IDY4Ljg2NDM3LDAuNzYzOTcgOC4xNjA5MiwxLjc1MDIxIDE3LjcyNzM4LDUuOTg2MzQgMjYuMzQ4MzEsMTEuNjY3MzIgMTIuNzQ4MDUsOC40MDA2NiAyMi4xNjE0OCwxOS45Njc3IDI3Ljk4NjcxLDM0LjM4OTUyIDUuMTcwNTMsMTIuODAwOTQgNS4yOTM3MiwxNC43MjAyMSA1LjMxMjM5LDgyLjc2NzI4IDAuMDE5NCw3MC44MDMxNSAwLjAyMjMsNzAuNzY4MyAtNi45NjU1MSw4NS44MjQwNSAtOC4wOTYzOCwxNy40NDQzOCAtMjIuOTAwMjksMzIuMDIwNyAtMzguOTQyNzcsMzguMzQ0MDUgLTcuMDk3OTIsMi43OTc3NCAtMTEuOTYzMzcsNi4wNTcxOCAtMTYuNDQyNiwxMS4wMTUxNSAtNS4xODYwOSw1Ljc0MDM4IC03LjY3MjEzLDExLjc0MjA4IC04LjUxMzgxLDIwLjU1MzcxIC0wLjQ5MDM2LDUuMTMzNiAtMS4yOTA1Myw4LjAwNjAzIC0yLjY1OTY2LDkuNTQ3NjUgLTEuNDI1MDEsMS42MDQ1MyAtMS42MTIxNiwyLjMyNTk4IC0wLjY4NzI1LDIuNjQ5MjUgMS43OTkwMSwwLjYyODc4IDQuMjI4OTYsNS42Nzk5NiA0LjIyODk2LDguNzkwODEgMCwxLjU2OTc0IC0xLjE3NjE1LDMuODAyNzQgLTIuOTIzMDgsNS41NDk2NiBsIC0yLjkyMzA3LDIuOTIzMDggaCAtNTAuMTIyMzggLTUwLjEyMjM4IHogbSAxMTMuNjU4OTYsLTc5LjU1MDczIGMgMTQuMTk3MDUsLTIuNjQ5NiAyNy45NDQzNSwtMTMuNjI1NTkgMzQuNjQ2NjIsLTI3LjY2MjI2IGwgMy43Mzk4NywtNy44MzI0NiAwLjI3ODEzLC02NS40NzgwNyBjIDAuMjY3NTEsLTYyLjk3OTUzIDAuMjAyMDYsLTY1LjcyODUxIC0xLjcxNTQ2LC03Mi4wNDE1MiAtNC45NDExNiwtMTYuMjY3NjggLTE5LjQ5OTg1LC0zMC4zMDYyMiAtMzUuMTc3MzMsLTMzLjkyMDUyIC01Ljk4MDk0LC0xLjM3ODg1IC0xMTguODY1NTIsLTEuMzYxMjEgLTEyNC44NTc1MywwLjAxOTUgLTEzLjk1NjQsMy4yMTU5MyAtMjcuMzc0NzUsMTQuMTU1OTMgLTMzLjc1NjMzLDI3LjUyMTU2IGwgLTMuNzcxNDgsNy44OTkwNSB2IDY4IDY4IGwgMy41ODcyNiw3LjUgYyA2LjUyMTc1LDEzLjYzNTIyIDE4LjIxMDUyLDIzLjYxMTAzIDMxLjgzMTU1LDI3LjE2NjczIDUuODMyNjIsMS41MjI1NyAxMy4wMjA2MywxLjcyNDUzIDYzLjE5NDcsMS43NzU2MiAzMy45NjY1NCwwLjAzNDYgNTguNzY4MjYsLTAuMzQ0NDkgNjIsLTAuOTQ3NjMgeiBtIC04NS4yNzc2NiwtMzYuNzQ0NzIgYyAtMC4wOTAzLC0xLjUxMjUgLTAuMDQ5MywtNSAwLjA5MTEsLTcuNzUgMS4wODgxOSwtMjEuMzE5NzEgMjYuMjM1NjQsLTMxLjQzMjY5IDQxLjEyODU5LC0xNi41Mzk3NCA1LjUzMzYzLDUuNTMzNjMgNy45NDQ1LDExLjk3MzUxIDcuOTQ0NSwyMS4yMjEyNCB2IDUuODE4NSBoIC0yNC41MDAwNCAtMjQuNSB6IG0gLTIxLjgzNTg1LC0xMDEuNzUgdiAtMjkuNSBoIDkgOSB2IDI5LjUgMjkuNSBoIC05IC05IHogbSA3NC42NDE4NSwyNS43NSBjIC0wLjM0MDkxLC0yLjA2MjUgLTAuNjI0NzksLTE1LjMzNzUgLTAuNjMwODQsLTI5LjUgbCAtMC4wMTEsLTI1Ljc1IGggOSA5IHYgMjkuNSAyOS41IGggLTguMzY5MTYgLTguMzY5MTYgeiIKICAgICAgIGlkPSJwYXRoMSIKICAgICAgIHNvZGlwb2RpOm5vZGV0eXBlcz0ic3Nzc3Nzc3Nzc2Nzc3Nzc3Nzc3Nzc3NzY2Njc3NzY3Nzc3NzY2Njc3Nzc3Njc3NjY2NzY2NjY2NjY2Njc3NjY2NjY2NjcyIgLz4KICA8L2c+Cjwvc3ZnPgo=
+      mediatype: image/svg+xml
+  customresourcedefinitions:
+    owned:
+      - name: plugs.integration.rock8s.com
+        displayName: Plug
+        kind: Plug
+        version: v1beta1
+        description: Plug
+        resources: []
+        specDescriptors: []
+        statusDescriptors: []
+      - name: sockets.integration.rock8s.com
+        displayName: Socket
+        kind: Socket
+        version: v1beta1
+        description: Socket
+        resources: []
+        specDescriptors: []
+        statusDescriptors: []
+    required: []
+  install:
+    strategy: deployment
+    spec:
+      permissions:
+        - serviceAccountName: integration-operator
+          rules:
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
+                - plugs
+                - sockets
+              verbs:
+                - "*"
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
+                - plugs/status
+                - sockets/status
+              verbs:
+                - get
+                - update
+                - patch
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
+                - plugs/finalizers
+                - sockets/finalizers
+              verbs:
+                - update
+      clusterPermissions: []
+      deployments:
+        - name: add-deployment
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                k8s-app: integration-operator
+            template:
+              metadata:
+                labels:
+                  k8s-app: integration-operator
+              spec:
+                containers:
+                  - image: registry.gitlab.com/bitspur/rock8s/integration-operator:1.0.0
+                    imagePullPolicy: Always
+                    name: integration-operator
+                    resources:
+                      limits:
+                        cpu: 200m
+                        memory: 100Mi
+                      requests:
+                        cpu: 100m
+                        memory: 50Mi
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: "metadata.annotations['olm.targetNamespaces']"
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: OPERATOR_NAME
+                        value: integration-operator
+                    imagePullSecrets:
+                      - name: ""
+                    nodeSelector:
+                      beta.kubernetes.io/os: linux
+                    serviceAccountName: integration-operator
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: MultiNamespace
+      supported: true
+    - type: AllNamespaces
+      supported: true

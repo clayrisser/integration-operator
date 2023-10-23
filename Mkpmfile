@@ -25,6 +25,8 @@
 include $(MKPM)/mkpm
 include $(MKPM)/gnu
 
+CLOC ?= cloc
+
 .PHONY: of/% build generate manifests install uninstall start reinstall
 build: of/build
 dev: of/run

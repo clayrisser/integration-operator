@@ -1,0 +1,5 @@
+packageName: integration-operator
+defaultChannel: stable
+channels:
+  - name: stable
+    currentCSV: integration-operator.v1.0.0
