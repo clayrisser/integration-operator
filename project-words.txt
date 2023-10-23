@@ -11,6 +11,7 @@ configmap
 controllerutil
 corev
 crds
+crossplane
 customresourcedefinitions
 deepcopy
 finalizer
@@ -23,7 +24,7 @@ intstr
 istio
 kubebuilder
 kustomize
-Kyverno
+kyverno
 logr
 mediatype
 metav

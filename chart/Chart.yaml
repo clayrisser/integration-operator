@@ -1,7 +1,7 @@
 name: integration-operator
 apiVersion: v1
 home: https://gitlab.com/bitspur/rock8s/integration-operator
-icon: ""
+icon: https://gitlab.com/bitspur/rock8s/integration-operator/-/raw/main/images/icon.svg
 version: 0.1.0
 appVersion: 0.1.0
 description: "bind a resource to a resource"
