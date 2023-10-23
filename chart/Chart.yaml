@@ -1,0 +1,16 @@
+name: integration-operator
+apiVersion: v1
+home: https://gitlab.com/bitspur/rock8s/integration-operator
+icon: ""
+version: 0.1.0
+appVersion: 0.1.0
+description: "bind a resource to a resource"
+keywords:
+  - controller
+  - operator
+  - crossplane
+sources:
+  - https://gitlab.com/bitspur/rock8s/integration-operator.git
+maintainers:
+  - name: "Clay Risser"
+    email: email@clayrisser.com

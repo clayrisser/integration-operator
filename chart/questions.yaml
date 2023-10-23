@@ -1,0 +1,87 @@
+categories:
+  - Server
+questions:
+  # Config
+  - variable: config.imagePullPolicy
+    description: ""
+    type: enum
+    options:
+      - IfNotPresent
+      - Always
+    required: true
+    label: "pull policy"
+    group: Config
+  - variable: config.updateStrategy
+    description: ""
+    type: enum
+    options:
+      - RollingUpdate
+      - Recreate
+      - OnDelete
+    required: true
+    label: "update strategy"
+    group: Config
+  - variable: config.debug
+    description: ""
+    type: boolean
+    required: true
+    label: debug
+    group: Config
+  - variable: config.replicas
+    description: ""
+    type: int
+    required: true
+    label: "replicas"
+    group: Config
+  - variable: config.maxConcurrentReconciles
+    description: ""
+    type: int
+    required: true
+    label: "max concurrent reconciles"
+    group: Config
+  - variable: config.resourceBindingOperator.resources.enabled
+    description: ""
+    type: enum
+    options:
+      - defaults
+      - custom
+      - "false"
+    required: true
+    label: "resource binding operator resources enabled"
+    show_subquestion_if: custom
+    group: Config
+    subquestions:
+      - variable: config.resourceBindingOperator.resources.requests.cpu
+        description: ""
+        type: string
+        required: true
+        label: "resource binding operator resources requests cpu"
+      - variable: config.resourceBindingOperator.resources.requests.memory
+        description: ""
+        type: string
+        required: true
+        label: "resource binding operator resources requests memory"
+      - variable: config.resourceBindingOperator.resources.limits.cpu
+        description: ""
+        type: string
+        required: true
+        label: "resource binding operator resources limits cpu"
+      - variable: config.resourceBindingOperator.resources.limits.memory
+        description: ""
+        type: string
+        required: true
+        label: "resource binding operator resources limits memory"
+
+  # Images
+  - variable: images.resourceBindingOperator.repository
+    description: ""
+    type: string
+    required: true
+    label: "resource binding operator repository"
+    group: Images
+  - variable: images.resourceBindingOperator.tag
+    description: ""
+    type: string
+    required: true
+    label: "resource binding operator tag"
+    group: Images

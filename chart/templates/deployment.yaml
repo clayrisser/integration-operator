@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "integration-operator.name" . }}
+  labels:
+    app.kubernetes.io/name: {{ template "integration-operator.name" . }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "integration-operator.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  replicas: {{ .Values.config.replicas }}
+  strategy:
+    type: {{ .Values.config.updateStrategy }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "integration-operator.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+      containers:
+        - image: {{ .Values.images.resourceBindingOperator.repository }}:{{ .Values.images.resourceBindingOperator.tag }} 
+          imagePullPolicy: {{ .Values.config.imagePullPolicy }}
+          name: {{ template "integration-operator.name" . }}
+          args:
+            - '--leader-elect'
+            - '--health-probe-bind-address=:8081'
+            {{- if .Values.config.debug }}
+            - '--zap-devel=true'
+            {{- end }}
+          {{- if (and .Values.config.resourceBindingOperator.resources.enabled (not (eq .Values.config.resourceBindingOperator.resources.enabled "false"))) }}
+          resources:
+            requests:
+{{ toYaml .Values.config.resourceBindingOperator.resources.requests | indent 14 }}
+            limits:
+{{ toYaml .Values.config.resourceBindingOperator.resources.limits | indent 14 }}
+          {{- else }}
+          resources: {}
+          {{- end }}
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: "metadata.annotations['olm.targetNamespaces']"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: integration-operator
+            - name: MAX_CONCURRENT_RECONCILES
+              value: {{ .Values.config.maxConcurrentReconciles | quote }}
+          nodeSelector:
+            beta.kubernetes.io/os: linux
+          serviceAccountName: {{ template "integration-operator.name" . }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10

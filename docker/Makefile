@@ -27,7 +27,7 @@ include $(MKPM)/gnu
 
 export DOCKER_COMPOSE := docker-compose
 export CONTEXT := ..
-export NAME := bitspur/rock8s/resource-binding-operator
+export NAME := bitspur/rock8s/integration-operator
 export REGISTRY := registry.gitlab.com
 export VERSION := 1.0.0
 
