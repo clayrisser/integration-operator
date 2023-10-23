@@ -58,6 +58,8 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
+//+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
+
 func main() {
 	var enableLeaderElection bool
 	var metricsAddr string

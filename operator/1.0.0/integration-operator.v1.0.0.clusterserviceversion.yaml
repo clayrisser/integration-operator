@@ -136,6 +136,18 @@ spec:
                 - sockets/finalizers
               verbs:
                 - update
+            - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
       clusterPermissions: []
       deployments:
         - name: add-deployment
@@ -160,6 +172,7 @@ spec:
                               operator: In
                               values:
                                 - amd64
+                serviceAccountName: integration-operator
                 containers:
                   - image: registry.gitlab.com/bitspur/rock8s/integration-operator:1.0.0
                     imagePullPolicy: Always
@@ -189,7 +202,6 @@ spec:
                         value: "3"
                     nodeSelector:
                       beta.kubernetes.io/os: linux
-                    serviceAccountName: integration-operator
                     livenessProbe:
                       httpGet:
                         path: /healthz
