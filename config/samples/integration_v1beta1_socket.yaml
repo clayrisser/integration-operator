@@ -1,82 +1,64 @@
 apiVersion: integration.rock8s.com/v1beta1
 kind: Socket
 metadata:
-  labels:
-    app.kubernetes.io/name: socket
-    app.kubernetes.io/instance: socket-sample
-    app.kubernetes.io/part-of: integration-operator
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: integration-operator
-  name: socket-sample
-  namespace: default
+  name: postgres
+  namespace: postgres-namespace
 spec:
   interface:
     config:
       socket:
-        hello: {}
-      plug:
-        howdy: {}
-    result:
-      plug:
-        hello:
+        protocol:
           required: true
-      socket:
-        world:
+        username:
+          required: true
+        password:
+          required: true
+        hostname:
+          required: true
+        port:
+          required: true
+      plug:
+        database:
           required: true
   config:
-    hello: world
-  resultTemplate:
-    world: '{% printf "chip" %}'
-  resultResources:
-    - do: apply
-      templates:
-        - apiVersion: v1
-          kind: ConfigMap
-          metadata:
-            name: result
-          data:
-            hello: '{% .plugResult.hello %}'
-            world: '{% .socketResult.world %}'
-
-  # interface:
-  #   plugDefinition:
-  #     description: connect postgres database
-  #     properties:
-  #       database:
-  #         description: postgres database
-  #         required: true
-  #   socketDefinition:
-  #     description: connect postgres database
-  #     properties:
-  #       password:
-  #         description: postgres password
-  #         default: postgres
-  #       username:
-  #         description: postgres username
-  #         default: postgres
-  #       port:
-  #         description: postgres port
-  #         default: "5432"
-  #       host:
-  #         description: postgres password
-  #         default: localhost
-  #       protocol:
-  #         description: postgres protocol
-  #         default: psql
-  # apparatus:
-  #   endpoint: /socket
-  #   containers:
-  #     - image: bitspur/example-apparatus:latest
-  #       imagePullPolicy: Always
-  #       name: apparatus
-  #       ports:
-  #         - containerPort: 3000
-  #           name: container
-  #           protocol: TCP
-  # data:
-  #   host: localhost
-  #   password: postgres
-  #   port: "5432"
-  #   username: postgres
-  # config:
-  #   protocol: psql
+    protocol: psql
+    username: postgres
+    hostname: postgres-service.postgres-namespace.svc.cluster.local
+    port: "5432"
+  configSecretName: postgres-secret
+  resources:
+    - when: [coupled, updated]
+      do: recreate
+      resource: |
+        apiVersion: batch/v1
+        kind: Job
+        metadata:
+          name: postgres-coupled-or-updated-{% .plug.metadata.namespace %}
+        spec:
+          template:
+            spec:
+              containers:
+                - name: psql
+                  image: registry.gitlab.com/bitspur/rock8s/images/kube-commands-psql:0.0.1
+                  env:
+                    - name: POSTGRES_PROTOCOL
+                      value: '{% .socketConfig.protocol %}'
+                    - name: POSTGRES_USERNAME
+                      value: '{% .socketConfig.username %}'
+                    - name: POSTGRES_HOSTNAME
+                      value: '{% .socketConfig.hostname %}'
+                    - name: POSTGRES_PORT
+                      value: '{% .socketConfig.port %}'
+                    - name: POSTGRES_DATABASE
+                      value: '{% .plugConfig.database %}'
+                    - name: POSTGRES_PASSWORD
+                      value: '{% .socketConfig.password %}'
+                  command:
+                    - sh
+                    - -c
+                    - |
+                        export PGPASSFILE="/tmp/.pgpass"
+                        export STDOUT="/tmp/createdb.out"
+                        echo "*:*:*:*:$POSTGRES_PASSWORD" > $PGPASSFILE
+                        chmod 600 $PGPASSFILE
+                        createdb -h $POSTGRES_HOSTNAME -U $POSTGRES_USERNAME -p $POSTGRES_PORT -w $POSTGRES_DATABASE || true
