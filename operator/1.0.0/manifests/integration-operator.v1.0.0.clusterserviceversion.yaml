@@ -5,14 +5,14 @@ metadata:
   namespace: placeholder
   annotations:
     alm-examples: >-
-      [{"apiVersion":"","kind":"Plug","metadata":{"name":""},"spec":{}},{"apiVersion":"","kind":"Socket","metadata":{"name":""},"spec":{}}]
+      [{"apiVersion":"integration.rock8s.com/v1beta1","kind":"Plug","metadata":{"name":"postgres","namespace":"app"},"spec":{"socket":{"name":"postgres","namespace":"postgres-namespace"},"config":{"database":"app"}}},{"apiVersion":"integration.rock8s.com/v1beta1","kind":"Socket","metadata":{"name":"postgres","namespace":"postgres-namespace"},"spec":{"interface":{"config":{"socket":{"protocol":{"required":true},"username":{"required":true},"password":{"required":true},"hostname":{"required":true},"port":{"required":true}},"plug":{"database":{"required":true}}}},"config":{"protocol":"psql","username":"postgres","hostname":"postgres-service.postgres-namespace.svc.cluster.local","port":"5432"},"configSecretName":"postgres-secret","resources":[{"when":["coupled","updated"],"do":"recreate","template":{"apiVersion":"batch/v1","kind":"Job","metadata":{"name":"postgres-coupled-or-updated-{% .plug.metadata.namespace %}"},"spec":{"template":{"spec":{"containers":[{"name":"psql","image":"registry.gitlab.com/bitspur/rock8s/images/kube-commands-psql:0.0.1","env":[{"name":"POSTGRES_PROTOCOL","value":"{% .socketConfig.protocol %}"},{"name":"POSTGRES_USERNAME","value":"{% .socketConfig.username %}"},{"name":"POSTGRES_HOSTNAME","value":"{% .socketConfig.hostname %}"},{"name":"POSTGRES_PORT","value":"{% .socketConfig.port %}"},{"name":"POSTGRES_DATABASE","value":"{% .plugConfig.database %}"},{"name":"POSTGRES_PASSWORD","value":"{% .socketConfig.password %}"}],"command":["sh","-c","export PGPASSFILE=\"/tmp/.pgpass\"\nexport STDOUT=\"/tmp/createdb.out\"\necho \"*:*:*:*:$POSTGRES_PASSWORD\" > $PGPASSFILE\nchmod 600 $PGPASSFILE\ncreatedb -h $POSTGRES_HOSTNAME -U $POSTGRES_USERNAME -p $POSTGRES_PORT -w $POSTGRES_DATABASE || true\n"]}]}}}}}]}}]
     k8sMinVersion: ""
     k8sMaxVersion: ""
     categories: Integration & Delivery
     certified: "false"
     createdAt: ""
     description: kubernetes operator to integrate deployments
-    containerImage: ""
+    containerImage: registry.gitlab.com/bitspur/rock8s/integration-operator:1.0.0
     support: ""
     capabilities: Full Lifecycle
     repository: ""
@@ -64,8 +64,6 @@ spec:
 
   maturity: stable
   version: 1.0.0
-  replaces: ""
-  skips: []
   minKubeVersion: 1.26.0
   keywords:
     - integration
@@ -113,6 +111,18 @@ spec:
       permissions:
         - serviceAccountName: integration-operator
           rules:
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
             - apiGroups:
                 - integration.rock8s.com
               resources:
@@ -180,6 +190,7 @@ spec:
                     args:
                       - "--leader-elect"
                       - "--health-probe-bind-address=:8081"
+                      - "--zap-devel=false"
                     resources:
                       limits:
                         cpu: 200m

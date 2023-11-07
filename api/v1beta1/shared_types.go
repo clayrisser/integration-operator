@@ -52,8 +52,11 @@ const (
 )
 
 type ResourceAction struct {
-	Do        Do                `json:"do,omitempty"`
-	Templates *[]*apiextv1.JSON `json:"templates,omitempty"`
+	Do              Do                `json:"do,omitempty"`
+	Template        *apiextv1.JSON    `json:"template,omitempty"`
+	Templates       *[]*apiextv1.JSON `json:"templates,omitempty"`
+	StringTemplate  string            `json:"stringTemplate,omitempty"`
+	StringTemplates *[]string         `json:"stringTemplates,omitempty"`
 }
 
 type Resource struct {

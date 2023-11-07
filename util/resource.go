@@ -324,7 +324,22 @@ func (u *ResourceUtil) ProcessResources(
 	kubectlUtil *KubectlUtil,
 ) error {
 	for _, resource := range resources {
-		for _, template := range *resource.Templates {
+		templates := []string{}
+		if resource.Template != nil {
+			templates = append(templates, string(resource.Template.Raw))
+		}
+		if resource.Templates != nil {
+			for _, template := range *resource.Templates {
+				templates = append(templates, string(template.Raw))
+			}
+		}
+		if resource.StringTemplate != "" {
+			templates = append(templates, resource.StringTemplate)
+		}
+		if resource.StringTemplates != nil {
+			templates = append(templates, *resource.StringTemplates...)
+		}
+		for _, template := range templates {
 			templatedResource, err := u.templateResource(
 				plug,
 				socket,
@@ -333,7 +348,7 @@ func (u *ResourceUtil) ProcessResources(
 				plugResult,
 				socketResult,
 				namespace,
-				string(template.Raw),
+				template,
 			)
 			if strings.TrimSpace(templatedResource) == "" {
 				return nil
@@ -378,8 +393,11 @@ func (u *ResourceUtil) filterResources(
 	for _, resource := range resources {
 		if WhenInWhenSlice(when, resource.When) {
 			filteredResources = append(filteredResources, &integrationv1beta1.ResourceAction{
-				Do:        resource.Do,
-				Templates: resource.Templates,
+				Do:              resource.Do,
+				StringTemplate:  resource.StringTemplate,
+				StringTemplates: resource.StringTemplates,
+				Template:        resource.Template,
+				Templates:       resource.Templates,
 			})
 		}
 	}

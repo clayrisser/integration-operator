@@ -1423,6 +1423,14 @@ spec:
                   properties:
                     do:
                       type: string
+                    stringTemplate:
+                      type: string
+                    stringTemplates:
+                      items:
+                        type: string
+                      type: array
+                    template:
+                      x-kubernetes-preserve-unknown-fields: true
                     templates:
                       items:
                         x-kubernetes-preserve-unknown-fields: true
@@ -1447,6 +1455,14 @@ spec:
                   properties:
                     do:
                       type: string
+                    stringTemplate:
+                      type: string
+                    stringTemplates:
+                      items:
+                        type: string
+                      type: array
+                    template:
+                      x-kubernetes-preserve-unknown-fields: true
                     templates:
                       items:
                         x-kubernetes-preserve-unknown-fields: true

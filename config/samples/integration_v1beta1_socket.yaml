@@ -29,7 +29,7 @@ spec:
   resources:
     - when: [coupled, updated]
       do: recreate
-      resource: |
+      template:
         apiVersion: batch/v1
         kind: Job
         metadata:
@@ -42,23 +42,23 @@ spec:
                   image: registry.gitlab.com/bitspur/rock8s/images/kube-commands-psql:0.0.1
                   env:
                     - name: POSTGRES_PROTOCOL
-                      value: '{% .socketConfig.protocol %}'
+                      value: "{% .socketConfig.protocol %}"
                     - name: POSTGRES_USERNAME
-                      value: '{% .socketConfig.username %}'
+                      value: "{% .socketConfig.username %}"
                     - name: POSTGRES_HOSTNAME
-                      value: '{% .socketConfig.hostname %}'
+                      value: "{% .socketConfig.hostname %}"
                     - name: POSTGRES_PORT
-                      value: '{% .socketConfig.port %}'
+                      value: "{% .socketConfig.port %}"
                     - name: POSTGRES_DATABASE
-                      value: '{% .plugConfig.database %}'
+                      value: "{% .plugConfig.database %}"
                     - name: POSTGRES_PASSWORD
-                      value: '{% .socketConfig.password %}'
+                      value: "{% .socketConfig.password %}"
                   command:
                     - sh
                     - -c
                     - |
-                        export PGPASSFILE="/tmp/.pgpass"
-                        export STDOUT="/tmp/createdb.out"
-                        echo "*:*:*:*:$POSTGRES_PASSWORD" > $PGPASSFILE
-                        chmod 600 $PGPASSFILE
-                        createdb -h $POSTGRES_HOSTNAME -U $POSTGRES_USERNAME -p $POSTGRES_PORT -w $POSTGRES_DATABASE || true
+                      export PGPASSFILE="/tmp/.pgpass"
+                      export STDOUT="/tmp/createdb.out"
+                      echo "*:*:*:*:$POSTGRES_PASSWORD" > $PGPASSFILE
+                      chmod 600 $PGPASSFILE
+                      createdb -h $POSTGRES_HOSTNAME -U $POSTGRES_USERNAME -p $POSTGRES_PORT -w $POSTGRES_DATABASE || true
