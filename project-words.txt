@@ -39,6 +39,7 @@ risser
 rolebinding
 serrors
 serviceaccount
+serviceaccounts
 servicemonitor
 sjson
 subresource

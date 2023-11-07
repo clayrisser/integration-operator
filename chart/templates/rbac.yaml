@@ -49,6 +49,12 @@ rules:
       - update
       - watch
   - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - impersonate
+  - apiGroups:
       - integration.rock8s.com
     resources:
       - plugs

@@ -38,7 +38,7 @@ spec:
           args:
             - '--leader-elect'
             - '--health-probe-bind-address=:8081'
-            - '--zap-devel={{ ternary .Values.config.debug "true" "false" }}'
+            - '--zap-devel={{ .Values.config.debug | ternary "true" "false" }}'
           {{- if (and .Values.config.resourceBindingOperator.resources.enabled (not (eq .Values.config.resourceBindingOperator.resources.enabled "false"))) }}
           resources:
             requests:

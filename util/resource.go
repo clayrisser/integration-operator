@@ -38,6 +38,7 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -366,7 +367,9 @@ func (u *ResourceUtil) ProcessResources(
 				}
 			} else if resource.Do == integrationv1beta1.DeleteDo {
 				if err := kubectlUtil.Delete([]byte(templatedResource)); err != nil {
-					return err
+					if !k8serrors.IsNotFound(err) {
+						return err
+					}
 				}
 			} else if resource.Do == integrationv1beta1.RecreateDo {
 				kubectlUtil.Delete([]byte(templatedResource))
