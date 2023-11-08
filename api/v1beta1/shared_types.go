@@ -60,7 +60,7 @@ type ResourceAction struct {
 }
 
 type Resource struct {
-	PreserveWhenDecoupled bool `json:"preserveWhenDecoupled"`
+	PreserveWhenDecoupled bool `json:"preserveWhenDecoupled,omitempty"`
 	ResourceAction        `json:",inline"`
 	When                  *[]When `json:"when,omitempty"`
 }

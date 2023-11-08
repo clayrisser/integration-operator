@@ -1544,8 +1544,6 @@ spec:
                         items:
                           type: string
                         type: array
-                    required:
-                      - preserveWhenDecoupled
                     type: object
                   type: array
                 result:
