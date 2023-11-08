@@ -1526,6 +1526,8 @@ spec:
                     properties:
                       do:
                         type: string
+                      preserveWhenDecoupled:
+                        type: boolean
                       stringTemplate:
                         type: string
                       stringTemplates:
@@ -1542,6 +1544,8 @@ spec:
                         items:
                           type: string
                         type: array
+                    required:
+                      - preserveWhenDecoupled
                     type: object
                   type: array
                 result:
