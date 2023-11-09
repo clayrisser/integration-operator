@@ -60,13 +60,13 @@ The best way to explain the architecture is to think about how plugs and sockets
 Let's say I have a laptop purchased in the United States. In order to power my laptop, I need to **integrate** it with the power grid.
 Since the laptop was purchased in the United States, the **interface** of the **plug** is Type A as illustrated below.
 
-![Type A](images/typea.png)
+![Type A](https://gitlab.com/bitspur/rock8s/integration-operator/-/raw/main/images/typea.png)
 
 This means the **socket** I connect to must be also be Type A.
 
 Now, let's say I travel to India and the only **socket** available to me is Type D as illustrated below.
 
-![Type D](images/typed.png)
+![Type D](https://gitlab.com/bitspur/rock8s/integration-operator/-/raw/main/images/typed.png)
 
 Since the **socket** interface does not match the **plug** interface, I cannot integrate my laptop with the power grid in India. Of course
 this can be overcome with converters, but that is beyond the scope of this analogy.
