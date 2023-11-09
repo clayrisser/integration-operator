@@ -12,11 +12,8 @@ This operator takes inspiration from [Juju](https://juju.is) [Charm](https://juj
 ## Install
 
 ```sh
-git clone -b tag/v0.1.1 https://gitlab.com/bitspur/rock8s/integration-operator.git
-helm install \
-   --set name=integration-operator \
-   --create-namespace=integration-operator \
-   charts/integration-operator
+helm repo add rock8s https://charts.rock8s.com
+helm install my-integration-operator rock8s/integration-operator --version 1.0.0
 ```
 
 ## Develop
@@ -24,20 +21,20 @@ helm install \
 1. Install the custom resource definitions
 
 ```sh
-make install
+./mkpm install
 ```
 
 2. Start the operator
 
 ```sh
-make dev
+./mkpm dev
 ```
 
 3. Start apparatuses
 
    You can find an example apparatus at the link below.
 
-   https://gitlab.com/bitspur/rock8s/example-apparatus
+   https://gitlab.com/bitspur/rock8s/keycloak-integration-apparatus
 
 4. Create plugs and sockets
 
