@@ -433,7 +433,7 @@ func (u *ResourceUtil) filterDeleteWhenDecoupledResources(
 	for _, resource := range resources {
 		if resource.Do != integrationv1beta1.DeleteDo &&
 			!WhenInWhenSlice(integrationv1beta1.DecoupledWhen, resource.When) &&
-			!resource.PreserveWhenDecoupled {
+			!resource.RetainWhenDecoupled {
 			filteredResources = append(filteredResources, &integrationv1beta1.ResourceAction{
 				Do:              integrationv1beta1.DeleteDo,
 				StringTemplate:  resource.StringTemplate,

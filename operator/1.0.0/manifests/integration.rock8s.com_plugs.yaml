@@ -1526,7 +1526,7 @@ spec:
                     properties:
                       do:
                         type: string
-                      preserveWhenDecoupled:
+                      retainWhenDecoupled:
                         type: boolean
                       stringTemplate:
                         type: string
