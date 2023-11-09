@@ -24,16 +24,53 @@ spec:
 
     ## Terminology
 
-    | Term            | Juju Equivalent | Definition                                                                           |
-    | --------------- | --------------- | ------------------------------------------------------------------------------------ |
-    | Integration     | Relation        | unite and connect applications through mutual communication and shared configuration |
-    | Plug            | Requires        | request from an application to integrate with another application                    |
-    | Socket          | Provides        | fulfils requests from applications trying to integrate                               |
-    | Interface       | Interface       | plug and socket schema required to connect                                           |
-    | Created Event   | Created Event   | event triggered when plug or socket created                                          |
-    | Updated Event   | Changed Event   | event triggered when plug or socket updated                                          |
-    | Coupled Event   | Joined Event    | event triggered when applications connected                                          |
-    | Decoupled Event | Detached Event  | event triggered when applications disconnected                                       |
+    <table>
+      <tr>
+        <th>Term</th>
+        <th>Juju Equivalent</th>
+        <th>Definition</th>
+      </tr>
+      <tr>
+        <td>Integration</td>
+        <td>Relation</td>
+        <td>unite and connect applications through mutual communication and shared configuration</td>
+      </tr>
+      <tr>
+        <td>Plug</td>
+        <td>Requires</td>
+        <td>request from an application to integrate with another application</td>
+      </tr>
+      <tr>
+        <td>Socket</td>
+        <td>Provides</td>
+        <td>fulfils requests from applications trying to integrate</td>
+      </tr>
+      <tr>
+        <td>Interface</td>
+        <td>Interface</td>
+        <td>plug and socket schema required to connect</td>
+      </tr>
+      <tr>
+        <td>Created Event</td>
+        <td>Created Event</td>
+        <td>event triggered when plug or socket created</td>
+      </tr>
+      <tr>
+        <td>Updated Event</td>
+        <td>Changed Event</td>
+        <td>event triggered when plug or socket updated</td>
+      </tr>
+      <tr>
+        <td>Coupled Event</td>
+        <td>Joined Event</td>
+        <td>event triggered when applications connected</td>
+      </tr>
+      <tr>
+        <td>Decoupled Event</td>
+        <td>Detached Event</td>
+        <td>event triggered when applications disconnected</td>
+      </tr>
+    </table>
 
     ## Architecture
 
@@ -41,16 +78,16 @@ spec:
 
     The best way to explain the architecture is to think about how plugs and sockets work in the real world.
 
-    Let's say I have a laptop purchased in the United States. In order to power my laptop, I need to **integrate** it with the power grid.
-    Since the laptop was purchased in the United States, the **interface** of the **plug** is Type A as illustrated below.
 
-    ![Type A](https://gitlab.com/bitspur/rock8s/integration-operator/-/raw/main/images/typea.png)
+    Let's say I have a laptop purchased in the United States. In order to power my laptop, I need to **integrate** it with the power grid.
+    Since the laptop was purchased in the United States, the **interface** of the **plug** is Type A.
+
 
     This means the **socket** I connect to must be also be Type A.
 
-    Now, let's say I travel to India and the only **socket** available to me is Type D as illustrated below.
 
-    ![Type D](https://gitlab.com/bitspur/rock8s/integration-operator/-/raw/main/images/typed.png)
+    Now, let's say I travel to India and the only **socket** available to me is Type D.
+
 
     Since the **socket** interface does not match the **plug** interface, I cannot integrate my laptop with the power grid in India. Of course
     this can be overcome with converters, but that is beyond the scope of this analogy.
@@ -70,24 +107,31 @@ spec:
     It carries out the following tasks:
 
     - defines the interface for the configuration and result of the plug and socket
+
     - provides the configuration for the socket
+
     - provides the result for the socket
+
     - templates any resources within the socket's namespace
+
     - executes any apparatuses within the socket's namespace
+
     - templates result resources within the socket's namespace
+
 
     **Example:**
 
-    ```yaml
-    apiVersion: v1
+    <pre>apiVersion: v1
+
     kind: Socket
+
     metadata:
       name: foo
       namespace: foo-namespace
     spec:
       config:
         hello: world
-    ```
+    </pre>
 
     ### Plug
 
@@ -96,17 +140,24 @@ spec:
     The plug carries out the following tasks:
 
     - couples to a socket
+
     - provides the configuration for the plug
+
     - provides the result for the plug
+
     - templates any resources within the plug's namespace
+
     - executes any apparatuses within the plug's namespace
+
     - templates result resources within the plug's namespace
+
 
     **Example:**
 
-    ```yaml
-    apiVersion: v1
+    <pre>apiVersion: v1
+
     kind: Plug
+
     metadata:
       name: bar
       namespace: bar-namespace
@@ -115,7 +166,7 @@ spec:
         name: foo
         namespace: foo-namespace
       configSecretName: my-secret
-    ```
+    </pre>
 
     ### Data
 
@@ -124,10 +175,12 @@ spec:
     Unlike _config_ and _result_, _data_ is not bound by an interface. It is used for exchanging or simplifying
     preliminary details or any other information that might be necessary for generating the final _config_.
 
+
     The _data_ can be supplied directly through the `data` field, and indirectly through the `dataConfigMapName` field
     and `dataSecretName` field. The `data` field is a key-value pair that can be defined directly within the plug or
     socket. If the `dataConfigMapName` or `dataSecretName` field is used, the _data_ will be retrieved from a ConfigMap
     or Secret respectively.
+
 
     It is important to know that _data_ is utilized exclusively by the `configTemplate` field, `resultTemplate` field, and
     the `/config` endpoint of an apparatus. It enables the exchange of information between plugs and sockets before the
@@ -135,18 +188,19 @@ spec:
     the plug and socket were interdependent. As such, _data_ serves as an initial medium for information exchange,
     facilitating the creation of the final _config_ for the integration process.
 
+
     **Example:**
+
 
     _this is a simplified incomplete example, only including necessary fields_
 
-    ```yaml
-    spec:
+    <pre>spec:
       dataConfigMapName: my-configmap
       dataSecretName: my-secret
       data:
         username: admin
         password: secret
-    ```
+    </pre>
 
     ### Vars
 
@@ -155,19 +209,22 @@ spec:
     by the `configTemplate` field and the `/config` endpoint of an apparatus. Since _vars_ is used by _config_, the
     lookup occurs before the _config_ is finalized.
 
+
     In addition to the `vars` field, there is a separate field, known as `resultVars`, which is used by
     the `resultTemplate` field. Since _resultVars_ is used by _result_, the lookup occurs after the integration has
     been established or updated. This allows for the creation of _resultVars_ based on the results of the integration.
 
+
     For more detailed information, please refer to the
     [Kustomize Vars Documentation](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/vars/).
 
+
     **Example:**
+
 
     _this is a simplified incomplete example, only including necessary fields_
 
-    ```yaml
-    spec:
+    <pre>spec:
       vars:
         - name: serviceAccountName
           objref:
@@ -186,13 +243,14 @@ spec:
             namespace: default
           fieldref:
             fieldPath: status.successful
-    ```
+    </pre>
 
     ### Config
 
     The _config_ is the most fundamental concept of the integrations, serving as a key-value data pair that enables secure
     information exchange between the plug and socket. It contains essential details and information necessary for the
     integration.
+
 
     The _config_ can be supplied directly through the `config` field, or indirectly through the `configConfigMapName` field,
     `configSecretName` field, `configTemplate` field and the `/config` endpoint of an apparatus. The `config` field is a
@@ -204,16 +262,18 @@ spec:
     be available to the `configTemplate` field or the `/config` endpoint of an apparatus. All of these strategies for creating
     the _config_ can be used in combination.
 
+
     The _config_ is validated against the _config interface_ before the integration process begins. This ensures that the
     _config_ contains all the necessary information, adheres to the correct format and enforces a contract between the
     plug and socket integration
 
+
     **Example:**
+
 
     _this is a simplified incomplete example, only including necessary fields_
 
-    ```yaml
-    spec:
+    <pre>spec:
       config:
         protocol: http
         port: "8080"
@@ -221,12 +281,13 @@ spec:
         hostname: "{% .vars.ingressHost %}"
       configConfigMapName: my-configmap
       configSecretName: my-secret
-    ```
+    </pre>
 
     ### Results
 
     The _result_ serves as a key-value data pair that contains essential details and information after an integration
     has been coupled or updated. It can be used in the `resultResources` field.
+
 
     The _result_ can be supplied directly through the `result` field, or indirectly through the `resultConfigMapName`
     or `resultSecretName` field. If the `resultConfigMapName` or `resultSecretName` field is used, the _result_ will be
@@ -234,23 +295,25 @@ spec:
     allowing the composition of values from `resultVars`, `plugData`, `socketData`, `plugConfig`, `socketConfig`, `plug`,
     and `socket`. All of these strategies for creating the _result_ can be used in combination.
 
+
     The _result_ is validated against the _result interface_ after the integration is coupled or updated. This ensures that
     the _result_ contains all the necessary information, adheres to the correct format and enforces a contract between the
     plug and socket integration.
 
+
     **Example:**
+
 
     _this is a simplified incomplete example, only including necessary fields_
 
-    ```yaml
-    spec:
+    <pre>spec:
       result:
         hello: world
       resultTemplate:
         foo: "{% .plugConfig.foo %}"
       resultConfigMapName: my-configmap
       resultSecretName: my-secret
-    ```
+    </pre>
 
     ### Interface
 
@@ -261,12 +324,14 @@ spec:
     provided, the _config_ and _result_ are not validated and can be any value. However, this is discouraged as it may
     lead to inconsistencies and unexpected behavior during the integration process.
 
+
     **Example:**
+
 
     _this is a simplified incomplete example, only including necessary fields_
 
-    ```yaml
-    kind: Socket
+    <pre>kind: Socket
+
     spec:
       interface:
         config:
@@ -282,7 +347,7 @@ spec:
               required: true
           plug:
             bar: {}
-    ```
+    </pre>
 
     ### Resources
 
@@ -290,37 +355,45 @@ spec:
     socket and can encompass any valid Kubernetes resource such as Jobs, Pods, Services, and more. These resources play a
     pivotal role in executing the integration process.
 
+
     Resource templates are defined using the `template` and `templates` fields. The `template` field is used for a single
     resource template, while the `templates` field is used for multiple resource templates. These templates are defined in YAML
     format.
+
 
     The `stringTemplate` and `stringTemplates` fields are analogous to `template` and `templates`, but they accept resource
     templates in string format. This is particularly useful when dealing with complex resource templates that require
     conditional templating, such as wrapping a resource in an if statement.
 
+
     The `do` field specifies the action to be performed on the resource. It can be `delete`, `apply`, or `recreate`.
+
 
     The `when` field specifies the stage of the integration process when the resource action should be performed. It can
     be `updated`, `coupled`, `decoupled`, `created`, or `deleted`.
+
 
     The `preserveWhenDecoupled` field is a boolean that determines whether the resource should be preserved when the
     integration is decoupled. If `true`, the resource will not be deleted during decoupling. If `false` or omitted, the
     resource will be deleted unless the `when` field contains `decoupled`.
 
+
     A unique field, `resultResources`, is used to create resources after the integration has been coupled or updated. The
     templating of `resultResources` takes place after the integration process has been coupled or updated. This allows for
     the creation of resources based on the results of the integration process.
+
 
     The `resultResources` field is used to create resources after the integration has been coupled or updated. The templating
     of `resultResources` takes place after the integration process has been coupled or updated. This allows for the creation
     of resources based on the results of the integration process.
 
+
     **Example:**
+
 
     _this is a simplified incomplete example, only including necessary fields_
 
-    ```yaml
-    spec:
+    <pre>spec:
       resources:
         - when: [coupled, updated]
           do: apply
@@ -354,7 +427,7 @@ spec:
                     - name: my-result-job
                       image: my-result-job-image
             {%- endif %}
-    ```
+    </pre>
 
     ### Apparatus
 
@@ -363,11 +436,14 @@ spec:
     are invoked at different stages of the integration process, passing data such as the `plug`, `socket`, `plugConfig`, and
     `socketConfig` in the request body.
 
+
     It's important to note that an apparatus and resources can be used together during the integration process. This
     combination provides a flexible and robust integration process capable of handling a wide range of scenarios.
 
+
     The apparatus pod is automatically cleaned up when it's not in use and will be created automatically when integrations
     require it. The apparatus schema is the same as the schema used to define a pod.
+
 
     An good example of an apparatus use case is the
     [Keycloak Integration Apparatus](https://gitlab.com/bitspur/rock8s/keycloak-integration-apparatus). This apparatus is
@@ -375,24 +451,67 @@ spec:
     via a TypeScript client, which would be challenging to accomplish using only resources. By constructing it
     as an apparatus, we can leverage a NodeJS REST API to effectively communicate with Keycloak.
 
+
     The apparatus controller, which can be programmed in any language due to its REST architecture, should implement the following endpoints:
 
-    | Method | Endpoint     | Description            | Request Body                                      |
-    | ------ | ------------ | ---------------------- | ------------------------------------------------- |
-    | `GET`  | `/ping`      | checks the health      |                                                   |
-    | `POST` | `/config`    | retrieves the config   | `vars`, `plug`, `socket`,`plugData`, `socketData` |
-    | `POST` | `/created`   | invoked when created   | `plug`, `socket`, `plugConfig`, `socketConfig`    |
-    | `POST` | `/coupled`   | invoked when coupled   | `plug`, `socket`, `plugConfig`, `socketConfig`    |
-    | `POST` | `/updated`   | invoked when updated   | `plug`, `socket`, `plugConfig`, `socketConfig`    |
-    | `POST` | `/decoupled` | invoked when decoupled | `plug`, `socket`, `plugConfig`, `socketConfig`    |
-    | `POST` | `/deleted`   | invoked when deleted   | `plug`, `socket`, `plugConfig`, `socketConfig`    |
+    <table>
+      <tr>
+        <th>Method</th>
+        <th>Endpoint</th>
+        <th>Description</th>
+        <th>Request Body</th>
+      </tr>
+      <tr>
+        <td>GET</td>
+        <td>/ping</td>
+        <td>checks the health</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td>/config</td>
+        <td>retrieves the config</td>
+        <td>vars, plug, socket, plugData, socketData</td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td>/created</td>
+        <td>invoked when created</td>
+        <td>plug, socket, plugConfig, socketConfig</td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td>/coupled</td>
+        <td>invoked when coupled</td>
+        <td>plug, socket, plugConfig, socketConfig</td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td>/updated</td>
+        <td>invoked when updated</td>
+        <td>plug, socket, plugConfig, socketConfig</td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td>/decoupled</td>
+        <td>invoked when decoupled</td>
+        <td>plug, socket, plugConfig, socketConfig</td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td>/deleted</td>
+        <td>invoked when deleted</td>
+        <td>plug, socket, plugConfig, socketConfig</td>
+      </tr>
+    </table>
+
 
     **Example:**
 
+
     _this is a simplified incomplete example, only including necessary fields_
 
-    ```yaml
-    spec:
+    <pre>spec:
       apparatus:
         endpoint: /socket
         containers:
@@ -402,7 +521,7 @@ spec:
               - containerPort: 3000
                 name: container
                 protocol: TCP
-    ```
+    </pre>
   maturity: stable
   version: 1.0.0
   minKubeVersion: 1.26.0

@@ -9,8 +9,6 @@ Please ★ this repo if you found it useful ★ ★ ★
 This operator takes inspiration from [Juju](https://juju.is) [Charm](https://juju.is/docs/sdk)
 [Relations](https://juju.is/docs/sdk/relations) by [Canonical](https://canonical.com).
 
-![](/images/integration-operator.jpg)
-
 ## Install
 
 ```sh
