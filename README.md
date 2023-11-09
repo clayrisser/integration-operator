@@ -2,6 +2,8 @@
 
 > kubernetes operator to integrate deployments
 
+[![integration-operator](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/rock8s)](https://artifacthub.io/packages/helm/rock8s/integration-operator)
+
 Please ★ this repo if you found it useful ★ ★ ★
 
 This operator takes inspiration from [Juju](https://juju.is) [Charm](https://juju.is/docs/sdk)
@@ -40,16 +42,16 @@ helm install integration-operator rock8s/integration-operator --version 1.0.0 --
 
 ## Terminology
 
-| Term            | Juju Equivalent | Definition                                                                                    |
-| --------------- | --------------- | --------------------------------------------------------------------------------------------- |
-| Integration     | Relation        | means to unite and connect applications through mutual communication and shared configuration |
-| Plug            | Requires        | request from an application to integrate with another application                             |
-| Socket          | Provides        | fulfils requests from applications trying to integrate                                        |
-| Interface       | Interface       | plug and socket schema required to connect                                                    |
-| Created Event   | Created Event   | event triggered when plug or socket created                                                   |
-| Updated Event   | Changed Event   | event triggered when plug or socket updated                                                   |
-| Coupled Event   | Joined Event    | event triggered when applications connected                                                   |
-| Decoupled Event | Detached Event  | event triggered when applications disconnected                                                |
+| Term            | Juju Equivalent | Definition                                                                           |
+| --------------- | --------------- | ------------------------------------------------------------------------------------ |
+| Integration     | Relation        | unite and connect applications through mutual communication and shared configuration |
+| Plug            | Requires        | request from an application to integrate with another application                    |
+| Socket          | Provides        | fulfils requests from applications trying to integrate                               |
+| Interface       | Interface       | plug and socket schema required to connect                                           |
+| Created Event   | Created Event   | event triggered when plug or socket created                                          |
+| Updated Event   | Changed Event   | event triggered when plug or socket updated                                          |
+| Coupled Event   | Joined Event    | event triggered when applications connected                                          |
+| Decoupled Event | Detached Event  | event triggered when applications disconnected                                       |
 
 ## Architecture
 
@@ -92,6 +94,19 @@ It carries out the following tasks:
 - executes any apparatuses within the socket's namespace
 - templates result resources within the socket's namespace
 
+**Example:**
+
+```yaml
+apiVersion: v1
+kind: Socket
+metadata:
+  name: foo
+  namespace: foo-namespace
+spec:
+  config:
+    hello: world
+```
+
 ### Plug
 
 A plug is a custom kubernetes resource that initiates an integration request with another application.
@@ -104,6 +119,21 @@ The plug carries out the following tasks:
 - templates any resources within the plug's namespace
 - executes any apparatuses within the plug's namespace
 - templates result resources within the plug's namespace
+
+**Example:**
+
+```yaml
+apiVersion: v1
+kind: Plug
+metadata:
+  name: bar
+  namespace: bar-namespace
+spec:
+  socket:
+    name: foo
+    namespace: foo-namespace
+  configSecretName: my-secret
+```
 
 ### Data
 
@@ -323,6 +353,9 @@ spec:
               containers:
                 - name: my-job
                   image: my-job-image
+                  env:
+                    - name: HELLO
+                      value: "{% .plugConfig.hello %}"
   resultResources:
     - when: [coupled, updated]
       do: apply
@@ -360,26 +393,31 @@ necessary because the Keycloak integration involves interacting with the Keycloa
 via a TypeScript client, which would be challenging to accomplish using only resources. By constructing it
 as an apparatus, we can leverage a NodeJS REST API to effectively communicate with Keycloak.
 
-The apparatus controller, which can be programmed in any language due to its REST architecture, should implement the following endpoints for the plug:
+The apparatus controller, which can be programmed in any language due to its REST architecture, should implement the following endpoints:
 
-| Endpoint               | Description                                          | Request Body                                                             |
-| ---------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------ |
-| `GET /plug/ping`       | This endpoint checks the health of the apparatus.    | None                                                                     |
-| `POST /plug/config`    | This endpoint retrieves the plug config.             | `plugData`, `socketData`, `vars`                                         |
-| `POST /plug/created`   | This endpoint is invoked when the plug is created.   | `plug`, `socket`, `plugConfig`, `socketConfig`, `plugData`, `socketData` |
-| `POST /plug/coupled`   | This endpoint is invoked when the plug is coupled.   | `plug`, `socket`, `plugConfig`, `socketConfig`, `plugData`, `socketData` |
-| `POST /plug/updated`   | This endpoint is invoked when the plug is updated.   | `plug`, `socket`, `plugConfig`, `socketConfig`, `plugData`, `socketData` |
-| `POST /plug/decoupled` | This endpoint is invoked when the plug is decoupled. | `plug`, `socket`, `plugConfig`, `socketConfig`, `plugData`, `socketData` |
-| `POST /plug/deleted`   | This endpoint is invoked when the plug is deleted.   | `plug`, `socket`, `plugConfig`, `socketConfig`, `plugData`, `socketData` |
+| Method | Endpoint     | Description            | Request Body                                      |
+| ------ | ------------ | ---------------------- | ------------------------------------------------- |
+| `GET`  | `/ping`      | checks the health      |                                                   |
+| `POST` | `/config`    | retrieves the config   | `vars`, `plug`, `socket`,`plugData`, `socketData` |
+| `POST` | `/created`   | invoked when created   | `plug`, `socket`, `plugConfig`, `socketConfig`    |
+| `POST` | `/coupled`   | invoked when coupled   | `plug`, `socket`, `plugConfig`, `socketConfig`    |
+| `POST` | `/updated`   | invoked when updated   | `plug`, `socket`, `plugConfig`, `socketConfig`    |
+| `POST` | `/decoupled` | invoked when decoupled | `plug`, `socket`, `plugConfig`, `socketConfig`    |
+| `POST` | `/deleted`   | invoked when deleted   | `plug`, `socket`, `plugConfig`, `socketConfig`    |
 
-Similarly, the apparatus controller should implement the following endpoints for the socket:
+**Example:**
 
-| Endpoint                 | Description                                            | Request Body                                                             |
-| ------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `GET /socket/ping`       | This endpoint checks the health of the apparatus.      | None                                                                     |
-| `POST /socket/config`    | This endpoint retrieves the socket config.             | `plugData`, `socketData`, `vars`                                         |
-| `POST /socket/created`   | This endpoint is invoked when the socket is created.   | `plug`, `socket`, `plugConfig`, `socketConfig`, `plugData`, `socketData` |
-| `POST /socket/coupled`   | This endpoint is invoked when the socket is coupled.   | `plug`, `socket`, `plugConfig`, `socketConfig`, `plugData`, `socketData` |
-| `POST /socket/updated`   | This endpoint is invoked when the socket is updated.   | `plug`, `socket`, `plugConfig`, `socketConfig`, `plugData`, `socketData` |
-| `POST /socket/decoupled` | This endpoint is invoked when the socket is decoupled. | `plug`, `socket`, `plugConfig`, `socketConfig`, `plugData`, `socketData` |
-| `POST /socket/deleted`   | This endpoint is invoked when the socket is deleted.   | `plug`, `socket`, `plugConfig`, `socketConfig`, `plugData`, `socketData` |
+_this is a simplified incomplete example, only including necessary fields_
+
+```yaml
+spec:
+  apparatus:
+    endpoint: /socket
+    containers:
+      - name: my-apparatus
+        image: my-apparatus-image
+        ports:
+          - containerPort: 3000
+            name: container
+            protocol: TCP
+```
