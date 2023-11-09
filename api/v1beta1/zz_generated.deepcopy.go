@@ -263,6 +263,17 @@ func (in *PlugSpec) DeepCopyInto(out *PlugSpec) {
 			}
 		}
 	}
+	if in.ResultVars != nil {
+		in, out := &in.ResultVars, &out.ResultVars
+		*out = make([]*types.Var, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(types.Var)
+				**out = **in
+			}
+		}
+	}
 	if in.Data != nil {
 		in, out := &in.Data, &out.Data
 		*out = make(map[string]string, len(*in))
@@ -567,6 +578,17 @@ func (in *SocketSpec) DeepCopyInto(out *SocketSpec) {
 	}
 	if in.Vars != nil {
 		in, out := &in.Vars, &out.Vars
+		*out = make([]*types.Var, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(types.Var)
+				**out = **in
+			}
+		}
+	}
+	if in.ResultVars != nil {
+		in, out := &in.ResultVars, &out.ResultVars
 		*out = make([]*types.Var, len(*in))
 		for i := range *in {
 			if (*in)[i] != nil {

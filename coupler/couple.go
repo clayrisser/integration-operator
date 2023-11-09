@@ -32,6 +32,7 @@ import (
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"gitlab.com/bitspur/rock8s/integration-operator/util"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -44,6 +45,7 @@ func Couple(
 	socketUtil *util.SocketUtil,
 	plug *integrationv1beta1.Plug,
 	socket *integrationv1beta1.Socket,
+	recorder record.EventRecorder,
 ) (ctrl.Result, error) {
 	configUtil := util.NewConfigUtil(ctx)
 	if plug == nil {
@@ -75,7 +77,7 @@ func Couple(
 			return plugUtil.UpdateCoupledStatus(util.UpdatingInProcess, plug, socket, true)
 		}
 		if plug.Generation > plug.Status.CoupledResult.ObservedGeneration {
-			if err := Update(client, ctx, req, plugUtil, socketUtil, plug, socket); err != nil {
+			if err := Update(client, ctx, req, plugUtil, socketUtil, plug, socket, recorder); err != nil {
 				return plugUtil.Error(err, plug)
 			}
 			plugConfig, err := configUtil.GetPlugConfig(plug, socket)
@@ -84,6 +86,10 @@ func Couple(
 			}
 			socketConfig, err := configUtil.GetSocketConfig(plug, socket)
 			if err != nil {
+				socketUtil.Error(err, socket)
+				return plugUtil.Error(err, plug)
+			}
+			if _, err := socketUtil.UpdateCoupledStatus(util.SocketCoupled, socket, nil, false); err != nil {
 				socketUtil.Error(err, socket)
 				return plugUtil.Error(err, plug)
 			}
@@ -120,11 +126,11 @@ func Couple(
 		if coupledCondition.Reason != string(util.CouplingInProcess) {
 			return plugUtil.UpdateCoupledStatus(util.CouplingInProcess, plug, nil, true)
 		}
-		err = CoupledPlug(plug, socket, plugConfig, socketConfig)
+		err = CoupledPlug(plug, socket, plugConfig, socketConfig, recorder)
 		if err != nil {
 			return plugUtil.Error(err, plug)
 		}
-		err = CoupledSocket(plug, socket, plugConfig, socketConfig)
+		err = CoupledSocket(plug, socket, plugConfig, socketConfig, recorder)
 		if err != nil {
 			socketUtil.Error(err, socket)
 			return plugUtil.Error(err, plug)
@@ -136,6 +142,10 @@ func Couple(
 	}
 
 	if plug.Status.CoupledResult == nil {
+		if _, err := socketUtil.UpdateCoupledStatus(util.SocketCoupled, socket, nil, false); err != nil {
+			socketUtil.Error(err, socket)
+			return plugUtil.Error(err, plug)
+		}
 		return plugUtil.UpdateResultStatus(plug, socket, plugConfig, socketConfig)
 	}
 

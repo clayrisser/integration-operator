@@ -204,22 +204,26 @@ func (u *PlugUtil) UpdateResultStatus(
 	if err != nil {
 		return u.Error(err, plug)
 	}
-	u.resultUtil.SocketTemplateResultResources(
+	if err := u.resultUtil.SocketTemplateResultResources(
 		plug,
 		socket,
 		plugConfig,
 		socketConfig,
 		coupledResult.Plug,
 		coupledResult.Socket,
-	)
-	u.resultUtil.PlugTemplateResultResources(
+	); err != nil {
+		return u.Error(err, plug)
+	}
+	if err := u.resultUtil.PlugTemplateResultResources(
 		plug,
 		socket,
 		plugConfig,
 		socketConfig,
 		coupledResult.Plug,
 		coupledResult.Socket,
-	)
+	); err != nil {
+		return u.Error(err, plug)
+	}
 	coupledResultStatus := integrationv1beta1.CoupledResultStatus{
 		ObservedGeneration: plug.Generation,
 	}

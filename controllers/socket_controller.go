@@ -34,6 +34,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -50,7 +51,8 @@ import (
 // SocketReconciler reconciles a Socket object
 type SocketReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=integration.rock8s.com,resources=sockets,verbs=get;list;watch;create;update;patch;delete
@@ -102,7 +104,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			if socket == nil {
 				return ctrl.Result{}, nil
 			}
-			if err := coupler.DeletedSocket(socket); err != nil {
+			if err := coupler.DeletedSocket(socket, r.Recorder); err != nil {
 				return socketUtil.Error(err, socket)
 			}
 			controllerutil.RemoveFinalizer(socket, integrationv1beta1.Finalizer)
@@ -121,7 +123,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return socketUtil.Error(err, socket)
 	}
 	if coupledCondition == nil {
-		if err := coupler.CreatedSocket(socket); err != nil {
+		if err := coupler.CreatedSocket(socket, r.Recorder); err != nil {
 			return socketUtil.Error(err, socket)
 		}
 		return socketUtil.UpdateCoupledStatus(util.SocketCreated, socket, nil, true)

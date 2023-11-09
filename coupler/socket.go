@@ -31,24 +31,27 @@ import (
 
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"gitlab.com/bitspur/rock8s/integration-operator/util"
+	"k8s.io/client-go/tools/record"
 )
 
 func CreatedSocket(
 	socket *integrationv1beta1.Socket,
+	recorder record.EventRecorder,
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	eventUtil := util.NewEventUtil(ctx)
-	return eventUtil.SocketCreated(socket)
+	return eventUtil.SocketCreated(socket, recorder)
 }
 
 func DeletedSocket(
 	socket *integrationv1beta1.Socket,
+	recorder record.EventRecorder,
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	eventUtil := util.NewEventUtil(ctx)
-	return eventUtil.SocketDeleted(socket)
+	return eventUtil.SocketDeleted(socket, recorder)
 }
 
 func CoupledSocket(
@@ -56,11 +59,12 @@ func CoupledSocket(
 	socket *integrationv1beta1.Socket,
 	plugConfig util.Config,
 	socketConfig util.Config,
+	recorder record.EventRecorder,
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	eventUtil := util.NewEventUtil(ctx)
-	return eventUtil.SocketCoupled(plug, socket, &plugConfig, &socketConfig)
+	return eventUtil.SocketCoupled(plug, socket, &plugConfig, &socketConfig, recorder)
 }
 
 func UpdatedSocket(
@@ -68,11 +72,12 @@ func UpdatedSocket(
 	socket *integrationv1beta1.Socket,
 	plugConfig util.Config,
 	socketConfig util.Config,
+	recorder record.EventRecorder,
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	eventUtil := util.NewEventUtil(ctx)
-	return eventUtil.SocketUpdated(plug, socket, &plugConfig, &socketConfig)
+	return eventUtil.SocketUpdated(plug, socket, &plugConfig, &socketConfig, recorder)
 }
 
 func DecoupledSocket(
@@ -80,9 +85,10 @@ func DecoupledSocket(
 	socket *integrationv1beta1.Socket,
 	plugConfig util.Config,
 	socketConfig util.Config,
+	recorder record.EventRecorder,
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	eventUtil := util.NewEventUtil(ctx)
-	return eventUtil.SocketDecoupled(plug, socket, &plugConfig, &socketConfig)
+	return eventUtil.SocketDecoupled(plug, socket, &plugConfig, &socketConfig, recorder)
 }

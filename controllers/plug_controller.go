@@ -33,6 +33,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -49,7 +50,8 @@ import (
 // PlugReconciler reconciles a Plug object
 type PlugReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=integration.rock8s.com,resources=plugs,verbs=get;list;watch;create;update;patch;delete
@@ -79,11 +81,11 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if plug.GetDeletionTimestamp() != nil {
 		if controllerutil.ContainsFinalizer(plug, integrationv1beta1.Finalizer) {
 			if plug.Status.CoupledSocket != nil && socket != nil {
-				if err := coupler.Decouple(&r.Client, ctx, &req, plugUtil, socketUtil, plug, socket); err != nil {
+				if err := coupler.Decouple(&r.Client, ctx, &req, plugUtil, socketUtil, plug, socket, r.Recorder); err != nil {
 					return plugUtil.Error(err, plug)
 				}
 			}
-			if err := coupler.DeletedPlug(plug); err != nil {
+			if err := coupler.DeletedPlug(plug, r.Recorder); err != nil {
 				return plugUtil.Error(err, plug)
 			}
 			controllerutil.RemoveFinalizer(plug, integrationv1beta1.Finalizer)
@@ -102,13 +104,13 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return plugUtil.Error(err, plug)
 	}
 	if coupledCondition == nil {
-		if err := coupler.CreatedPlug(plug); err != nil {
+		if err := coupler.CreatedPlug(plug, r.Recorder); err != nil {
 			return plugUtil.Error(err, plug)
 		}
 		return plugUtil.UpdateCoupledStatus(util.PlugCreated, plug, nil, true)
 	}
 
-	return coupler.Couple(&r.Client, ctx, &req, plugUtil, socketUtil, plug, socket)
+	return coupler.Couple(&r.Client, ctx, &req, plugUtil, socketUtil, plug, socket, r.Recorder)
 }
 
 func filterPlugPredicate() predicate.Predicate {

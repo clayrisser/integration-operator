@@ -31,6 +31,7 @@ import (
 
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"gitlab.com/bitspur/rock8s/integration-operator/util"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -43,6 +44,7 @@ func Update(
 	socketUtil *util.SocketUtil,
 	plug *integrationv1beta1.Plug,
 	socket *integrationv1beta1.Socket,
+	recorder record.EventRecorder,
 ) error {
 	configUtil := util.NewConfigUtil(ctx)
 	if plug == nil {
@@ -74,10 +76,10 @@ func Update(
 		return err
 	}
 
-	if err = UpdatedPlug(plug, socket, plugConfig, socketConfig); err != nil {
+	if err = UpdatedPlug(plug, socket, plugConfig, socketConfig, recorder); err != nil {
 		return err
 	}
-	if err = UpdatedSocket(plug, socket, plugConfig, socketConfig); err != nil {
+	if err = UpdatedSocket(plug, socket, plugConfig, socketConfig, recorder); err != nil {
 		socketUtil.Error(err, socket)
 		return err
 	}

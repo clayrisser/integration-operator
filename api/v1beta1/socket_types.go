@@ -40,13 +40,11 @@ type SocketSpec struct {
 	// limit
 	Limit int32 `json:"limit,omitempty"`
 
-	// A var is a name (e.g. FOO) associated
-	// with a field in a specific resource instance.  The field must
-	// contain a value of type string/bool/int/float, and defaults to the name field
-	// of the instance.  Any appearance of "$(FOO)" in the object
-	// spec will be replaced, after the final
-	// value of the specified field has been determined.
+	// vars
 	Vars []*kustomizeTypes.Var `json:"vars,omitempty" yaml:"vars,omitempty"`
+
+	// result vars
+	ResultVars []*kustomizeTypes.Var `json:"resultVars,omitempty" yaml:"vars,omitempty"`
 
 	// data
 	Data map[string]string `json:"data,omitempty"`

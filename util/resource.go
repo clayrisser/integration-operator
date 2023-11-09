@@ -368,7 +368,7 @@ func (u *ResourceUtil) ProcessResources(
 				template,
 			)
 			if strings.TrimSpace(templatedResource) == "" {
-				return nil
+				continue
 			}
 			if err != nil {
 				return err

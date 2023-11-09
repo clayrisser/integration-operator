@@ -32,6 +32,7 @@ import (
 
 	"github.com/go-logr/logr"
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -51,12 +52,19 @@ func NewEventUtil(
 	}
 }
 
-func (u *EventUtil) PlugCreated(plug *integrationv1beta1.Plug) error {
-	u.logger.Info("plug created " + fmt.Sprintf("%s/%s", plug.Name, plug.Namespace))
+func (u *EventUtil) PlugCreated(
+	plug *integrationv1beta1.Plug,
+	recorder record.EventRecorder,
+) error {
+	u.logger.Info(fmt.Sprintf("plug %s/%s created", plug.Name, plug.Namespace))
 	if err := u.apparatusUtil.PlugCreated(plug); err != nil {
 		return err
 	}
-	return u.resourceUtil.PlugCreated(plug)
+	if err := u.resourceUtil.PlugCreated(plug); err != nil {
+		return err
+	}
+	recorder.Event(plug, "Normal", "PlugCreated", fmt.Sprintf("plug %s/%s created", plug.Name, plug.Namespace))
+	return nil
 }
 
 func (u *EventUtil) PlugCoupled(
@@ -64,12 +72,17 @@ func (u *EventUtil) PlugCoupled(
 	socket *integrationv1beta1.Socket,
 	plugConfig *Config,
 	socketConfig *Config,
+	recorder record.EventRecorder,
 ) error {
-	u.logger.Info("plug coupled " + fmt.Sprintf("%s/%s", plug.Name, plug.Namespace))
+	u.logger.Info(fmt.Sprintf("plug %s/%s coupled", plug.Name, plug.Namespace))
 	if err := u.apparatusUtil.PlugCoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
-	return u.resourceUtil.PlugCoupled(plug, socket, plugConfig, socketConfig)
+	if err := u.resourceUtil.PlugCoupled(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	recorder.Event(plug, "Normal", "PlugCoupled", fmt.Sprintf("plug %s/%s coupled", plug.Name, plug.Namespace))
+	return nil
 }
 
 func (u *EventUtil) PlugUpdated(
@@ -77,12 +90,17 @@ func (u *EventUtil) PlugUpdated(
 	socket *integrationv1beta1.Socket,
 	plugConfig *Config,
 	socketConfig *Config,
+	recorder record.EventRecorder,
 ) error {
-	u.logger.Info("plug updated " + fmt.Sprintf("%s/%s", plug.Name, plug.Namespace))
+	u.logger.Info(fmt.Sprintf("plug %s/%s updated", plug.Name, plug.Namespace))
 	if err := u.apparatusUtil.PlugUpdated(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
-	return u.resourceUtil.PlugUpdated(plug, socket, plugConfig, socketConfig)
+	if err := u.resourceUtil.PlugUpdated(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	recorder.Event(plug, "Normal", "PlugUpdated", fmt.Sprintf("plug %s/%s updated", plug.Name, plug.Namespace))
+	return nil
 }
 
 func (u *EventUtil) PlugDecoupled(
@@ -90,30 +108,47 @@ func (u *EventUtil) PlugDecoupled(
 	socket *integrationv1beta1.Socket,
 	plugConfig *Config,
 	socketConfig *Config,
+	recorder record.EventRecorder,
 ) error {
-	u.logger.Info("plug decoupled " + fmt.Sprintf("%s/%s", plug.Name, plug.Namespace))
+	u.logger.Info(fmt.Sprintf("plug %s/%s decoupled", plug.Name, plug.Namespace))
 	if err := u.apparatusUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
-	return u.resourceUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig)
+	if err := u.resourceUtil.PlugDecoupled(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	recorder.Event(plug, "Normal", "PlugDecoupled", fmt.Sprintf("plug %s/%s decoupled", plug.Name, plug.Namespace))
+	return nil
 }
 
 func (u *EventUtil) PlugDeleted(
 	plug *integrationv1beta1.Plug,
+	recorder record.EventRecorder,
 ) error {
-	u.logger.Info("plug deleted " + fmt.Sprintf("%s/%s", plug.Name, plug.Namespace))
+	u.logger.Info(fmt.Sprintf("plug %s/%s deleted", plug.Name, plug.Namespace))
 	if err := u.apparatusUtil.PlugDeleted(plug); err != nil {
 		return err
 	}
-	return u.resourceUtil.PlugDeleted(plug)
+	if err := u.resourceUtil.PlugDeleted(plug); err != nil {
+		return err
+	}
+	recorder.Event(plug, "Normal", "PlugDeleted", fmt.Sprintf("plug %s/%s deleted", plug.Name, plug.Namespace))
+	return nil
 }
 
-func (u *EventUtil) SocketCreated(socket *integrationv1beta1.Socket) error {
-	u.logger.Info("socket created " + fmt.Sprintf("%s/%s", socket.Name, socket.Namespace))
+func (u *EventUtil) SocketCreated(
+	socket *integrationv1beta1.Socket,
+	recorder record.EventRecorder,
+) error {
+	u.logger.Info(fmt.Sprintf("socket %s/%s created", socket.Name, socket.Namespace))
 	if err := u.apparatusUtil.SocketCreated(socket); err != nil {
 		return err
 	}
-	return u.resourceUtil.SocketCreated(socket)
+	if err := u.resourceUtil.SocketCreated(socket); err != nil {
+		return err
+	}
+	recorder.Event(socket, "Normal", "SocketCreated", fmt.Sprintf("socket %s/%s created", socket.Name, socket.Namespace))
+	return nil
 }
 
 func (u *EventUtil) SocketCoupled(
@@ -121,12 +156,17 @@ func (u *EventUtil) SocketCoupled(
 	socket *integrationv1beta1.Socket,
 	plugConfig *Config,
 	socketConfig *Config,
+	recorder record.EventRecorder,
 ) error {
-	u.logger.Info("socket coupled " + fmt.Sprintf("%s/%s", socket.Name, socket.Namespace))
+	u.logger.Info(fmt.Sprintf("socket %s/%s coupled", socket.Name, socket.Namespace))
 	if err := u.apparatusUtil.SocketCoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
-	return u.resourceUtil.SocketCoupled(plug, socket, plugConfig, socketConfig)
+	if err := u.resourceUtil.SocketCoupled(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	recorder.Event(socket, "Normal", "SocketCoupled", fmt.Sprintf("socket %s/%s coupled", socket.Name, socket.Namespace))
+	return nil
 }
 
 func (u *EventUtil) SocketUpdated(
@@ -134,12 +174,17 @@ func (u *EventUtil) SocketUpdated(
 	socket *integrationv1beta1.Socket,
 	plugConfig *Config,
 	socketConfig *Config,
+	recorder record.EventRecorder,
 ) error {
-	u.logger.Info("socket updated " + fmt.Sprintf("%s/%s", socket.Name, socket.Namespace))
+	u.logger.Info(fmt.Sprintf("socket %s/%s updated", socket.Name, socket.Namespace))
 	if err := u.apparatusUtil.SocketUpdated(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
-	return u.resourceUtil.SocketUpdated(plug, socket, plugConfig, socketConfig)
+	if err := u.resourceUtil.SocketUpdated(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	recorder.Event(socket, "Normal", "SocketUpdated", fmt.Sprintf("socket %s/%s updated", socket.Name, socket.Namespace))
+	return nil
 }
 
 func (u *EventUtil) SocketDecoupled(
@@ -147,20 +192,30 @@ func (u *EventUtil) SocketDecoupled(
 	socket *integrationv1beta1.Socket,
 	plugConfig *Config,
 	socketConfig *Config,
+	recorder record.EventRecorder,
 ) error {
-	u.logger.Info("socket decoupled " + fmt.Sprintf("%s/%s", socket.Name, socket.Namespace))
+	u.logger.Info(fmt.Sprintf("socket %s/%s decoupled", socket.Name, socket.Namespace))
 	if err := u.apparatusUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig); err != nil {
 		return err
 	}
-	return u.resourceUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig)
+	if err := u.resourceUtil.SocketDecoupled(plug, socket, plugConfig, socketConfig); err != nil {
+		return err
+	}
+	recorder.Event(socket, "Normal", "SocketDecoupled", fmt.Sprintf("socket %s/%s decoupled", socket.Name, socket.Namespace))
+	return nil
 }
 
 func (u *EventUtil) SocketDeleted(
 	socket *integrationv1beta1.Socket,
+	recorder record.EventRecorder,
 ) error {
-	u.logger.Info("socket deleted " + fmt.Sprintf("%s/%s", socket.Name, socket.Namespace))
+	u.logger.Info(fmt.Sprintf("socket %s/%s deleted", socket.Name, socket.Namespace))
 	if err := u.apparatusUtil.SocketDeleted(socket); err != nil {
 		return err
 	}
-	return u.resourceUtil.SocketDeleted(socket)
+	if err := u.resourceUtil.SocketDeleted(socket); err != nil {
+		return err
+	}
+	recorder.Event(socket, "Normal", "SocketDeleted", fmt.Sprintf("socket %s/%s deleted", socket.Name, socket.Namespace))
+	return nil
 }

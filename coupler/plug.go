@@ -31,24 +31,27 @@ import (
 
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"gitlab.com/bitspur/rock8s/integration-operator/util"
+	"k8s.io/client-go/tools/record"
 )
 
 func CreatedPlug(
 	plug *integrationv1beta1.Plug,
+	recorder record.EventRecorder,
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	eventUtil := util.NewEventUtil(ctx)
-	return eventUtil.PlugCreated(plug)
+	return eventUtil.PlugCreated(plug, recorder)
 }
 
 func DeletedPlug(
 	plug *integrationv1beta1.Plug,
+	recorder record.EventRecorder,
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	eventUtil := util.NewEventUtil(ctx)
-	return eventUtil.PlugDeleted(plug)
+	return eventUtil.PlugDeleted(plug, recorder)
 }
 
 func CoupledPlug(
@@ -56,11 +59,12 @@ func CoupledPlug(
 	socket *integrationv1beta1.Socket,
 	plugConfig util.Config,
 	socketConfig util.Config,
+	recorder record.EventRecorder,
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	eventUtil := util.NewEventUtil(ctx)
-	return eventUtil.PlugCoupled(plug, socket, &plugConfig, &socketConfig)
+	return eventUtil.PlugCoupled(plug, socket, &plugConfig, &socketConfig, recorder)
 }
 
 func UpdatedPlug(
@@ -68,11 +72,12 @@ func UpdatedPlug(
 	socket *integrationv1beta1.Socket,
 	plugConfig util.Config,
 	socketConfig util.Config,
+	recorder record.EventRecorder,
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	eventUtil := util.NewEventUtil(ctx)
-	return eventUtil.PlugUpdated(plug, socket, &plugConfig, &socketConfig)
+	return eventUtil.PlugUpdated(plug, socket, &plugConfig, &socketConfig, recorder)
 }
 
 func DecoupledPlug(
@@ -80,9 +85,10 @@ func DecoupledPlug(
 	socket *integrationv1beta1.Socket,
 	plugConfig util.Config,
 	socketConfig util.Config,
+	recorder record.EventRecorder,
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	eventUtil := util.NewEventUtil(ctx)
-	return eventUtil.PlugDecoupled(plug, socket, &plugConfig, &socketConfig)
+	return eventUtil.PlugDecoupled(plug, socket, &plugConfig, &socketConfig, recorder)
 }

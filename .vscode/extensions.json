@@ -4,6 +4,8 @@
     "ms-azuretools.vscode-docker",
     "ms-kubernetes-tools.vscode-kubernetes-tools",
     "streetsidesoftware.code-spell-checker",
-    "mkhl.direnv"
+    "mkhl.direnv",
+    "hashicorp.hcl",
+    "fredwangwang.vscode-hcl-format"
   ]
 }

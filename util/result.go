@@ -317,8 +317,8 @@ func (u *ResultUtil) buildPlugResultTemplateData(
 		return dataMap, err
 	}
 	dataMap["socketData"] = socketData
-	if plug.Spec.Vars != nil {
-		varsMap, err := u.config.varUtil.GetVars(plug.Namespace, plug.Spec.Vars, kubectlUtil)
+	if plug.Spec.ResultVars != nil {
+		varsMap, err := u.config.varUtil.GetVars(plug.Namespace, plug.Spec.ResultVars, kubectlUtil)
 		if err != nil {
 			return dataMap, err
 		}
@@ -355,8 +355,8 @@ func (u *ResultUtil) buildSocketResultTemplateData(
 		return dataMap, err
 	}
 	dataMap["plugData"] = plugData
-	if socket.Spec.Vars != nil {
-		varsMap, err := u.config.varUtil.GetVars(socket.Namespace, socket.Spec.Vars, kubectlUtil)
+	if socket.Spec.ResultVars != nil {
+		varsMap, err := u.config.varUtil.GetVars(socket.Namespace, socket.Spec.ResultVars, kubectlUtil)
 		if err != nil {
 			return dataMap, err
 		}
