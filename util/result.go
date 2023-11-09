@@ -322,7 +322,7 @@ func (u *ResultUtil) buildPlugResultTemplateData(
 		if err != nil {
 			return dataMap, err
 		}
-		dataMap["vars"] = varsMap
+		dataMap["resultVars"] = varsMap
 	}
 	bData, err := json.Marshal(dataMap)
 	if err != nil {
