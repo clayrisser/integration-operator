@@ -34,7 +34,7 @@ export GIT_COMMIT ?= $(shell git describe --tags --always --dirty 2>/dev/null)
 
 include $(MKPM)/docker
 
-BUILDX ?= $(DOCKER) buildx
+BUILDX ?= $(call ternary,$(WHICH) buildx,buildx,$(call ternary,$(WHICH) docker-buildx,docker-buildx,$(DOCKER) buildx))
 
 .PHONY: bake
 bake:
