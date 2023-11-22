@@ -29,7 +29,6 @@ package v1beta1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 )
 
 // PlugSpec defines the desired state of Plug
@@ -38,10 +37,10 @@ type PlugSpec struct {
 	Socket NamespacedName `json:"socket,omitempty"`
 
 	// vars
-	Vars []*kustomizeTypes.Var `json:"vars,omitempty" yaml:"vars,omitempty"`
+	Vars []*Var `json:"vars,omitempty" yaml:"vars,omitempty"`
 
 	// result vars
-	ResultVars []*kustomizeTypes.Var `json:"resultVars,omitempty" yaml:"vars,omitempty"`
+	ResultVars []*Var `json:"resultVars,omitempty" yaml:"vars,omitempty"`
 
 	// data
 	Data map[string]string `json:"data,omitempty"`

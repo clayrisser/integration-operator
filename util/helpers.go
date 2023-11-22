@@ -115,9 +115,9 @@ func Validate(plug *integrationv1beta1.Plug, socket *integrationv1beta1.Socket) 
 
 func Template(
 	data *map[string]interface{},
-	mapper string,
+	templateValue string,
 ) (string, error) {
-	t, err := template.New("").Funcs(sprig.TxtFuncMap()).Delims("{%", "%}").Parse(mapper)
+	t, err := template.New("").Funcs(sprig.TxtFuncMap()).Delims("{%", "%}").Parse(templateValue)
 	if err != nil {
 		return "", err
 	}

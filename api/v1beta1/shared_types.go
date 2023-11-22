@@ -29,6 +29,8 @@ package v1beta1
 import (
 	v1 "k8s.io/api/core/v1"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"sigs.k8s.io/kustomize/api/resid"
+	kustomizeTypes "sigs.k8s.io/kustomize/api/types"
 )
 
 const Finalizer = "integration.rock8s.com/finalizer"
@@ -87,4 +89,37 @@ type SpecApparatus struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Containers *[]v1.Container `json:"containers"`
+}
+
+// Var represents a variable whose value will be sourced
+// from a field in a Kubernetes object.
+type Var struct {
+	// Value of identifier name e.g. FOO used in container args, annotations
+	// Appears in pod template as $(FOO)
+	Name string `json:"name" yaml:"name"`
+
+	// ObjRef must refer to a Kubernetes resource under the
+	// purview of this kustomization. ObjRef should use the
+	// raw name of the object (the name specified in its YAML,
+	// before addition of a namePrefix and a nameSuffix).
+	ObjRef Target `json:"objref" yaml:"objref"`
+
+	// FieldRef refers to the field of the object referred to by
+	// ObjRef whose value will be extracted for use in
+	// replacing $(FOO).
+	// If unspecified, this defaults to fieldPath: $defaultFieldPath
+	FieldRef kustomizeTypes.FieldSelector `json:"fieldref,omitempty" yaml:"fieldref,omitempty"`
+}
+
+// Target refers to a kubernetes object by Group, Version, Kind and Name
+// gvk.Gvk contains Group, Version and Kind
+// APIVersion is added to keep the backward compatibility of using ObjectReference
+// for Var.ObjRef
+type Target struct {
+	APIVersion        string `json:"apiVersion,omitempty" yaml:"apiVersion,omitempty"`
+	resid.Gvk         `json:",inline,omitempty" yaml:",inline,omitempty"`
+	Name              string `json:"name,omitempty" yaml:"name,omitempty"`
+	Namespace         string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	TemplateName      string `json:"templateName,omitempty" yaml:"templateName,omitempty"`
+	TemplateNamespace string `json:"templateNamespace,omitempty" yaml:"templateNamespace,omitempty"`
 }

@@ -29,8 +29,8 @@ export DOCKER_COMPOSE := docker-compose
 export CONTEXT := ..
 export NAME := bitspur/rock8s/integration-operator
 export REGISTRY := registry.gitlab.com
-export VERSION := 1.0.0
-export GIT_COMMIT := $(shell $(GIT) rev-parse --short HEAD)
+export VERSION := 1.1.0
+export GIT_COMMIT ?= $(shell git describe --tags --always --dirty 2>/dev/null)
 
 include $(MKPM)/docker
 
@@ -38,5 +38,4 @@ BUILDX ?= $(DOCKER) buildx
 
 .PHONY: bake
 bake:
-	@if [ -n "$(shell git status --porcelain)" ]; then printf "\033[33mgit directory is dirty, please commit any pending changes\033[0m\n"; exit 1; fi
 	@$(BUILDX) bake --provenance false

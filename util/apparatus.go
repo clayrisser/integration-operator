@@ -120,7 +120,7 @@ func (u *ApparatusUtil) GetPlugConfig(
 			}
 
 			if plug.Spec.Vars != nil {
-				vars, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars, kubectlUtil)
+				vars, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars, kubectlUtil, plug, socket)
 				if err != nil {
 					errCh <- err
 					return
@@ -211,7 +211,7 @@ func (u *ApparatusUtil) GetSocketConfig(
 			}
 
 			if socket.Spec.Vars != nil {
-				vars, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars, kubectlUtil)
+				vars, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars, kubectlUtil, plug, socket)
 				if err != nil {
 					errCh <- err
 					return

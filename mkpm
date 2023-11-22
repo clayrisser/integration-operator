@@ -1,6 +1,6 @@
 #!/bin/sh
 
-MKPM_VERSION="1.0.0"
+MKPM_VERSION="1.1.0"
 MKPM_SH_URL="${MKPM_SH_URL:-https://gitlab.com/api/v4/projects/48207162/packages/generic/mkpm/${MKPM_VERSION}/mkpm.sh}"
 alias download="$(curl --version >/dev/null 2>&1 && echo curl -Lo || echo wget -O)"
 alias echo="$([ "$(echo -e)" = "-e" ] && echo "echo" || echo "echo -e")"

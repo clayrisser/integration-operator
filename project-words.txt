@@ -14,6 +14,7 @@ crds
 crossplane
 customresourcedefinitions
 deepcopy
+devel
 fieldref
 finalizer
 finalizers
@@ -23,7 +24,7 @@ healthz
 integrationv
 intstr
 istio
-Keycloak
+keycloak
 kubebuilder
 kustomize
 kyverno
@@ -37,6 +38,7 @@ oidc
 operatorframework
 protobuf
 readyz
+resid
 restmapper
 resty
 risser

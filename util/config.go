@@ -115,6 +115,9 @@ func (u *ConfigUtil) GetPlugConfig(
 			plugConfig[key] = value
 		}
 	}
+	if socket.Spec.Interface == nil {
+		return plugConfig, nil
+	}
 	plugConfig, err := u.ValidatePlugConfig(plug, socket.Spec.Interface.Config, plugConfig)
 	if err != nil {
 		return nil, err
@@ -214,6 +217,9 @@ func (u *ConfigUtil) ValidateSocketConfig(
 	socket *integrationv1beta1.Socket,
 	socketConfig map[string]string,
 ) (map[string]string, error) {
+	if socket.Spec.Interface == nil {
+		return socketConfig, nil
+	}
 	configInterface := socket.Spec.Interface.Config
 	if configInterface == nil {
 		return socketConfig, nil
@@ -233,24 +239,24 @@ func (u *ConfigUtil) ValidateSocketConfig(
 	return validatedSocketConfig, nil
 }
 
-func (u *ConfigUtil) plugConfigTemplateLookup(plug *integrationv1beta1.Plug, mapper string, socket *integrationv1beta1.Socket) (string, error) {
+func (u *ConfigUtil) plugConfigTemplateLookup(plug *integrationv1beta1.Plug, configTemplate string, socket *integrationv1beta1.Socket) (string, error) {
 	data, err := u.buildPlugConfigTemplateData(*plug, socket)
 	if err != nil {
 		return "", err
 	}
-	return Template(&data, mapper)
+	return Template(&data, configTemplate)
 }
 
 func (u *ConfigUtil) socketConfigTemplateLookup(
 	socket *integrationv1beta1.Socket,
-	mapper string,
+	configTemplate string,
 	plug *integrationv1beta1.Plug,
 ) (string, error) {
 	data, err := u.buildSocketConfigTemplateData(*socket, plug)
 	if err != nil {
 		return "", err
 	}
-	return Template(&data, mapper)
+	return Template(&data, configTemplate)
 }
 
 func (u *ConfigUtil) buildPlugConfigTemplateData(
@@ -274,7 +280,7 @@ func (u *ConfigUtil) buildPlugConfigTemplateData(
 	}
 	dataMap["socketData"] = socketData
 	if plug.Spec.Vars != nil {
-		varsMap, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars, kubectlUtil)
+		varsMap, err := u.varUtil.GetVars(plug.Namespace, plug.Spec.Vars, kubectlUtil, &plug, socket)
 		if err != nil {
 			return dataMap, err
 		}
@@ -312,7 +318,7 @@ func (u *ConfigUtil) buildSocketConfigTemplateData(
 	}
 	dataMap["plugData"] = plugData
 	if socket.Spec.Vars != nil {
-		varsMap, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars, kubectlUtil)
+		varsMap, err := u.varUtil.GetVars(socket.Namespace, socket.Spec.Vars, kubectlUtil, plug, &socket)
 		if err != nil {
 			return dataMap, err
 		}
