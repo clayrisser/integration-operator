@@ -145,7 +145,12 @@ func (u *PlugUtil) Error(
 			return ctrl.Result{Requeue: true}, nil
 		}
 	}
-	return u.UpdateErrorStatus(e, plug)
+	result, err := u.UpdateErrorStatus(e, plug)
+	if strings.Contains(e.Error(), "result property") &&
+		strings.Contains(e.Error(), "is required") {
+		return ctrl.Result{Requeue: true}, nil
+	}
+	return result, err
 }
 
 func (u *PlugUtil) UpdateErrorStatus(

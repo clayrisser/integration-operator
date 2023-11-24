@@ -200,7 +200,7 @@ func (u *ConfigUtil) ValidatePlugConfig(
 	}
 	validatedPlugConfig := make(map[string]string)
 	for propertyName, property := range configInterface.Plug {
-		if _, found := plugConfig[propertyName]; found {
+		if value, found := plugConfig[propertyName]; found && value != "" {
 			validatedPlugConfig[propertyName] = plugConfig[propertyName]
 		} else {
 			if property.Required {

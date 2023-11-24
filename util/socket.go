@@ -144,7 +144,12 @@ func (u *SocketUtil) Error(err error, socket *integrationv1beta1.Socket) (ctrl.R
 			return ctrl.Result{Requeue: true}, nil
 		}
 	}
-	return u.UpdateErrorStatus(e, socket)
+	result, err := u.UpdateErrorStatus(e, socket)
+	if strings.Contains(e.Error(), "result property") &&
+		strings.Contains(e.Error(), "is required") {
+		return ctrl.Result{Requeue: true}, nil
+	}
+	return result, err
 }
 
 func (u *SocketUtil) UpdateCoupledStatus(

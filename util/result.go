@@ -270,8 +270,8 @@ func (u *ResultUtil) validateSocketResult(
 	}
 	validatedSocketResult := make(map[string]string)
 	for propertyName, property := range resultInterface.Socket {
-		if _, found := socketResult[propertyName]; found {
-			validatedSocketResult[propertyName] = socketResult[propertyName]
+		if value, found := socketResult[propertyName]; found && value != "" {
+			validatedSocketResult[propertyName] = value
 		} else {
 			if property.Required {
 				return socketResult, errors.New("socket result property '" + propertyName + "' is required")
