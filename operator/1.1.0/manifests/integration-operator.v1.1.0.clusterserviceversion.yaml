@@ -572,7 +572,29 @@ spec:
             - apiGroups:
                 - ""
               resources:
+                - configmaps
+                - secrets
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - ""
+              resources:
                 - events
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+                - services
               verbs:
                 - create
                 - delete
@@ -588,29 +610,6 @@ spec:
               verbs:
                 - impersonate
             - apiGroups:
-                - integration.rock8s.com
-              resources:
-                - plugs
-                - sockets
-              verbs:
-                - "*"
-            - apiGroups:
-                - integration.rock8s.com
-              resources:
-                - plugs/status
-                - sockets/status
-              verbs:
-                - get
-                - update
-                - patch
-            - apiGroups:
-                - integration.rock8s.com
-              resources:
-                - plugs/finalizers
-                - sockets/finalizers
-              verbs:
-                - update
-            - apiGroups:
                 - coordination.k8s.io
               resources:
                 - leases
@@ -622,6 +621,58 @@ spec:
                 - patch
                 - update
                 - watch
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
+                - plugs
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
+                - plugs/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
+                - plugs/status
+              verbs:
+                - get
+                - patch
+                - update
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
+                - sockets
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
+                - sockets/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
+                - sockets/status
+              verbs:
+                - get
+                - patch
+                - update
       clusterPermissions: []
       deployments:
         - name: add-deployment
