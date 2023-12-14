@@ -572,6 +572,15 @@ spec:
             - apiGroups:
                 - ""
               resources:
+                - configmaps
+                - secrets
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - ""
+              resources:
                 - events
               verbs:
                 - create
@@ -585,7 +594,6 @@ spec:
                 - ""
               resources:
                 - pods
-                - secrets
                 - services
               verbs:
                 - create
