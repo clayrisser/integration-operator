@@ -61,8 +61,7 @@ func init() {
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=impersonate
-//+kubebuilder:rbac:groups="",resources=services;pods,verbs=create;delete;get;list;patch;update;watch
-//+kubebuilder:rbac:groups="",resources=configmaps;secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=secrets;services;pods,verbs=create;delete;get;list;patch;update;watch
 
 func main() {
 	var enableLeaderElection bool
