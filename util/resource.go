@@ -367,11 +367,11 @@ func (u *ResourceUtil) ProcessResources(
 				namespace,
 				template,
 			)
-			if strings.TrimSpace(templatedResource) == "" {
-				continue
-			}
 			if err != nil {
 				return err
+			}
+			if strings.TrimSpace(templatedResource) == "" {
+				continue
 			}
 			do := resource.Do
 			if do == "" {

@@ -171,7 +171,7 @@ func (u *ApparatusUtil) GetSocketConfig(
 	min := minify.New()
 	min.AddFunc("application/json", minifyJson.Minify)
 	url := u.getSocketEndpoint(socket) + "/config"
-	kubectlUtil := NewKubectlUtil(u.ctx, plug.Namespace, EnsureServiceAccount(plug.Spec.ServiceAccountName))
+	kubectlUtil := NewKubectlUtil(u.ctx, socket.Namespace, EnsureServiceAccount(socket.Spec.ServiceAccountName))
 	go func() {
 		body := `{"version":1}`
 		var err error
