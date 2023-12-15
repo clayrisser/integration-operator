@@ -31,6 +31,7 @@ import (
 	"errors"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -467,6 +468,9 @@ func (u *ApparatusUtil) SocketDeleted(
 }
 
 func (u *ApparatusUtil) NotRunning(err error) bool {
+	if strings.Contains(err.Error(), "connect: connection refused") {
+		return true
+	}
 	if netErr, ok := err.(ApparatusNetError); ok {
 		return netErr.NotRunning()
 	}
@@ -515,34 +519,50 @@ func (u *ApparatusUtil) RenewIdleTimeout(
 	}
 }
 
-func (u *ApparatusUtil) StartFromPlug(
-	plug *integrationv1beta1.Plug,
-	requeueAfter *time.Duration,
-) (bool, error) {
-	return u.start(
-		plug.Spec.Apparatus,
-		plug.Name+"-apparatus",
-		plug.Namespace,
-		string(plug.UID),
-		u.createPlugOwnerReference(plug),
-		EnsureServiceAccount(plug.Spec.ServiceAccountName),
-		requeueAfter,
-	)
-}
-
 func (u *ApparatusUtil) StartFromSocket(
 	socket *integrationv1beta1.Socket,
 	requeueAfter *time.Duration,
 ) (bool, error) {
-	return u.start(
-		socket.Spec.Apparatus,
-		socket.Name+"-apparatus",
-		socket.Namespace,
-		string(socket.UID),
-		u.createSocketOwnerReference(socket),
-		EnsureServiceAccount(socket.Spec.ServiceAccountName),
-		requeueAfter,
-	)
+	return u.Start(nil, socket, requeueAfter)
+}
+
+func (u *ApparatusUtil) Start(
+	plug *integrationv1beta1.Plug,
+	socket *integrationv1beta1.Socket,
+	requeueAfter *time.Duration,
+) (bool, error) {
+	plugStarted := false
+	socketStarted := false
+	var err error
+	if plug != nil {
+		plugStarted, err = u.start(
+			plug.Spec.Apparatus,
+			plug.Name+"-apparatus",
+			plug.Namespace,
+			string(plug.UID),
+			u.createPlugOwnerReference(plug),
+			EnsureServiceAccount(plug.Spec.ServiceAccountName),
+			requeueAfter,
+		)
+		if err != nil {
+			return false, err
+		}
+	}
+	if socket != nil {
+		socketStarted, err = u.start(
+			socket.Spec.Apparatus,
+			socket.Name+"-apparatus",
+			socket.Namespace,
+			string(socket.UID),
+			u.createSocketOwnerReference(socket),
+			EnsureServiceAccount(socket.Spec.ServiceAccountName),
+			requeueAfter,
+		)
+		if err != nil {
+			return false, err
+		}
+	}
+	return plugStarted || socketStarted, err
 }
 
 func (u *ApparatusUtil) start(

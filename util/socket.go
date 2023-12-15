@@ -140,7 +140,7 @@ func (u *SocketUtil) Error(err error, socket *integrationv1beta1.Socket) (ctrl.R
 		requeueAfter := time.Duration(time.Second.Nanoseconds() * 10)
 		started, err := u.apparatusUtil.StartFromSocket(socket, &requeueAfter)
 		if err != nil {
-			return u.UpdateErrorStatus(e, socket)
+			return u.UpdateErrorStatus(err, socket)
 		}
 		if started {
 			return ctrl.Result{

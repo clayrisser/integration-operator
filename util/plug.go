@@ -48,6 +48,7 @@ type PlugUtil struct {
 	namespacedName types.NamespacedName
 	req            *ctrl.Request
 	resultUtil     *ResultUtil
+	socket         *integrationv1beta1.Socket
 }
 
 func NewPlugUtil(
@@ -55,6 +56,7 @@ func NewPlugUtil(
 	ctx context.Context,
 	req *ctrl.Request,
 	namespacedName *integrationv1beta1.NamespacedName,
+	socket *integrationv1beta1.Socket,
 ) *PlugUtil {
 	operatorNamespace := GetOperatorNamespace()
 	return &PlugUtil{
@@ -64,6 +66,7 @@ func NewPlugUtil(
 		namespacedName: EnsureNamespacedName(namespacedName, operatorNamespace),
 		req:            req,
 		resultUtil:     NewResultUtil(ctx),
+		socket:         socket,
 	}
 }
 
@@ -139,9 +142,9 @@ func (u *PlugUtil) Error(
 	}
 	if u.apparatusUtil.NotRunning(err) {
 		requeueAfter := time.Duration(time.Second.Nanoseconds() * 10)
-		started, err := u.apparatusUtil.StartFromPlug(plug, &requeueAfter)
+		started, err := u.apparatusUtil.Start(plug, u.socket, &requeueAfter)
 		if err != nil {
-			return u.UpdateErrorStatus(e, plug)
+			return u.UpdateErrorStatus(err, plug)
 		}
 		if started {
 			return ctrl.Result{

@@ -61,19 +61,21 @@ type PlugReconciler struct {
 func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(1).Info("Plug Reconcile")
-	plugUtil := util.NewPlugUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
+	namespacedName := integrationv1beta1.NamespacedName{
 		Name:      req.NamespacedName.Name,
 		Namespace: req.NamespacedName.Namespace,
-	})
-	plug, err := plugUtil.Get()
-	if err != nil {
+	}
+	plug := &integrationv1beta1.Plug{}
+	if err := r.Client.Get(ctx, util.EnsureNamespacedName(&namespacedName, util.GetOperatorNamespace()), plug); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	plug = plug.DeepCopy()
 	socketUtil := util.NewSocketUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
 		Name:      plug.Spec.Socket.Name,
 		Namespace: util.Default(plug.Spec.Socket.Namespace, req.NamespacedName.Namespace),
 	})
 	socket, err := socketUtil.Get()
+	plugUtil := util.NewPlugUtil(&r.Client, ctx, &req, &namespacedName, socket)
 	if err != nil && !errors.IsNotFound(err) {
 		return plugUtil.Error(err, plug)
 	}

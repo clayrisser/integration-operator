@@ -87,7 +87,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					plugUtil := util.NewPlugUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
 						Name:      coupledPlug.Name,
 						Namespace: coupledPlug.Namespace,
-					})
+					}, socket)
 					plug, err := plugUtil.Get()
 					if err != nil {
 						if errors.IsNotFound(err) {
@@ -134,7 +134,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		plugUtil := util.NewPlugUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
 			Name:      coupledPlug.Name,
 			Namespace: coupledPlug.Namespace,
-		})
+		}, socket)
 		if _, err := plugUtil.Get(); err != nil {
 			if errors.IsNotFound(err) {
 				if _, err := socketUtil.RemoveCoupledPlugStatus(coupledPlug.UID, socket); err != nil {
@@ -154,7 +154,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		plugUtil := util.NewPlugUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
 			Name:      coupledPlug.Name,
 			Namespace: coupledPlug.Namespace,
-		})
+		}, socket)
 		plug, err := plugUtil.Get()
 		if err != nil {
 			return socketUtil.Error(err, socket)
