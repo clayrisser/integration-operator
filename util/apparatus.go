@@ -515,7 +515,10 @@ func (u *ApparatusUtil) RenewIdleTimeout(
 	}
 }
 
-func (u *ApparatusUtil) StartFromPlug(plug *integrationv1beta1.Plug) (bool, error) {
+func (u *ApparatusUtil) StartFromPlug(
+	plug *integrationv1beta1.Plug,
+	requeueAfter *time.Duration,
+) (bool, error) {
 	return u.start(
 		plug.Spec.Apparatus,
 		plug.Name+"-apparatus",
@@ -523,10 +526,14 @@ func (u *ApparatusUtil) StartFromPlug(plug *integrationv1beta1.Plug) (bool, erro
 		string(plug.UID),
 		u.createPlugOwnerReference(plug),
 		EnsureServiceAccount(plug.Spec.ServiceAccountName),
+		requeueAfter,
 	)
 }
 
-func (u *ApparatusUtil) StartFromSocket(socket *integrationv1beta1.Socket) (bool, error) {
+func (u *ApparatusUtil) StartFromSocket(
+	socket *integrationv1beta1.Socket,
+	requeueAfter *time.Duration,
+) (bool, error) {
 	return u.start(
 		socket.Spec.Apparatus,
 		socket.Name+"-apparatus",
@@ -534,6 +541,7 @@ func (u *ApparatusUtil) StartFromSocket(socket *integrationv1beta1.Socket) (bool
 		string(socket.UID),
 		u.createSocketOwnerReference(socket),
 		EnsureServiceAccount(socket.Spec.ServiceAccountName),
+		requeueAfter,
 	)
 }
 
@@ -544,6 +552,7 @@ func (u *ApparatusUtil) start(
 	uid string,
 	ownerReference metav1.OwnerReference,
 	serviceAccountName string,
+	requeueAfter *time.Duration,
 ) (bool, error) {
 	if apparatus == nil || len(*apparatus.Containers) <= 0 {
 		return false, nil
@@ -551,6 +560,9 @@ func (u *ApparatusUtil) start(
 	idleTimeout := time.Second * 60
 	if apparatus.IdleTimeout != 0 {
 		idleTimeout = time.Second * time.Duration(apparatus.IdleTimeout)
+	}
+	if requeueAfter != nil {
+		idleTimeout = idleTimeout + *requeueAfter
 	}
 	alreadyExists := false
 	automountServiceAccountToken := true

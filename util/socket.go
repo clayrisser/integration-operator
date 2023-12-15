@@ -31,6 +31,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -136,12 +137,16 @@ func (u *SocketUtil) Error(err error, socket *integrationv1beta1.Socket) (ctrl.R
 		}
 	}
 	if u.apparatusUtil.NotRunning(err) {
-		started, err := u.apparatusUtil.StartFromSocket(socket)
+		requeueAfter := time.Duration(time.Second.Nanoseconds() * 10)
+		started, err := u.apparatusUtil.StartFromSocket(socket, &requeueAfter)
 		if err != nil {
-			return ctrl.Result{}, err
+			return u.UpdateErrorStatus(e, socket)
 		}
 		if started {
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: requeueAfter,
+			}, nil
 		}
 	}
 	result, err := u.UpdateErrorStatus(e, socket)
