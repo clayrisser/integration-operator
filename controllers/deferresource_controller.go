@@ -49,16 +49,15 @@ import (
 	"strconv"
 	"time"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
+	"gitlab.com/bitspur/rock8s/integration-operator/util"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // DeferResourceReconciler reconciles a DeferResource object
@@ -72,40 +71,45 @@ type DeferResourceReconciler struct {
 //+kubebuilder:rbac:groups=integration.rock8s.com,resources=deferresources/finalizers,verbs=update
 
 func (r *DeferResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-	var deferResource integrationv1beta1.DeferResource
-	if err := r.Get(ctx, req.NamespacedName, &deferResource); err != nil {
-		log.Error(err, "unable to fetch DeferResource")
+	logger := log.FromContext(ctx)
+	logger.V(1).Info("DeferResource Reconcile")
+	deferResourceUtil := util.NewDeferResourceUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
+		Name:      req.NamespacedName.Name,
+		Namespace: req.NamespacedName.Namespace,
+	})
+	deferResource, err := deferResourceUtil.Get()
+	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	kubectlUtil := util.NewKubectlUtil(
+		ctx, deferResource.Namespace,
+		util.EnsureServiceAccount(deferResource.Spec.ServiceAccountName),
+	)
+
+	if deferResource.Spec.Timeout > 0 {
+		if time.Since(deferResource.CreationTimestamp.Time) < time.Duration(deferResource.Spec.Timeout)*time.Second {
+			return ctrl.Result{
+				RequeueAfter: time.Duration(deferResource.Spec.Timeout)*time.Second - time.Since(deferResource.CreationTimestamp.Time),
+			}, nil
+		}
 	}
 
 	if deferResource.Spec.WaitFor != nil {
-		for _, target := range *deferResource.Spec.WaitFor {
-			var targetResource unstructured.Unstructured
-			targetResource.SetGroupVersionKind(schema.GroupVersionKind{
-				Group:   target.Gvk.Group,
-				Version: target.Gvk.Version,
-				Kind:    target.Gvk.Kind,
-			})
-			if err := r.Get(ctx, types.NamespacedName{Name: target.Name}, &targetResource); err != nil {
-				log.Info("waitFor target does not exist", "target", target.Name)
-				return ctrl.Result{RequeueAfter: time.Duration(deferResource.Spec.Timeout) * time.Second}, nil
+		for _, waitFor := range *deferResource.Spec.WaitFor {
+			body, err := json.Marshal(waitFor)
+			if err != nil {
+				return deferResourceUtil.Error(err, deferResource)
+			}
+			if _, err := kubectlUtil.Get(body); err != nil {
+				if k8serrors.IsNotFound(err) {
+					return ctrl.Result{Requeue: true}, nil
+				}
+				return deferResourceUtil.Error(err, deferResource)
 			}
 		}
 	}
 
-	// Create the resource from spec.resource after the waitFor targets exist and the timeout has passed
-	var resource unstructured.Unstructured
-	if err := json.Unmarshal(deferResource.Spec.Resource.Raw, &resource); err != nil {
-		log.Error(err, "unable to unmarshal resource from spec")
-		return ctrl.Result{}, err
-	}
-	if err := r.Create(ctx, &resource); err != nil {
-		log.Error(err, "unable to create resource", "resource", resource.GetName())
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{}, nil
+	return deferResourceUtil.ApplyResource(deferResource, kubectlUtil)
 }
 
 // SetupWithManager sets up the controller with the Manager.

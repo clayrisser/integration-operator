@@ -1,5 +1,5 @@
 /**
- * File: /util/deferResource.go
+ * File: /util/defer_resource.go
  * Project: integration-operator
  * File Created: 17-12-2023 03:49:19
  * Author: Clay Risser
@@ -28,8 +28,8 @@ package util
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
+	"time"
 
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -177,6 +177,7 @@ func (u *DeferResourceUtil) UpdateErrorStatus(
 func (u *DeferResourceUtil) UpdateResolvedStatus(
 	conditionResolvedReason DeferResourceConditionResolvedReason,
 	deferResource *integrationv1beta1.DeferResource,
+	appliedResource *unstructured.Unstructured,
 	requeue bool,
 ) (ctrl.Result, error) {
 	if deferResource == nil {
@@ -187,16 +188,36 @@ func (u *DeferResourceUtil) UpdateResolvedStatus(
 		}
 	}
 	if deferResource != nil {
-		targetResource, err := u.unmarshalTargetResource(deferResource)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		u.setResolvedStatus(deferResource, targetResource)
+		u.setResolvedStatus(deferResource, appliedResource)
 	}
 	if conditionResolvedReason != "" {
 		u.setResolvedStatusCondition(conditionResolvedReason, "", deferResource)
 	}
 	return u.UpdateStatus(deferResource, requeue)
+}
+
+func (u *DeferResourceUtil) ApplyResource(
+	deferResource *integrationv1beta1.DeferResource,
+	kubectlUtil *KubectlUtil,
+) (ctrl.Result, error) {
+	err := kubectlUtil.Apply(deferResource.Spec.Resource.Raw)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	var appliedResource *unstructured.Unstructured
+	maxRetries := 5
+	retryInterval := time.Second * 2
+	for i := 0; i < maxRetries; i++ {
+		appliedResource, err = kubectlUtil.Get(deferResource.Spec.Resource.Raw)
+		if err == nil {
+			break
+		}
+		time.Sleep(retryInterval)
+	}
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	return u.UpdateResolvedStatus(DeferResourceSuccess, deferResource, appliedResource, false)
 }
 
 func (u *DeferResourceUtil) setResolvedStatusCondition(
@@ -265,28 +286,14 @@ func (u *DeferResourceUtil) setErrorStatus(err error, deferResource *integration
 
 func (u *DeferResourceUtil) setResolvedStatus(
 	deferResource *integrationv1beta1.DeferResource,
-	targetResource *unstructured.Unstructured,
+	appliedResource *unstructured.Unstructured,
 ) {
-	if targetResource != nil {
+	if appliedResource != nil {
 		deferResource.Status.OwnerReference = metav1.OwnerReference{
-			APIVersion: targetResource.GetAPIVersion(),
-			Kind:       targetResource.GetKind(),
-			Name:       targetResource.GetName(),
-			UID:        targetResource.GetUID(),
+			APIVersion: appliedResource.GetAPIVersion(),
+			Kind:       appliedResource.GetKind(),
+			Name:       appliedResource.GetName(),
+			UID:        appliedResource.GetUID(),
 		}
 	}
-}
-
-func (u *DeferResourceUtil) unmarshalTargetResource(
-	deferResource *integrationv1beta1.DeferResource,
-) (*unstructured.Unstructured, error) {
-	if deferResource.Spec.Resource != nil {
-		targetResource := &unstructured.Unstructured{}
-		err := json.Unmarshal([]byte(deferResource.Spec.Resource.Raw), targetResource)
-		if err != nil {
-			return nil, err
-		}
-		return targetResource, nil
-	}
-	return nil, nil
 }

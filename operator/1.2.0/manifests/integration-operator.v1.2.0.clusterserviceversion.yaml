@@ -624,6 +624,32 @@ spec:
             - apiGroups:
                 - integration.rock8s.com
               resources:
+                - deferresources
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
+                - deferresources/finalizers
+              verbs:
+                - update
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
+                - deferresources/status
+              verbs:
+                - get
+                - patch
+                - update
+            - apiGroups:
+                - integration.rock8s.com
+              resources:
                 - plugs
               verbs:
                 - create

@@ -34,9 +34,18 @@ import (
 
 // DeferResourceSpec defines the desired state of DeferResource
 type DeferResourceSpec struct {
-	Timeout  int64             `json:"timeout,omitempty"`
-	WaitFor  *[]*WaitForTarget `json:"waitFor,omitempty"`
-	Resource *apiextv1.JSON    `json:"resource,omitempty"`
+	// Timeout is the maximum time to wait before creating the resource
+	Timeout int64 `json:"timeout,omitempty"`
+
+	// WaitFor is a list of resources to wait for before creating the resource
+	WaitFor *[]*WaitForTarget `json:"waitFor,omitempty"`
+
+	// Resource is the resource to create after the defer is resolved
+	Resource *apiextv1.JSON `json:"resource,omitempty"`
+	// ServiceAccountName is the name of the ServiceAccount to use to create deferred resources from.
+	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty" protobuf:"bytes,8,opt,name=serviceAccountName"`
 }
 
 // DeferResourceStatus defines the observed state of DeferResource
@@ -71,8 +80,8 @@ type DeferResourceList struct {
 // APIVersion is added to keep the backward compatibility of using ObjectReference
 // for Var.ObjRef
 type WaitForTarget struct {
-	APIVersion string `json:"apiVersion,omitempty" yaml:"apiVersion,omitempty"`
 	resid.Gvk  `json:",inline,omitempty" yaml:",inline,omitempty"`
+	APIVersion string `json:"apiVersion,omitempty" yaml:"apiVersion,omitempty"`
 	Name       string `json:"name,omitempty" yaml:"name,omitempty"`
 }
 

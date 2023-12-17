@@ -36,11 +36,21 @@ spec:
             description: DeferResourceSpec defines the desired state of DeferResource
             properties:
               resource:
+                description: Resource is the resource to create after the defer is
+                  resolved
                 x-kubernetes-preserve-unknown-fields: true
+              serviceAccountName:
+                description: 'ServiceAccountName is the name of the ServiceAccount
+                  to use to create deferred resources from. More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/'
+                type: string
               timeout:
+                description: Timeout is the maximum time to wait before creating the
+                  resource
                 format: int64
                 type: integer
               waitFor:
+                description: WaitFor is a list of resources to wait for before creating
+                  the resource
                 items:
                   description: Target refers to a kubernetes object by Group, Version,
                     Kind and Name gvk.Gvk contains Group, Version and Kind APIVersion
