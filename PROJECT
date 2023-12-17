@@ -4,38 +4,38 @@
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: rock8s.com
 layout:
-- go.kubebuilder.io/v3
+  - go.kubebuilder.io/v3
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: integration-operator
 repo: gitlab.com/bitspur/rock8s/integration-operator
 resources:
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: rock8s.com
-  group: integration
-  kind: Socket
-  path: gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1
-  version: v1beta1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: rock8s.com
-  group: integration
-  kind: Plug
-  path: gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1
-  version: v1beta1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: rock8s.com
-  group: integration
-  kind: DeferResource
-  path: gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1
-  version: v1beta1
+  - api:
+      crdVersion: v1
+      namespaced: true
+    controller: true
+    domain: rock8s.com
+    group: integration
+    kind: Socket
+    path: gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1
+    version: v1beta1
+  - api:
+      crdVersion: v1
+      namespaced: true
+    controller: true
+    domain: rock8s.com
+    group: integration
+    kind: Plug
+    path: gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1
+    version: v1beta1
+  - api:
+      crdVersion: v1
+      namespaced: true
+    controller: true
+    domain: rock8s.com
+    group: integration
+    kind: DeferredResource
+    path: gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1
+    version: v1beta1
 version: "3"

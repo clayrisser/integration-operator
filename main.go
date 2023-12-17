@@ -122,11 +122,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Plug")
 		os.Exit(1)
 	}
-	if err = (&controllers.DeferResourceReconciler{
+	if err = (&controllers.DeferredResourceReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DeferResource")
+		setupLog.Error(err, "unable to create controller", "controller", "DeferredResource")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

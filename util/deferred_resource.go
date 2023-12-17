@@ -1,5 +1,5 @@
 /**
- * File: /util/defer_resource.go
+ * File: /util/deferred_resource.go
  * Project: integration-operator
  * File Created: 17-12-2023 03:49:19
  * Author: Clay Risser
@@ -41,7 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type DeferResourceUtil struct {
+type DeferredResourceUtil struct {
 	apparatusUtil  *ApparatusUtil
 	client         *client.Client
 	ctx            context.Context
@@ -50,14 +50,14 @@ type DeferResourceUtil struct {
 	resultUtil     *ResultUtil
 }
 
-func NewDeferResourceUtil(
+func NewDeferredResourceUtil(
 	client *client.Client,
 	ctx context.Context,
 	req *ctrl.Request,
 	namespacedName *integrationv1beta1.NamespacedName,
-) *DeferResourceUtil {
+) *DeferredResourceUtil {
 	operatorNamespace := GetOperatorNamespace()
-	return &DeferResourceUtil{
+	return &DeferredResourceUtil{
 		apparatusUtil:  NewApparatusUtil(ctx),
 		client:         client,
 		ctx:            ctx,
@@ -67,17 +67,17 @@ func NewDeferResourceUtil(
 	}
 }
 
-func (u *DeferResourceUtil) Get() (*integrationv1beta1.DeferResource, error) {
+func (u *DeferredResourceUtil) Get() (*integrationv1beta1.DeferredResource, error) {
 	client := *u.client
 	ctx := u.ctx
-	plug := &integrationv1beta1.DeferResource{}
+	plug := &integrationv1beta1.DeferredResource{}
 	if err := client.Get(ctx, u.namespacedName, plug); err != nil {
 		return nil, err
 	}
 	return plug.DeepCopy(), nil
 }
 
-func (u *DeferResourceUtil) Update(plug *integrationv1beta1.DeferResource, requeue bool) (ctrl.Result, error) {
+func (u *DeferredResourceUtil) Update(plug *integrationv1beta1.DeferredResource, requeue bool) (ctrl.Result, error) {
 	client := *u.client
 	ctx := u.ctx
 	if err := client.Update(ctx, plug); err != nil {
@@ -89,8 +89,8 @@ func (u *DeferResourceUtil) Update(plug *integrationv1beta1.DeferResource, reque
 	return ctrl.Result{}, nil
 }
 
-func (u *DeferResourceUtil) UpdateStatus(
-	plug *integrationv1beta1.DeferResource,
+func (u *DeferredResourceUtil) UpdateStatus(
+	plug *integrationv1beta1.DeferredResource,
 	requeue bool,
 ) (ctrl.Result, error) {
 	client := *u.client
@@ -107,7 +107,7 @@ func (u *DeferResourceUtil) UpdateStatus(
 	return ctrl.Result{}, nil
 }
 
-func (u *DeferResourceUtil) Delete(plug *integrationv1beta1.DeferResource) (ctrl.Result, error) {
+func (u *DeferredResourceUtil) Delete(plug *integrationv1beta1.DeferredResource) (ctrl.Result, error) {
 	client := *u.client
 	ctx := u.ctx
 	if err := client.Delete(ctx, plug); err != nil {
@@ -116,33 +116,33 @@ func (u *DeferResourceUtil) Delete(plug *integrationv1beta1.DeferResource) (ctrl
 	return ctrl.Result{}, nil
 }
 
-func (u *DeferResourceUtil) GetResolvedCondition(
-	deferResource *integrationv1beta1.DeferResource,
+func (u *DeferredResourceUtil) GetResolvedCondition(
+	deferredResource *integrationv1beta1.DeferredResource,
 ) (*metav1.Condition, error) {
-	if deferResource == nil {
+	if deferredResource == nil {
 		var err error
-		deferResource, err = u.Get()
+		deferredResource, err = u.Get()
 		if err != nil {
 			return nil, err
 		}
 	}
-	coupledCondition := meta.FindStatusCondition(deferResource.Status.Conditions, string(DeferResourceConditionTypeResolved))
+	coupledCondition := meta.FindStatusCondition(deferredResource.Status.Conditions, string(DeferredResourceConditionTypeResolved))
 	return coupledCondition, nil
 }
 
-func (u *DeferResourceUtil) Error(
+func (u *DeferredResourceUtil) Error(
 	err error,
-	deferResource *integrationv1beta1.DeferResource,
+	deferredResource *integrationv1beta1.DeferredResource,
 ) (ctrl.Result, error) {
 	e := err
-	if deferResource == nil {
+	if deferredResource == nil {
 		var err error
-		deferResource, err = u.Get()
+		deferredResource, err = u.Get()
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 	}
-	result, err := u.UpdateErrorStatus(e, deferResource)
+	result, err := u.UpdateErrorStatus(e, deferredResource)
 	if strings.Contains(e.Error(), "result property") &&
 		strings.Contains(e.Error(), "is required") {
 		return ctrl.Result{Requeue: true}, nil
@@ -150,9 +150,9 @@ func (u *DeferResourceUtil) Error(
 	return result, err
 }
 
-func (u *DeferResourceUtil) UpdateErrorStatus(
+func (u *DeferredResourceUtil) UpdateErrorStatus(
 	err error,
-	plug *integrationv1beta1.DeferResource,
+	plug *integrationv1beta1.DeferredResource,
 ) (ctrl.Result, error) {
 	e := err
 	if plug == nil {
@@ -174,33 +174,33 @@ func (u *DeferResourceUtil) UpdateErrorStatus(
 	return ctrl.Result{}, e
 }
 
-func (u *DeferResourceUtil) UpdateResolvedStatus(
-	conditionResolvedReason DeferResourceConditionResolvedReason,
-	deferResource *integrationv1beta1.DeferResource,
+func (u *DeferredResourceUtil) UpdateResolvedStatus(
+	conditionResolvedReason DeferredResourceConditionResolvedReason,
+	deferredResource *integrationv1beta1.DeferredResource,
 	appliedResource *unstructured.Unstructured,
 	requeue bool,
 ) (ctrl.Result, error) {
-	if deferResource == nil {
+	if deferredResource == nil {
 		var err error
-		deferResource, err = u.Get()
+		deferredResource, err = u.Get()
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 	}
-	if deferResource != nil {
-		u.setResolvedStatus(deferResource, appliedResource)
+	if deferredResource != nil {
+		u.setResolvedStatus(deferredResource, appliedResource)
 	}
 	if conditionResolvedReason != "" {
-		u.setResolvedStatusCondition(conditionResolvedReason, "", deferResource)
+		u.setResolvedStatusCondition(conditionResolvedReason, "", deferredResource)
 	}
-	return u.UpdateStatus(deferResource, requeue)
+	return u.UpdateStatus(deferredResource, requeue)
 }
 
-func (u *DeferResourceUtil) ApplyResource(
-	deferResource *integrationv1beta1.DeferResource,
+func (u *DeferredResourceUtil) ApplyResource(
+	deferredResource *integrationv1beta1.DeferredResource,
 	kubectlUtil *KubectlUtil,
 ) (ctrl.Result, error) {
-	err := kubectlUtil.Apply(deferResource.Spec.Resource.Raw)
+	err := kubectlUtil.Apply(deferredResource.Spec.Resource.Raw)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -208,7 +208,7 @@ func (u *DeferResourceUtil) ApplyResource(
 	maxRetries := 5
 	retryInterval := time.Second * 2
 	for i := 0; i < maxRetries; i++ {
-		appliedResource, err = kubectlUtil.Get(deferResource.Spec.Resource.Raw)
+		appliedResource, err = kubectlUtil.Get(deferredResource.Spec.Resource.Raw)
 		if err == nil {
 			break
 		}
@@ -217,79 +217,79 @@ func (u *DeferResourceUtil) ApplyResource(
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	return u.UpdateResolvedStatus(DeferResourceSuccess, deferResource, appliedResource, false)
+	return u.UpdateResolvedStatus(DeferredResourceSuccess, deferredResource, appliedResource, false)
 }
 
-func (u *DeferResourceUtil) setResolvedStatusCondition(
-	conditionResolvedReason DeferResourceConditionResolvedReason,
+func (u *DeferredResourceUtil) setResolvedStatusCondition(
+	conditionResolvedReason DeferredResourceConditionResolvedReason,
 	message string,
-	deferResource *integrationv1beta1.DeferResource,
+	deferredResource *integrationv1beta1.DeferredResource,
 ) {
 	resolvedStatus := false
 	if message == "" {
-		if conditionResolvedReason == DeferResourcePending {
+		if conditionResolvedReason == DeferredResourcePending {
 			message = "pending"
-		} else if conditionResolvedReason == DeferResourceSuccess {
+		} else if conditionResolvedReason == DeferredResourceSuccess {
 			message = "success"
-		} else if conditionResolvedReason == DeferResourceError {
+		} else if conditionResolvedReason == DeferredResourceError {
 			message = "unknown error"
 		}
 	}
-	if conditionResolvedReason != DeferResourceError {
-		deferResource.Status.Conditions = []metav1.Condition{}
+	if conditionResolvedReason != DeferredResourceError {
+		deferredResource.Status.Conditions = []metav1.Condition{}
 	}
-	if conditionResolvedReason == DeferResourceSuccess {
+	if conditionResolvedReason == DeferredResourceSuccess {
 		resolvedStatus = true
 	}
 	condition := metav1.Condition{
 		Message:            message,
-		ObservedGeneration: deferResource.Generation,
+		ObservedGeneration: deferredResource.Generation,
 		Reason:             string(conditionResolvedReason),
 		Status:             "False",
-		Type:               string(DeferResourceConditionTypeResolved),
+		Type:               string(DeferredResourceConditionTypeResolved),
 	}
 	if resolvedStatus {
 		condition.Status = "True"
 	}
-	meta.SetStatusCondition(&deferResource.Status.Conditions, condition)
+	meta.SetStatusCondition(&deferredResource.Status.Conditions, condition)
 }
 
-func (u *DeferResourceUtil) setErrorStatus(err error, deferResource *integrationv1beta1.DeferResource) error {
+func (u *DeferredResourceUtil) setErrorStatus(err error, deferredResource *integrationv1beta1.DeferredResource) error {
 	e := err
 	if e == nil {
 		return nil
 	}
-	if deferResource == nil {
+	if deferredResource == nil {
 		return nil
 	}
 	if strings.Contains(e.Error(), registry.OptimisticLockErrorMsg) {
 		return nil
 	}
 	message := e.Error()
-	resolvedCondition, err := u.GetResolvedCondition(deferResource)
+	resolvedCondition, err := u.GetResolvedCondition(deferredResource)
 	if err != nil {
 		return err
 	}
 	if resolvedCondition != nil {
-		u.setResolvedStatusCondition(DeferResourceError, "failed", deferResource)
+		u.setResolvedStatusCondition(DeferredResourceError, "failed", deferredResource)
 	}
 	failedCondition := metav1.Condition{
 		Message:            message,
-		ObservedGeneration: deferResource.Generation,
+		ObservedGeneration: deferredResource.Generation,
 		Reason:             "Error",
 		Status:             "True",
-		Type:               string(DeferResourceConditionTypeFailed),
+		Type:               string(DeferredResourceConditionTypeFailed),
 	}
-	meta.SetStatusCondition(&deferResource.Status.Conditions, failedCondition)
+	meta.SetStatusCondition(&deferredResource.Status.Conditions, failedCondition)
 	return nil
 }
 
-func (u *DeferResourceUtil) setResolvedStatus(
-	deferResource *integrationv1beta1.DeferResource,
+func (u *DeferredResourceUtil) setResolvedStatus(
+	deferredResource *integrationv1beta1.DeferredResource,
 	appliedResource *unstructured.Unstructured,
 ) {
 	if appliedResource != nil {
-		deferResource.Status.OwnerReference = metav1.OwnerReference{
+		deferredResource.Status.OwnerReference = metav1.OwnerReference{
 			APIVersion: appliedResource.GetAPIVersion(),
 			Kind:       appliedResource.GetKind(),
 			Name:       appliedResource.GetName(),

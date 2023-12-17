@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
-  name: deferresources.integration.rock8s.com
+  name: deferredresources.integration.rock8s.com
 spec:
   group: integration.rock8s.com
   names:
-    kind: DeferResource
-    listKind: DeferResourceList
-    plural: deferresources
-    singular: deferresource
+    kind: DeferredResource
+    listKind: DeferredResourceList
+    plural: deferredresources
+    singular: deferredresource
   scope: Namespaced
   versions:
   - name: v1beta1
     schema:
       openAPIV3Schema:
-        description: DeferResource is the Schema for the deferresources API
+        description: DeferredResource is the Schema for the deferredresources API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: DeferResourceSpec defines the desired state of DeferResource
+            description: DeferredResourceSpec defines the desired state of DeferredResource
             properties:
               resource:
                 description: Resource is the resource to create after the defer is
@@ -71,7 +71,7 @@ spec:
                 type: array
             type: object
           status:
-            description: DeferResourceStatus defines the observed state of DeferResource
+            description: DeferredResourceStatus defines the observed state of DeferredResource
             properties:
               conditions:
                 items:

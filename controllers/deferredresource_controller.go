@@ -1,5 +1,5 @@
 /**
- * File: /controllers/deferresource_controller.go
+ * File: /controllers/deferredresource_controller.go
  * Project: integration-operator
  * File Created: 17-12-2023 03:35:18
  * Author: Clay Risser
@@ -60,60 +60,60 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// DeferResourceReconciler reconciles a DeferResource object
-type DeferResourceReconciler struct {
+// DeferredResourceReconciler reconciles a DeferredResource object
+type DeferredResourceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=integration.rock8s.com,resources=deferresources,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=integration.rock8s.com,resources=deferresources/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=integration.rock8s.com,resources=deferresources/finalizers,verbs=update
+//+kubebuilder:rbac:groups=integration.rock8s.com,resources=deferredresources,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=integration.rock8s.com,resources=deferredresources/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=integration.rock8s.com,resources=deferredresources/finalizers,verbs=update
 
-func (r *DeferResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *DeferredResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	logger.V(1).Info("DeferResource Reconcile")
-	deferResourceUtil := util.NewDeferResourceUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
+	logger.V(1).Info("DeferredResource Reconcile")
+	deferredResourceUtil := util.NewDeferredResourceUtil(&r.Client, ctx, &req, &integrationv1beta1.NamespacedName{
 		Name:      req.NamespacedName.Name,
 		Namespace: req.NamespacedName.Namespace,
 	})
-	deferResource, err := deferResourceUtil.Get()
+	deferredResource, err := deferredResourceUtil.Get()
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	kubectlUtil := util.NewKubectlUtil(
-		ctx, deferResource.Namespace,
-		util.EnsureServiceAccount(deferResource.Spec.ServiceAccountName),
+		ctx, deferredResource.Namespace,
+		util.EnsureServiceAccount(deferredResource.Spec.ServiceAccountName),
 	)
 
-	if deferResource.Spec.Timeout > 0 {
-		if time.Since(deferResource.CreationTimestamp.Time) < time.Duration(deferResource.Spec.Timeout)*time.Second {
+	if deferredResource.Spec.Timeout > 0 {
+		if time.Since(deferredResource.CreationTimestamp.Time) < time.Duration(deferredResource.Spec.Timeout)*time.Second {
 			return ctrl.Result{
-				RequeueAfter: time.Duration(deferResource.Spec.Timeout)*time.Second - time.Since(deferResource.CreationTimestamp.Time),
+				RequeueAfter: time.Duration(deferredResource.Spec.Timeout)*time.Second - time.Since(deferredResource.CreationTimestamp.Time),
 			}, nil
 		}
 	}
 
-	if deferResource.Spec.WaitFor != nil {
-		for _, waitFor := range *deferResource.Spec.WaitFor {
+	if deferredResource.Spec.WaitFor != nil {
+		for _, waitFor := range *deferredResource.Spec.WaitFor {
 			body, err := json.Marshal(waitFor)
 			if err != nil {
-				return deferResourceUtil.Error(err, deferResource)
+				return deferredResourceUtil.Error(err, deferredResource)
 			}
 			if _, err := kubectlUtil.Get(body); err != nil {
 				if k8serrors.IsNotFound(err) {
 					return ctrl.Result{Requeue: true}, nil
 				}
-				return deferResourceUtil.Error(err, deferResource)
+				return deferredResourceUtil.Error(err, deferredResource)
 			}
 		}
 	}
 
-	return deferResourceUtil.ApplyResource(deferResource, kubectlUtil)
+	return deferredResourceUtil.ApplyResource(deferredResource, kubectlUtil)
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *DeferResourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *DeferredResourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	maxConcurrentReconciles := 3
 	if value := os.Getenv("MAX_CONCURRENT_RECONCILES"); value != "" {
 		if val, err := strconv.Atoi(value); err == nil {

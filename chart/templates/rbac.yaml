@@ -91,7 +91,7 @@ rules:
   - apiGroups:
       - integration.rock8s.com
     resources:
-      - deferresources
+      - deferredresources
     verbs:
       - create
       - delete
@@ -103,13 +103,13 @@ rules:
   - apiGroups:
       - integration.rock8s.com
     resources:
-      - deferresources/finalizers
+      - deferredresources/finalizers
     verbs:
       - update
   - apiGroups:
       - integration.rock8s.com
     resources:
-      - deferresources/status
+      - deferredresources/status
     verbs:
       - get
       - patch

@@ -1,7 +1,7 @@
 /**
- * File: /api/v1beta1/deferresource_types.go
+ * File: /api/v1beta1/deferredresource_types.go
  * Project: integration-operator
- * File Created: 17-12-2023 03:35:18
+ * File Created: 17-12-2023 11:14:58
  * Author: Clay Risser
  * -----
  * BitSpur (c) Copyright 2021 - 2023
@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/kustomize/api/resid"
 )
 
-// DeferResourceSpec defines the desired state of DeferResource
-type DeferResourceSpec struct {
+// DeferredResourceSpec defines the desired state of DeferredResource
+type DeferredResourceSpec struct {
 	// Timeout is the maximum time to wait before creating the resource
 	Timeout int64 `json:"timeout,omitempty"`
 
@@ -48,8 +48,8 @@ type DeferResourceSpec struct {
 	ServiceAccountName string `json:"serviceAccountName,omitempty" protobuf:"bytes,8,opt,name=serviceAccountName"`
 }
 
-// DeferResourceStatus defines the observed state of DeferResource
-type DeferResourceStatus struct {
+// DeferredResourceStatus defines the observed state of DeferredResource
+type DeferredResourceStatus struct {
 	Conditions     []metav1.Condition    `json:"conditions,omitempty"`
 	OwnerReference metav1.OwnerReference `json:"ownerReferences,omitempty"`
 }
@@ -57,22 +57,22 @@ type DeferResourceStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// DeferResource is the Schema for the deferresources API
-type DeferResource struct {
+// DeferredResource is the Schema for the deferredresources API
+type DeferredResource struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DeferResourceSpec   `json:"spec,omitempty"`
-	Status DeferResourceStatus `json:"status,omitempty"`
+	Spec   DeferredResourceSpec   `json:"spec,omitempty"`
+	Status DeferredResourceStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// DeferResourceList contains a list of DeferResource
-type DeferResourceList struct {
+// DeferredResourceList contains a list of DeferredResource
+type DeferredResourceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []DeferResource `json:"items"`
+	Items           []DeferredResource `json:"items"`
 }
 
 // Target refers to a kubernetes object by Group, Version, Kind and Name
@@ -86,5 +86,5 @@ type WaitForTarget struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&DeferResource{}, &DeferResourceList{})
+	SchemeBuilder.Register(&DeferredResource{}, &DeferredResourceList{})
 }

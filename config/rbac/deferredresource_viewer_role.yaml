@@ -1,20 +1,20 @@
-# permissions for end users to view deferresources.
+# permissions for end users to view deferredresources.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: deferresource-viewer-role
+    app.kubernetes.io/instance: deferredresource-viewer-role
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: integration-operator
     app.kubernetes.io/part-of: integration-operator
     app.kubernetes.io/managed-by: kustomize
-  name: deferresource-viewer-role
+  name: deferredresource-viewer-role
 rules:
 - apiGroups:
   - integration.rock8s.com
   resources:
-  - deferresources
+  - deferredresources
   verbs:
   - get
   - list
@@ -22,6 +22,6 @@ rules:
 - apiGroups:
   - integration.rock8s.com
   resources:
-  - deferresources/status
+  - deferredresources/status
   verbs:
   - get

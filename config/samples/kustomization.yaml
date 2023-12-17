@@ -4,4 +4,6 @@ resources:
 - integration_v1beta1_plug.yaml
 - rbac.yaml
 - integration_v1beta1_deferresource.yaml
+- integration_v1beta1_deferedresource.yaml
+- integration_v1beta1_deferredresource.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
