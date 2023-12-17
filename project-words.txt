@@ -6,7 +6,7 @@ apiserver
 automount
 bitspur
 cainjection
-CERTMANAGER
+certmanager
 clientgoscheme
 clientset
 configmap
