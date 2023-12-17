@@ -357,8 +357,7 @@ spec:
                     - name: HELLO
                       value: "{% .plugConfig.hello %}"
   resultResources:
-    - when: [coupled, updated]
-      do: apply
+    - do: apply
       stringTemplate: |
         {%- if (eq .result.resultJob "1") %}
         apiVersion: batch/v1
