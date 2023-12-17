@@ -69,7 +69,7 @@ func Couple(
 	if socketUtil.CoupledPlugExists(socket.Status.CoupledPlugs, plug.UID) &&
 		plug.Status.CoupledSocket != nil &&
 		plug.Status.CoupledResult != nil {
-		coupledCondition, err := plugUtil.GetCoupledCondition()
+		coupledCondition, err := plugUtil.GetCoupledCondition(plug)
 		if err != nil {
 			return plugUtil.Error(err, plug)
 		}
@@ -119,7 +119,7 @@ func Couple(
 			}
 			return plugUtil.UpdateCoupledStatus(util.CouplingInProcess, plug, socket, true)
 		}
-		coupledCondition, err := plugUtil.GetCoupledCondition()
+		coupledCondition, err := plugUtil.GetCoupledCondition(plug)
 		if err != nil {
 			return plugUtil.Error(err, plug)
 		}

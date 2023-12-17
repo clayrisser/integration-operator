@@ -13,7 +13,7 @@ This operator takes inspiration from [Juju](https://juju.is) [Charm](https://juj
 
 ```sh
 helm repo add rock8s https://charts.rock8s.com
-helm install integration-operator rock8s/integration-operator --version 1.1.0 --namespace kube-system
+helm install integration-operator rock8s/integration-operator --version 1.2.0 --namespace kube-system
 ```
 
 ## Develop

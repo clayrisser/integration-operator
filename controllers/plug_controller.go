@@ -101,7 +101,7 @@ func (r *PlugReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return plugUtil.Update(plug, true)
 	}
 
-	coupledCondition, err := plugUtil.GetCoupledCondition()
+	coupledCondition, err := plugUtil.GetCoupledCondition(plug)
 	if err != nil {
 		return plugUtil.Error(err, plug)
 	}

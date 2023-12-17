@@ -118,7 +118,7 @@ func (r *SocketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return socketUtil.Update(socket, true)
 	}
 
-	coupledCondition, err := socketUtil.GetCoupledCondition()
+	coupledCondition, err := socketUtil.GetCoupledCondition(socket)
 	if err != nil {
 		return socketUtil.Error(err, socket)
 	}

@@ -56,6 +56,21 @@ const (
 	ConditionTypeFailed  ConditionType = "Failed"
 )
 
+type DeferResourceConditionResolvedReason string
+
+const (
+	DeferResourcePending DeferResourceConditionResolvedReason = "Pending"
+	DeferResourceError   DeferResourceConditionResolvedReason = "Error"
+	DeferResourceSuccess DeferResourceConditionResolvedReason = "Success"
+)
+
+type DeferResourceConditionType string
+
+const (
+	DeferResourceConditionTypeResolved ConditionType = "Resolved"
+	DeferResourceConditionTypeFailed   ConditionType = "Failed"
+)
+
 type Config map[string]string
 
 type Result map[string]string

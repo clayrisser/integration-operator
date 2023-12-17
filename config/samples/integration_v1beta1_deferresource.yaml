@@ -1,0 +1,12 @@
+apiVersion: integration.rock8s.com/v1beta1
+kind: DeferResource
+metadata:
+  labels:
+    app.kubernetes.io/name: deferresource
+    app.kubernetes.io/instance: deferresource-sample
+    app.kubernetes.io/part-of: integration-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: integration-operator
+  name: deferresource-sample
+spec:
+  # TODO(user): Add fields here

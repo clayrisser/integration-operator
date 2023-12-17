@@ -29,7 +29,6 @@ package util
 import (
 	"context"
 	"strings"
-	"sync"
 	"time"
 
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
@@ -119,10 +118,15 @@ func (u *PlugUtil) Delete(plug *integrationv1beta1.Plug) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (u *PlugUtil) GetCoupledCondition() (*metav1.Condition, error) {
-	plug, err := u.Get()
-	if err != nil {
-		return nil, err
+func (u *PlugUtil) GetCoupledCondition(
+	plug *integrationv1beta1.Plug,
+) (*metav1.Condition, error) {
+	if plug == nil {
+		var err error
+		plug, err = u.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 	coupledCondition := meta.FindStatusCondition(plug.Status.Conditions, string(ConditionTypeCoupled))
 	return coupledCondition, nil
@@ -298,7 +302,7 @@ func (u *PlugUtil) setErrorStatus(err error, plug *integrationv1beta1.Plug) erro
 		return nil
 	}
 	message := e.Error()
-	coupledCondition, err := u.GetCoupledCondition()
+	coupledCondition, err := u.GetCoupledCondition(plug)
 	if err != nil {
 		return err
 	}
@@ -328,5 +332,3 @@ func (u *PlugUtil) setCoupledSocketStatus(
 		UID:        socket.UID,
 	}
 }
-
-var GlobalPlugMutex *sync.Mutex = &sync.Mutex{}

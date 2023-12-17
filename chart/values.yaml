@@ -1,7 +1,7 @@
 images:
   resourceBindingOperator:
     repository: registry.gitlab.com/bitspur/rock8s/integration-operator
-    tag: 1.1.0
+    tag: 1.2.0
 
 config:
   imagePullPolicy: Always

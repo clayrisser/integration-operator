@@ -29,7 +29,7 @@ export DOCKER_COMPOSE := docker-compose
 export CONTEXT := ..
 export NAME := bitspur/rock8s/integration-operator
 export REGISTRY := registry.gitlab.com
-export VERSION := 1.1.0
+export VERSION := 1.2.0
 export GIT_COMMIT ?= $(shell git describe --tags --always --dirty 2>/dev/null)
 
 include $(MKPM)/docker

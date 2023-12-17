@@ -109,10 +109,15 @@ func (u *SocketUtil) Delete(socket *integrationv1beta1.Socket) (ctrl.Result, err
 	return ctrl.Result{}, nil
 }
 
-func (u *SocketUtil) GetCoupledCondition() (*metav1.Condition, error) {
-	socket, err := u.Get()
-	if err != nil {
-		return nil, err
+func (u *SocketUtil) GetCoupledCondition(
+	socket *integrationv1beta1.Socket,
+) (*metav1.Condition, error) {
+	if socket == nil {
+		var err error
+		socket, err = u.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 	coupledCondition := meta.FindStatusCondition(socket.Status.Conditions, string(ConditionTypeCoupled))
 	return coupledCondition, nil
@@ -266,7 +271,7 @@ func (u *SocketUtil) RemoveCoupledPlugStatus(
 		}
 	}
 	socket.Status.CoupledPlugs = coupledPlugs
-	coupledCondition, err := u.GetCoupledCondition()
+	coupledCondition, err := u.GetCoupledCondition(socket)
 	if err != nil {
 		return false, err
 	}
@@ -351,7 +356,7 @@ func (u *SocketUtil) setErrorStatus(err error, socket *integrationv1beta1.Socket
 		return nil
 	}
 	message := e.Error()
-	coupledCondition, err := u.GetCoupledCondition()
+	coupledCondition, err := u.GetCoupledCondition(socket)
 	if err != nil {
 		return err
 	}
