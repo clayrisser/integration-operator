@@ -28,10 +28,12 @@ package util
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"time"
 
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -70,18 +72,18 @@ func NewDeferredResourceUtil(
 func (u *DeferredResourceUtil) Get() (*integrationv1beta1.DeferredResource, error) {
 	client := *u.client
 	ctx := u.ctx
-	plug := &integrationv1beta1.DeferredResource{}
-	if err := client.Get(ctx, u.namespacedName, plug); err != nil {
+	deferredResource := &integrationv1beta1.DeferredResource{}
+	if err := client.Get(ctx, u.namespacedName, deferredResource); err != nil {
 		return nil, err
 	}
-	return plug.DeepCopy(), nil
+	return deferredResource.DeepCopy(), nil
 }
 
-func (u *DeferredResourceUtil) Update(plug *integrationv1beta1.DeferredResource, requeue bool) (ctrl.Result, error) {
+func (u *DeferredResourceUtil) Update(deferredResource *integrationv1beta1.DeferredResource, requeue bool) (ctrl.Result, error) {
 	client := *u.client
 	ctx := u.ctx
-	if err := client.Update(ctx, plug); err != nil {
-		return u.Error(err, plug)
+	if err := client.Update(ctx, deferredResource); err != nil {
+		return u.Error(err, deferredResource)
 	}
 	if requeue {
 		return ctrl.Result{Requeue: true, RequeueAfter: 0}, nil
@@ -90,12 +92,12 @@ func (u *DeferredResourceUtil) Update(plug *integrationv1beta1.DeferredResource,
 }
 
 func (u *DeferredResourceUtil) UpdateStatus(
-	plug *integrationv1beta1.DeferredResource,
+	deferredResource *integrationv1beta1.DeferredResource,
 	requeue bool,
 ) (ctrl.Result, error) {
 	client := *u.client
 	ctx := u.ctx
-	if err := client.Status().Update(ctx, plug); err != nil {
+	if err := client.Status().Update(ctx, deferredResource); err != nil {
 		if strings.Contains(err.Error(), registry.OptimisticLockErrorMsg) {
 			return ctrl.Result{Requeue: true}, nil
 		}
@@ -107,11 +109,11 @@ func (u *DeferredResourceUtil) UpdateStatus(
 	return ctrl.Result{}, nil
 }
 
-func (u *DeferredResourceUtil) Delete(plug *integrationv1beta1.DeferredResource) (ctrl.Result, error) {
+func (u *DeferredResourceUtil) Delete(deferredResource *integrationv1beta1.DeferredResource) (ctrl.Result, error) {
 	client := *u.client
 	ctx := u.ctx
-	if err := client.Delete(ctx, plug); err != nil {
-		return u.Error(err, plug)
+	if err := client.Delete(ctx, deferredResource); err != nil {
+		return u.Error(err, deferredResource)
 	}
 	return ctrl.Result{}, nil
 }
@@ -142,30 +144,25 @@ func (u *DeferredResourceUtil) Error(
 			return ctrl.Result{}, err
 		}
 	}
-	result, err := u.UpdateErrorStatus(e, deferredResource)
-	if strings.Contains(e.Error(), "result property") &&
-		strings.Contains(e.Error(), "is required") {
-		return ctrl.Result{Requeue: true}, nil
-	}
-	return result, err
+	return u.UpdateErrorStatus(e, deferredResource)
 }
 
 func (u *DeferredResourceUtil) UpdateErrorStatus(
 	err error,
-	plug *integrationv1beta1.DeferredResource,
+	deferredResource *integrationv1beta1.DeferredResource,
 ) (ctrl.Result, error) {
 	e := err
-	if plug == nil {
+	if deferredResource == nil {
 		var err error
-		plug, err = u.Get()
+		deferredResource, err = u.Get()
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 	}
-	if err = u.setErrorStatus(e, plug); err != nil {
+	if err = u.setErrorStatus(e, deferredResource); err != nil {
 		return ctrl.Result{}, err
 	}
-	if _, err := u.UpdateStatus(plug, true); err != nil {
+	if _, err := u.UpdateStatus(deferredResource, true); err != nil {
 		return ctrl.Result{}, err
 	}
 	if strings.Contains(e.Error(), registry.OptimisticLockErrorMsg) {
@@ -178,6 +175,7 @@ func (u *DeferredResourceUtil) UpdateResolvedStatus(
 	conditionResolvedReason DeferredResourceConditionResolvedReason,
 	deferredResource *integrationv1beta1.DeferredResource,
 	appliedResource *unstructured.Unstructured,
+	message string,
 	requeue bool,
 ) (ctrl.Result, error) {
 	if deferredResource == nil {
@@ -191,7 +189,7 @@ func (u *DeferredResourceUtil) UpdateResolvedStatus(
 		u.setResolvedStatus(deferredResource, appliedResource)
 	}
 	if conditionResolvedReason != "" {
-		u.setResolvedStatusCondition(conditionResolvedReason, "", deferredResource)
+		u.setResolvedStatusCondition(conditionResolvedReason, message, deferredResource)
 	}
 	return u.UpdateStatus(deferredResource, requeue)
 }
@@ -200,7 +198,14 @@ func (u *DeferredResourceUtil) ApplyResource(
 	deferredResource *integrationv1beta1.DeferredResource,
 	kubectlUtil *KubectlUtil,
 ) (ctrl.Result, error) {
-	err := kubectlUtil.Apply(deferredResource.Spec.Resource.Raw)
+	resource, err := u.getResource(deferredResource, kubectlUtil)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if appliedResource, err := kubectlUtil.Get(resource); err == nil {
+		return u.UpdateResolvedStatus(DeferredResourceSuccess, deferredResource, appliedResource, "", false)
+	}
+	err = kubectlUtil.Apply(resource)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -208,7 +213,7 @@ func (u *DeferredResourceUtil) ApplyResource(
 	maxRetries := 5
 	retryInterval := time.Second * 2
 	for i := 0; i < maxRetries; i++ {
-		appliedResource, err = kubectlUtil.Get(deferredResource.Spec.Resource.Raw)
+		appliedResource, err = kubectlUtil.Get(resource)
 		if err == nil {
 			break
 		}
@@ -217,7 +222,38 @@ func (u *DeferredResourceUtil) ApplyResource(
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	return u.UpdateResolvedStatus(DeferredResourceSuccess, deferredResource, appliedResource, false)
+	return u.UpdateResolvedStatus(DeferredResourceSuccess, deferredResource, appliedResource, "", false)
+}
+
+func (u *DeferredResourceUtil) DeleteResource(
+	deferredResource *integrationv1beta1.DeferredResource,
+	kubectlUtil *KubectlUtil,
+) error {
+	resource, err := u.getResource(deferredResource, kubectlUtil)
+	if err != nil {
+		return err
+	}
+	err = kubectlUtil.Delete(resource)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
+
+func (u *DeferredResourceUtil) getResource(
+	deferredResource *integrationv1beta1.DeferredResource,
+	kubectlUtil *KubectlUtil,
+) ([]byte, error) {
+	var resource unstructured.Unstructured
+	if err := json.Unmarshal(deferredResource.Spec.Resource.Raw, &resource); err != nil {
+		return nil, err
+	}
+	resource.SetNamespace(deferredResource.Namespace)
+	raw, err := json.Marshal(resource.Object)
+	if err != nil {
+		return nil, err
+	}
+	return raw, nil
 }
 
 func (u *DeferredResourceUtil) setResolvedStatusCondition(

@@ -53,6 +53,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	integrationv1beta1 "gitlab.com/bitspur/rock8s/integration-operator/api/v1beta1"
@@ -86,23 +87,61 @@ func (r *DeferredResourceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		util.EnsureServiceAccount(deferredResource.Spec.ServiceAccountName),
 	)
 
+	if deferredResource.GetDeletionTimestamp() != nil {
+		if controllerutil.ContainsFinalizer(deferredResource, integrationv1beta1.Finalizer) {
+			if err := deferredResourceUtil.DeleteResource(deferredResource, kubectlUtil); err != nil {
+				return deferredResourceUtil.Error(err, deferredResource)
+			}
+			controllerutil.RemoveFinalizer(deferredResource, integrationv1beta1.Finalizer)
+			return deferredResourceUtil.Update(deferredResource, true)
+		}
+		return ctrl.Result{}, nil
+	}
+
 	if deferredResource.Spec.Timeout > 0 {
 		if time.Since(deferredResource.CreationTimestamp.Time) < time.Duration(deferredResource.Spec.Timeout)*time.Second {
-			return ctrl.Result{
-				RequeueAfter: time.Duration(deferredResource.Spec.Timeout)*time.Second - time.Since(deferredResource.CreationTimestamp.Time),
-			}, nil
+			return deferredResourceUtil.UpdateResolvedStatus(
+				util.DeferredResourcePending,
+				deferredResource,
+				nil,
+				"waiting for timeout",
+				true,
+			)
 		}
 	}
 
 	if deferredResource.Spec.WaitFor != nil {
 		for _, waitFor := range *deferredResource.Spec.WaitFor {
-			body, err := json.Marshal(waitFor)
+			apiVersion := waitFor.APIVersion
+			if apiVersion == "" {
+				group := ""
+				if waitFor.Group != "" {
+					group = waitFor.Group + "/"
+				}
+				apiVersion = group + waitFor.Version
+			}
+			body, err := json.Marshal(
+				map[string]interface{}{
+					"apiVersion": apiVersion,
+					"kind":       waitFor.Kind,
+					"metadata": map[string]interface{}{
+						"name":      waitFor.Name,
+						"namespace": deferredResource.Namespace,
+					},
+				},
+			)
 			if err != nil {
 				return deferredResourceUtil.Error(err, deferredResource)
 			}
 			if _, err := kubectlUtil.Get(body); err != nil {
 				if k8serrors.IsNotFound(err) {
-					return ctrl.Result{Requeue: true}, nil
+					return deferredResourceUtil.UpdateResolvedStatus(
+						util.DeferredResourcePending,
+						deferredResource,
+						nil,
+						"waiting for resource",
+						true,
+					)
 				}
 				return deferredResourceUtil.Error(err, deferredResource)
 			}
@@ -122,7 +161,6 @@ func (r *DeferredResourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{MaxConcurrentReconciles: maxConcurrentReconciles}).
-		WithEventFilter(filterPlugPredicate()).
-		For(&integrationv1beta1.Plug{}).
+		For(&integrationv1beta1.DeferredResource{}).
 		Complete(r)
 }
