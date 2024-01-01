@@ -202,8 +202,8 @@ func (u *DeferredResourceUtil) ApplyResource(
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	if appliedResource, err := kubectlUtil.Get(resource); err == nil {
-		return u.UpdateResolvedStatus(DeferredResourceSuccess, deferredResource, appliedResource, "", false)
+	if _, err := kubectlUtil.Get(resource); err == nil {
+		return ctrl.Result{}, nil
 	}
 	err = kubectlUtil.Apply(resource)
 	if err != nil {
