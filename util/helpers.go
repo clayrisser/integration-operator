@@ -81,6 +81,9 @@ func JsonToHashMap(body []byte) (map[string]string, error) {
 }
 
 func WhenInWhenSlice(when integrationv1beta1.When, whenSlice *[]integrationv1beta1.When) bool {
+	if whenSlice == nil {
+		return false
+	}
 	for _, whenItem := range *whenSlice {
 		if when == whenItem {
 			return true
