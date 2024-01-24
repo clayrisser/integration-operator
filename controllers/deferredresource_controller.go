@@ -105,7 +105,7 @@ func (r *DeferredResourceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 				deferredResource,
 				nil,
 				"waiting for timeout",
-				true,
+				deferredResource.Spec.Timeout,
 			)
 		}
 	}
@@ -140,7 +140,7 @@ func (r *DeferredResourceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 						deferredResource,
 						nil,
 						"waiting for resource",
-						true,
+						1,
 					)
 				}
 				return deferredResourceUtil.Error(err, deferredResource)

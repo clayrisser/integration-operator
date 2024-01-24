@@ -93,7 +93,7 @@ func (u *DeferredResourceUtil) Update(deferredResource *integrationv1beta1.Defer
 
 func (u *DeferredResourceUtil) UpdateStatus(
 	deferredResource *integrationv1beta1.DeferredResource,
-	requeue bool,
+	requeueAfter int64,
 ) (ctrl.Result, error) {
 	client := *u.client
 	ctx := u.ctx
@@ -103,8 +103,8 @@ func (u *DeferredResourceUtil) UpdateStatus(
 		}
 		return ctrl.Result{}, err
 	}
-	if requeue {
-		return ctrl.Result{Requeue: true, RequeueAfter: 0}, nil
+	if requeueAfter > 0 {
+		return ctrl.Result{Requeue: true, RequeueAfter: time.Duration(requeueAfter)}, nil
 	}
 	return ctrl.Result{}, nil
 }
@@ -162,7 +162,7 @@ func (u *DeferredResourceUtil) UpdateErrorStatus(
 	if err = u.setErrorStatus(e, deferredResource); err != nil {
 		return ctrl.Result{}, err
 	}
-	if _, err := u.UpdateStatus(deferredResource, true); err != nil {
+	if _, err := u.UpdateStatus(deferredResource, 1); err != nil {
 		return ctrl.Result{}, err
 	}
 	if strings.Contains(e.Error(), registry.OptimisticLockErrorMsg) {
@@ -176,7 +176,7 @@ func (u *DeferredResourceUtil) UpdateResolvedStatus(
 	deferredResource *integrationv1beta1.DeferredResource,
 	appliedResource *unstructured.Unstructured,
 	message string,
-	requeue bool,
+	requeueAfter int64,
 ) (ctrl.Result, error) {
 	if deferredResource == nil {
 		var err error
@@ -191,7 +191,7 @@ func (u *DeferredResourceUtil) UpdateResolvedStatus(
 	if conditionResolvedReason != "" {
 		u.setResolvedStatusCondition(conditionResolvedReason, message, deferredResource)
 	}
-	return u.UpdateStatus(deferredResource, requeue)
+	return u.UpdateStatus(deferredResource, requeueAfter)
 }
 
 func (u *DeferredResourceUtil) ApplyResource(
@@ -222,7 +222,7 @@ func (u *DeferredResourceUtil) ApplyResource(
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	return u.UpdateResolvedStatus(DeferredResourceSuccess, deferredResource, appliedResource, "", false)
+	return u.UpdateResolvedStatus(DeferredResourceSuccess, deferredResource, appliedResource, "", 0)
 }
 
 func (u *DeferredResourceUtil) DeleteResource(
